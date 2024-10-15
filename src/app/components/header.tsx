@@ -1,36 +1,34 @@
-import Link from 'next/link';
-import {
-    SignedIn,
-    SignedOut,
-    SignInButton,
-    UserButton
-  } from '@clerk/nextjs'
+import Image from 'next/image';
 
-const Header = () => {
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 
-  return (
-    <nav className='flex items-center justify-between px-6 py-4 mb-5 bg-[#686A6C]'>
-      <div className='flex items-center'>
-        <Link href='/'>
-          <div className='text-3xl font-bold italic text-white uppercase'>
-            TALLYSIGHT
-          </div>
-        </Link>
-      </div>
-      <div className='flex items-center text-white'>
-        <SignedOut>
-            <div className="flex justify-end p-4 rounded-full bg-[#5E6061] hover:scale-105">
-              <SignInButton />
+const Header: React.FC = () => {
+    return (
+        <nav className='flex items-center justify-between px-6 py-4 mb-5 bg-[#686A6C]'>
+            <div className='flex items-center'>
+                <Image src="/TallySight.png"
+                     alt="TallySight Logo"
+                       width={400} // Provide an appropriate width
+                       height={400} // Provide an appropriate height
+                       quality={100}
+                       className='m1-16'/>
             </div>
-        </SignedOut>
-        <SignedIn>
-            <div className= 'flex justify-end items-start absolute top-0 right-0 p-4'>
-              <UserButton />
+            <div className='flex items-center text-white'>
+                <SignedOut>
+                    <div className="flex justify-end p-4 rounded-full bg-[#5E6061] hover:scale-105">
+                        <SignInButton />
+                    </div>
+                </SignedOut>
+                <SignedIn>
+                    <div className='relative'>
+                        <div className='absolute top-0 right-0 flex justify-end items-start p-4'>
+                            <UserButton />
+                        </div>
+                    </div>
+                </SignedIn>
             </div>
-          </SignedIn>
-      </div>
-    </nav>
-  )
+        </nav>
+    );
 };
 
 export default Header;
