@@ -6,5 +6,5 @@ James Pullin
 Oscar VIllalobos
 Kartina Yu
 Jeremy Auradou
-Sosan Yari
+Sosan Yari 
 Mursal Yari
