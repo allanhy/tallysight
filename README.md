@@ -1,5 +1,5 @@
 Team Members of Team Olive Garder: 
-Allan Hy
+Allan Hy 
 Anthony Hernandez
 Cynthia Angulo
 James Pullin 
