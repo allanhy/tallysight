@@ -45,6 +45,12 @@ export default function SignInPage() {
             />
             <Clerk.FieldError className="mt-2 block text-xs text-rose-400" />
           </Clerk.Field>
+          <a
+            href="/forgot-password"
+            className="text-blue-600 decoration-blue-600/30 underline-offset-4 outline-none hover:underline focus-visible:underline"
+          >
+            Forgot password?
+          </a>
           <SignIn.Action
             submit
             className="relative isolate w-full rounded-lg bg-blue-600 px-3.5 py-2.5 text-center text-sm font-medium text-white shadow-[0_1px_0_0_theme(colors.white/30%)_inset,0_-1px_1px_0_theme(colors.black/5%)_inset] outline-none before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-blue-100 before:opacity-0 hover:before:opacity-100 transition-opacity duration-200 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-gray-800 active:bg-blue-700 active:text-gray-200"
