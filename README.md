@@ -4,7 +4,7 @@ Anthony Hernandez
 Cynthia Angulo
 James Pullin 
 Oscar VIllalobos
-Kartina Yu
+Katrina Yu,
 Jeremy Auradou
 Sosan Yari 
 Mursal Yari
