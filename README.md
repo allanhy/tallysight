@@ -1,4 +1,4 @@
-Team Members of Team Olive Garder: 
+Team Members of Team Olive Garden: 
 Allan Hy 
 Anthony Hernandez
 Cynthia Angulo <3
