@@ -1,10 +1,12 @@
-Team Members of Team Olive Garden: 
-Allan Hy 
+
+
+Team Members of Team Olive Garder: 
+Allan Hy
 Anthony Hernandez
-Cynthia Angulo <3
-James Pullin 
-Oscar Villalobos
-Katrina Yu,
+Cynthia Angulo <3<3
+James Pullin
+Oscar VIllalobos
+Kartina Yu
 Jeremy Auradou
-Sosan Yari 
-Mursal Yari 
+Sosan Yari
+Mursal Yari
