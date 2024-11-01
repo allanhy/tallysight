@@ -4,8 +4,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import Link from 'next/link'
 import NavLink from './nav-link'
 
-const Header: React.FC = () => {
-
+const Header = () => {
     return (
         <nav>
             <div className='flex items-center space-x-8'>
@@ -30,7 +29,7 @@ const Header: React.FC = () => {
                     </div>
                 </SignedOut>
                 <SignedIn>
-                    <div className='flex justify-end p-1'>
+                    <div className='flex justify-end p-3'>
                         <UserButton />
                     </div>
                 </SignedIn>
