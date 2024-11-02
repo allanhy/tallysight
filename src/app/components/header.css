@@ -1,0 +1,41 @@
+nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .5%;
+    margin-bottom: .5%;
+    background-color: #000000;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+} 
+
+li {
+    float: left;
+}
+
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 10px 15px;
+    text-decoration: none;
+}
+
+li a:hover {
+    background-color: #1a2229;
+}
+
+.nav-active {
+    border-bottom: 3px inset #008AFF;
+}
+
+.cl-avatarBox {
+    width: 35%;
+    height: 35%;
+  }

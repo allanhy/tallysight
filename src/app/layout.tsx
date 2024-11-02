@@ -17,7 +17,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "TallySight",
-  description: "Your go-to gambling site",
+  description: "Your go-to e-gaming gambling site",
 };
 
 export default function RootLayout({
