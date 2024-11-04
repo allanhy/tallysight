@@ -1,0 +1,3 @@
+### GET request to example server
+GET https://api.sportradar.com/nfl/official/trial/v7/en/games/current_week/schedule.json?api_key=raq8bQc77QJkTp4pjcHwA7hQOl7mePBDeuvHvj7x
+Accept: application/json
