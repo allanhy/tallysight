@@ -17,6 +17,39 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Add these type definitions at the top of the file
+interface Team {
+  name: string;
+  spread: string;
+  logo: string;
+}
+
+interface Game {
+  id: number;
+  date?: string;
+  team1: Team;
+  team2: Team;
+}
+
+// Move MOCK_GAMES outside the component to avoid recalculation during render
+const MOCK_GAMES_BASE: Game[] = [
+  {
+    id: 1,
+    team1: { name: "Steelers", spread: "+1.5", logo: "/Steelers.webp" },
+    team2: { name: "Colts", spread: "-1.5", logo: "/Colts.png" }
+  },
+  {
+    id: 2,
+    team1: { name: "Bengals", spread: "-4.5", logo: "/Bengals.png" },
+    team2: { name: "Panthers", spread: "+4.5", logo: "/Panthers.png" }
+  },
+  {
+    id: 3,
+    team1: { name: "Eagles", spread: "+1.5", logo: "/Eagles.png" },
+    team2: { name: "Buccaneers", spread: "-1.5", logo: "/Buccaneers.webp" }
+  }
+];
+
 export default function PicksPage() {
   // State Management
   const router = useRouter();
@@ -32,59 +65,82 @@ export default function PicksPage() {
 
   const picksCount = selectedPicks.size;
 
-  // Move all date formatting into useEffect
+  // Modify the useEffect to update a games state instead of relying on MOCK_GAMES
+  const [games, setGames] = useState<Game[]>([]);
+
+  // Add a loading state
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    setMounted(true);
-    
-    // Format dates only after component mounts
-    const formatGameDate = () => {
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-
-      const options: Intl.DateTimeFormatOptions = { 
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      };
-
-      return tomorrow.toLocaleString('en-US', options).replace(',', ' •');
-    };
-
-    const formatWeekRange = () => {
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
+    // Delay the mounting to ensure clean hydration
+    const timer = setTimeout(() => {
+      setMounted(true);
+      setIsLoading(false);
       
-      const dayAfterTomorrow = new Date(today);
-      dayAfterTomorrow.setDate(today.getDate() + 2);
+      // Format dates only after component mounts
+      const formatGameDate = () => {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
 
-      const options: Intl.DateTimeFormatOptions = { 
-        month: 'short',
-        day: 'numeric'
+        const options: Intl.DateTimeFormatOptions = { 
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        };
+
+        return tomorrow.toLocaleString('en-US', options).replace(',', ' •');
       };
 
-      return `Tomorrow ${tomorrow.toLocaleString('en-US', options)}-${dayAfterTomorrow.toLocaleString('en-US', options)}`;
-    };
+      const formatWeekRange = () => {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        
+        const dayAfterTomorrow = new Date(today);
+        dayAfterTomorrow.setDate(today.getDate() + 2);
 
-    setFormattedDates({
-      gameDate: formatGameDate(),
-      weekRange: formatWeekRange()
-    });
+        const options: Intl.DateTimeFormatOptions = { 
+          month: 'short',
+          day: 'numeric'
+        };
+
+        return `Tomorrow ${tomorrow.toLocaleString('en-US', options)}-${dayAfterTomorrow.toLocaleString('en-US', options)}`;
+      };
+
+      // Update both dates and games state
+      const gameDate = formatGameDate();
+      setFormattedDates({
+        gameDate: gameDate,
+        weekRange: formatWeekRange()
+      });
+
+      // Create games with dates
+      setGames(MOCK_GAMES_BASE.map(game => ({
+        ...game,
+        date: gameDate
+      })));
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Don't render until client-side hydration is complete
-  if (!mounted) {
-    return null;
+  // Show loading state or nothing during initial render
+  if (isLoading || !mounted) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
   }
 
   // Utility function: Extracts team details from a pick ID (format: "gameId-teamIndex")
   const getPickDetails = (pickId: string) => {
     const [gameId, teamIndex] = pickId.split('-').map(Number);
-    const game = MOCK_GAMES.find(g => g.id === gameId);
+    const game = games.find(g => g.id === gameId);
     return game ? (teamIndex === 0 ? game.team1 : game.team2) : null;
   };
 
@@ -99,29 +155,6 @@ export default function PicksPage() {
   const handleSignIn = () => {
     router.push('/sign-in'); // Update this path to match your sign-in page route
   };
-
-  // Update MOCK_GAMES to avoid date calculations during render
-  const MOCK_GAMES = mounted ? [
-    {
-      id: 1,
-      date: formattedDates.gameDate,
-      team1: { name: "Steelers", spread: "-1.5", logo: "/Steelers.webp" },
-      team2: { name: "Colts", spread: "+1.5", logo: "/Colts.png" }
-    },
-    {
-      id: 2,
-      date: formattedDates.gameDate,
-      team1: { name: "Bengals", spread: "-4.5", logo: "/Bengals.png" },
-      team2: { name: "Panthers", spread: "+4.5", logo: "/Panthers.png" }
-    },
-    {
-      id: 3,
-      date: formattedDates.gameDate,
-      team1: { name: "Eagles", spread: "-1.5", logo: "/Eagles.png" },
-      team2: { name: "Buccaneers", spread: "+1.5", logo: "/Buccaneers.webp" }
-    },
-    // Add more games as needed...
-  ] : [];
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -141,7 +174,7 @@ export default function PicksPage() {
 
       {/* Games Grid: Main container for all game cards */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {MOCK_GAMES.map((game) => (
+        {games.map((game) => (
           <div key={game.id} className="bg-white rounded-lg shadow">
             {/* Game Card Structure:
                 - Game date and preview button
