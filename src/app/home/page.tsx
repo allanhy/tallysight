@@ -1,5 +1,6 @@
 'use client';
 
+//yo does this work?
 import React, { useState, useEffect, useRef } from 'react';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
