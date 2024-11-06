@@ -1,11 +1,11 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
 import GameCard from '../components/GameCard';
-import Leaderboard from '../components/Leaderboard';
+import { Game } from '../types/game';
+import Leaderboard from '../components/leaderboard';
 
 const responsive = {
   superLargeDesktop: {
