@@ -7,6 +7,7 @@ import 'react-multi-carousel/lib/styles.css';
 import GameCard from '../components/GameCard';
 import { Game } from '../types/game';
 import Leaderboard from '../components/leaderboard';
+import Link from 'next/link';
 
 const responsive = {
   superLargeDesktop: {
@@ -97,12 +98,15 @@ export default function Home() {
             <div className="flex flex-col gap-4 relative w-full">
               {/* White box with MyPicks button */}
               <div className="bg-white h-[200px] w-full relative bg-opacity-100 translate-y-[100px]">
-                <button 
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded absolute top-1/2 right-4 transform -translate-y-1/2"
-                  onClick={() => alert('MyPicks clicked!')} 
-                >
-                  MyPicks
-                </button>
+                <div className="absolute top-1/2 right-4 transform -translate-y-1/2">
+                  <Link href="/myPicks">
+                    <button 
+                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                      MyPicks
+                    </button>
+                  </Link>
+                </div>
               </div>
               
               {/* Gray boxes */}
