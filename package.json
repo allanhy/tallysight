@@ -2,24 +2,30 @@
   "name": "tallysight",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "main": "server.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node server.js",
     "lint": "next lint"
   },
   "dependencies": {
     "@clerk/elements": "^0.18.0",
     "@clerk/nextjs": "^6.2.0",
     "autoprefixer": "^10.4.20",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
     "next": "^15.0.2",
     "node": "^20.18.0",
+    "pg": "^8.13.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-multi-carousel": "^2.8.5"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pg": "^8.11.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8.57.1",
