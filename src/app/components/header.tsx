@@ -30,7 +30,7 @@ const Header = () => {
                 </SignedOut>
                 <SignedIn>
                     <div className='flex justify-end p-3'>
-                        <UserButton />
+                        <UserButton userProfileUrl='/profile'/>
                     </div>
                 </SignedIn>
             </div>
