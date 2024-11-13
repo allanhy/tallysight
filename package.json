@@ -13,6 +13,7 @@
   "dependencies": {
     "@clerk/elements": "^0.18.0",
     "@clerk/nextjs": "^6.2.0",
+    "@vercel/postgres": "^0.10.0",
     "autoprefixer": "^10.4.20",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
