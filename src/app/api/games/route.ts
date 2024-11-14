@@ -1,160 +1,132 @@
 import { NextResponse } from 'next/server';
 
-const SPORTRADAR_API_KEY = process.env.SPORTRADAR_API_KEY;
-const BASE_URL = 'http://api.sportradar.us/nfl/official/trial/v7/en';
+const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 
-const getTeamLogo = (teamName: string) => {
-  // Strip any city names and get just the team name
-  const teamNameOnly = teamName.split(' ').pop() || '';
-  
-  const teamIds: { [key: string]: string } = {
-    'Cardinals': '22',
-    'Falcons': '1',
-    'Ravens': '33',
-    'Bills': '2',
-    'Panthers': '29',
-    'Bears': '3',
-    'Bengals': '4',
-    'Browns': '5',
-    'Cowboys': '6',
-    'Broncos': '7',
-    'Lions': '8',
-    'Packers': '9',
-    'Texans': '34',
-    'Colts': '11',
-    'Jaguars': '30',
-    'Chiefs': '12',
-    'Raiders': '13',
-    'Chargers': '24',
-    'Rams': '14',
-    'Dolphins': '15',
-    'Vikings': '16',
-    'Patriots': '17',
-    'Saints': '18',
-    'Giants': '19',
-    'Jets': '20',
-    'Eagles': '21',
-    'Steelers': '23',
-    '49ers': '25',
-    'Seahawks': '26',
-    'Buccaneers': '27',
-    'Titans': '10',
-    'Commanders': '28'
+function getTeamLogo(teamName: string): string {
+  // Convert team names to their ESPN abbreviations
+  const teamAbbreviations: { [key: string]: string } = {
+    'Bills': 'buf',
+    'Dolphins': 'mia',
+    'Patriots': 'ne',
+    'Jets': 'nyj',
+    'Ravens': 'bal',
+    'Bengals': 'cin',
+    'Browns': 'cle',
+    'Steelers': 'pit',
+    'Texans': 'hou',
+    'Colts': 'ind',
+    'Jaguars': 'jax',
+    'Titans': 'ten',
+    'Broncos': 'den',
+    'Chiefs': 'kc',
+    'Raiders': 'lv',
+    'Chargers': 'lac',
+    'Cowboys': 'dal',
+    'Giants': 'nyg',
+    'Eagles': 'phi',
+    'Commanders': 'wsh',
+    'Bears': 'chi',
+    'Lions': 'det',
+    'Packers': 'gb',
+    'Vikings': 'min',
+    'Falcons': 'atl',
+    'Panthers': 'car',
+    'Saints': 'no',
+    'Buccaneers': 'tb',
+    'Cardinals': 'ari',
+    '49ers': 'sf',
+    'Seahawks': 'sea',
+    'Rams': 'lar'
   };
 
-  // Add console.log to debug
-  console.log('Team Name:', teamName);
-  console.log('Team ID:', teamIds[teamNameOnly]);
-  
-  const teamId = teamIds[teamNameOnly];
-  if (!teamId) {
-    console.log('No team ID found for:', teamName);
-    return null;
-  }
-  
-  const logoUrl = `https://a.espncdn.com/i/teamlogos/nfl/500/${teamId}.png`;
-  console.log('Logo URL:', logoUrl);
-  return logoUrl;
-};
+  const abbreviation = teamAbbreviations[teamName] || teamName.toLowerCase();
+  return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500/${abbreviation}.png`;
+}
 
 export async function GET() {
   try {
-    // Get current year
+    // Add currentDate definition at the start of the function
     const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
 
-    // Fetch the NFL schedule
-    const response = await fetch(
-      `${BASE_URL}/games/${currentYear}/REG/schedule.json?api_key=${SPORTRADAR_API_KEY}`
-    );
-
+    // Fetch the NFL schedule from ESPN
+    const url = `${BASE_URL}/scoreboard`;
+    console.log('Fetching URL:', url);
+    
+    const response = await fetch(url);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch NFL schedule');
+      const errorText = await response.text();
+      console.error('API Response Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      });
+      return NextResponse.json(
+        { error: 'Failed to fetch NFL schedule' }, 
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
-
-    // Find the most relevant week
-    let relevantWeek = data.weeks.reduce((closest: any, week: any) => {
-      if (!week.games || week.games.length === 0) return closest;
-      
-      const weekStart = new Date(week.games[0].scheduled);
-      const weekEnd = new Date(week.games[week.games.length - 1].scheduled);
-      
-      // If current date is within this week, return this week
-      if (currentDate >= weekStart && currentDate <= weekEnd) {
-        return week;
-      }
-      
-      // If we haven't found a week yet, or if this week is closer to current date
-      if (!closest || Math.abs(currentDate.getTime() - weekStart.getTime()) < 
-          Math.abs(currentDate.getTime() - new Date(closest.games[0].scheduled).getTime())) {
-        return week;
-      }
-      
-      return closest;
-    }, null);
-
-    // If still no week found, get the first upcoming week
-    if (!relevantWeek) {
-      relevantWeek = data.weeks.find((week: any) => {
-        if (!week.games || week.games.length === 0) return false;
-        const weekStart = new Date(week.games[0].scheduled);
-        return weekStart >= currentDate;
-      });
+    
+    console.log('ESPN API Response:', data);
+    
+    // Check if events exists instead of weeks
+    if (!data.events || !Array.isArray(data.events)) {
+      console.error('Invalid API response structure:', data);
+      return NextResponse.json(
+        { error: 'Invalid API response structure' },
+        { status: 500 }
+      );
     }
 
-    // If still no week found, get the last played week
-    if (!relevantWeek) {
-      relevantWeek = data.weeks[data.weeks.length - 1];
-    }
+    // Transform the games data directly from events
+    const games = data.events.map((game: any) => {
+      const odds = game.competitions[0].odds?.[0];
+      
+      return {
+        id: game.id,
+        homeTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.team.name,
+        awayTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name,
+        date: new Date(game.date).toISOString(),
+        time: new Date(game.date).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'America/New_York'
+        }),
+        status: game.status.type.name,
+        homeTeamLogo: getTeamLogo(game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.team.name),
+        awayTeamLogo: getTeamLogo(game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name),
+        venue: game.competitions[0].venue?.fullName,
+        broadcast: game.competitions[0].broadcasts?.[0]?.names?.[0] || 'TBD',
+        week: game.week.number,
+        homeScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.score,
+        awayScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.score,
+        odds: {
+          favorite: odds?.details || 'TBD',
+          spread: odds?.spread || 'TBD',
+          overUnder: odds?.overUnder || 'TBD',
+          homeTeamMoneyLine: odds?.homeTeamOdds?.moneyLine || 'TBD',
+          awayTeamMoneyLine: odds?.awayTeamOdds?.moneyLine || 'TBD',
+          provider: odds?.provider?.name || 'TBD'
+        }
+      };
+    });
 
-    // Transform the games data
-    const games = relevantWeek.games.map((game: any) => ({
-      id: game.id,
-      homeTeam: game.home.name,
-      awayTeam: game.away.name,
-      date: new Date(game.scheduled).toISOString(),
-      time: new Date(game.scheduled).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: 'America/New_York'
-      }),
-      status: game.status,
-      homeTeamLogo: getTeamLogo(game.home.name),
-      awayTeamLogo: getTeamLogo(game.away.name),
-      venue: game.venue?.name,
-      broadcast: game.broadcast?.network || 'TBD',
-      week: relevantWeek.sequence,
-      homeScore: game.home_points,
-      awayScore: game.away_points
-    }));
-
-    // Sort games by scheduled time
+    // Sort games by date
     games.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    return NextResponse.json({ games });
+    const weekStart = games.length > 0 ? games[0].date : null;
+    const weekEnd = games.length > 0 ? games[games.length - 1].date : null;
+
+    return NextResponse.json({ games, weekStart, weekEnd });
 
   } catch (error) {
     console.error('Error fetching NFL games:', error);
-    
-    // Return mock data if API fails
-    const mockGames = [
-      {
-        id: '1',
-        homeTeam: 'Eagles',
-        awayTeam: 'Cowboys',
-        date: new Date().toISOString(),
-        time: '1:00 PM',
-        status: 'Scheduled',
-        homeTeamLogo: getTeamLogo('Eagles'),
-        awayTeamLogo: getTeamLogo('Cowboys'),
-        week: 1
-      },
-      // Add more mock games if needed
-    ];
-
-    return NextResponse.json({ games: mockGames });
+    return NextResponse.json(
+      { error: 'Failed to fetch NFL schedule', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 } 

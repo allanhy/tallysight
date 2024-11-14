@@ -98,33 +98,33 @@ export default function SignUpPage() {
         </SignUp.Step>
         <SignUp.Step
           name="verifications"
-          className="relative isolate w-full space-y-8 rounded-2xl bg-emerald-950 px-4 py-10 shadow-md ring-1 ring-inset ring-white/10 before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-black/50 sm:w-96 sm:px-8"
+          className="relative isolate w-full space-y-8 rounded-2xl bg-white px-4 py-10 shadow-md ring-1 ring-inset ring-gray-300 before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-gray-50 sm:w-96 sm:px-8"
         >
           <header className="text-center">
             <div className='text-3xl font-bold italic text-blue-600 uppercase'>
               TALLYSIGHT
             </div>
-            <h1 className="mt-4 text-xl font-medium tracking-tight text-white">
+            <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-800">
               Verify email code
             </h1>
           </header>
           <Clerk.GlobalError className="block text-sm text-rose-400" />
           <SignUp.Strategy name="email_code">
             <Clerk.Field name="code" className="group/field relative">
-              <Clerk.Label className="absolute left-2 top-0 -translate-y-1/2 bg-emerald-950 px-2 font-mono text-xs/4 text-white before:absolute before:inset-0 before:-z-10 before:bg-black/50 group-focus-within/field:text-emerald-300 group-data-[invalid]/field:text-rose-400">
+            <Clerk.Label className="absolute left-2 top-0 -translate-y-1/2 bg-white px-2 font-mono text-xs/4 text-gray-600 before:absolute before:inset-0 before:-z-10 before:bg-white group-focus-within/field:text-blue-600 group-data-[invalid]/field:text-rose-400">
                 Verification Code
               </Clerk.Label>
               <Clerk.Input
                 type="text"
                 required
-                className="w-full rounded-lg bg-transparent px-4 py-2.5 text-sm text-white outline-none ring-1 ring-inset ring-white/20 hover:ring-white/30 focus:shadow-[0_0_6px_0] focus:shadow-emerald-500/20 focus:ring-[1.5px] focus:ring-emerald-300 data-[invalid]:shadow-rose-400/20 data-[invalid]:ring-rose-400"
+                className="w-full rounded-lg bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none ring-1 ring-inset ring-gray-300 hover:ring-blue-400 focus:ring-[1.5px] focus:ring-blue-600 data-[invalid]:shadow-rose-400/20 data-[invalid]:ring-rose-400"
               />
               <Clerk.FieldError className="mt-2 block text-xs text-rose-400" />
             </Clerk.Field>
           </SignUp.Strategy>
           <SignUp.Action
             submit
-            className="relative isolate w-full rounded-lg bg-gradient-to-b from-emerald-400 to-emerald-500 px-3.5 py-2.5 text-center text-sm font-medium text-emerald-950 shadow-[0_1px_0_0_theme(colors.white/30%)_inset,0_-1px_1px_0_theme(colors.black/5%)_inset] outline-none before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-white/10 before:opacity-0 hover:before:opacity-100 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-white active:text-emerald-950/80 active:before:bg-black/10"
+            className="relative isolate w-full rounded-lg bg-blue-600 px-3.5 py-2.5 text-center text-sm font-medium text-white shadow-[0_1px_0_0_theme(colors.white/30%)_inset,0_-1px_1px_0_theme(colors.black/5%)_inset] outline-none before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-blue-100 before:opacity-0 hover:before:opacity-100 transition-opacity duration-200 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-gray-800 active:bg-blue-700 active:text-gray-200"
           >
             Verify
           </SignUp.Action>
