@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Header from "./components/header";
 import { ClerkProvider }from '@clerk/nextjs'
+import NProgressHandler from "./components/NProgressHandler"; 
 import "./globals.css";
 
 const geistSans = localFont({
@@ -29,6 +30,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body suppressHydrationWarning>
+          <NProgressHandler /> {/* Add NProgress handler here */}
           <Header />
           {children}
         </body>
