@@ -59,7 +59,7 @@ export default function PicksPage() {
 
   // Add a loading state
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const availableGames = games.filter(game => game.isAvailable);
   const isSubmitDisabled = isSubmitting || selectedPicks.size === 0;
