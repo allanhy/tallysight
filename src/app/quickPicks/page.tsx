@@ -179,7 +179,8 @@ export default function PicksPage() {
   // Navigation: Redirects user to sign-in page
   const handleSignIn = async () => {
     if (!isSignedIn) {
-      router.push('/sign-in'); // Update this path to match your sign-in page route
+      const returnUrl = window.location.pathname;
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`); // Update this path to match your sign-in page route
       return;
     }
     // Format selected picks
