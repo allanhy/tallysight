@@ -204,8 +204,10 @@ export default function PicksPage() {
       if (response.status === 200) {
         console.log('Picks saved successfully');
         setSubmissionStatus('Picks Saved!'); // Update to show success message
-        setTimeout(() => window.location.reload(), 2000); // Reload page after 2 seconds
-
+        // Wait for 2 seconds before routing
+        setTimeout(() => {
+          router.push('/myPicks');
+        }, 2000);
       } else {
         console.error('Failed to save picks:', response.data.message);
         setSubmissionStatus('Failed to Save Picks');
