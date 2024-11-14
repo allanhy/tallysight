@@ -2,8 +2,52 @@ import { NextResponse } from 'next/server';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 
+function getTeamLogo(teamName: string): string {
+  // Convert team names to their ESPN abbreviations
+  const teamAbbreviations: { [key: string]: string } = {
+    'Bills': 'buf',
+    'Dolphins': 'mia',
+    'Patriots': 'ne',
+    'Jets': 'nyj',
+    'Ravens': 'bal',
+    'Bengals': 'cin',
+    'Browns': 'cle',
+    'Steelers': 'pit',
+    'Texans': 'hou',
+    'Colts': 'ind',
+    'Jaguars': 'jax',
+    'Titans': 'ten',
+    'Broncos': 'den',
+    'Chiefs': 'kc',
+    'Raiders': 'lv',
+    'Chargers': 'lac',
+    'Cowboys': 'dal',
+    'Giants': 'nyg',
+    'Eagles': 'phi',
+    'Commanders': 'wsh',
+    'Bears': 'chi',
+    'Lions': 'det',
+    'Packers': 'gb',
+    'Vikings': 'min',
+    'Falcons': 'atl',
+    'Panthers': 'car',
+    'Saints': 'no',
+    'Buccaneers': 'tb',
+    'Cardinals': 'ari',
+    '49ers': 'sf',
+    'Seahawks': 'sea',
+    'Rams': 'lar'
+  };
+
+  const abbreviation = teamAbbreviations[teamName] || teamName.toLowerCase();
+  return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500/${abbreviation}.png`;
+}
+
 export async function GET() {
   try {
+    // Add currentDate definition at the start of the function
+    const currentDate = new Date();
+
     // Fetch the NFL schedule from ESPN
     const url = `${BASE_URL}/scoreboard`;
     console.log('Fetching URL:', url);
@@ -25,39 +69,52 @@ export async function GET() {
 
     const data = await response.json();
     
-    if (!data || !data.events) {
+    console.log('ESPN API Response:', data);
+    
+    // Check if events exists instead of weeks
+    if (!data.events || !Array.isArray(data.events)) {
       console.error('Invalid API response structure:', data);
-      throw new Error('Invalid API response structure');
+      return NextResponse.json(
+        { error: 'Invalid API response structure' },
+        { status: 500 }
+      );
     }
 
-    // Transform ESPN data structure to match your existing format
-    const games = data.events.map((event: any) => {
-      const homeTeam = event.competitions[0].competitors.find((team: any) => team.homeAway === 'home');
-      const awayTeam = event.competitions[0].competitors.find((team: any) => team.homeAway === 'away');
+    // Transform the games data directly from events
+    const games = data.events.map((game: any) => {
+      const odds = game.competitions[0].odds?.[0];
       
       return {
-        id: event.id,
-        homeTeam: homeTeam.team.name,
-        awayTeam: awayTeam.team.name,
-        date: new Date(event.date).toISOString(),
-        time: new Date(event.date).toLocaleTimeString('en-US', {
+        id: game.id,
+        homeTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.team.name,
+        awayTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name,
+        date: new Date(game.date).toISOString(),
+        time: new Date(game.date).toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
-          timeZone: 'America/Los_Angeles'
+          timeZone: 'America/New_York'
         }),
-        status: event.status.type.state,
-        homeTeamLogo: homeTeam.team.logo,
-        awayTeamLogo: awayTeam.team.logo,
-        venue: event.competitions[0].venue?.fullName,
-        broadcast: event.competitions[0].broadcasts?.[0]?.names?.[0] || 'TBD',
-        week: event.week?.number,
-        homeScore: homeTeam.score,
-        awayScore: awayTeam.score
+        status: game.status.type.name,
+        homeTeamLogo: getTeamLogo(game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.team.name),
+        awayTeamLogo: getTeamLogo(game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name),
+        venue: game.competitions[0].venue?.fullName,
+        broadcast: game.competitions[0].broadcasts?.[0]?.names?.[0] || 'TBD',
+        week: game.week.number,
+        homeScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.score,
+        awayScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.score,
+        odds: {
+          favorite: odds?.details || 'TBD',
+          spread: odds?.spread || 'TBD',
+          overUnder: odds?.overUnder || 'TBD',
+          homeTeamMoneyLine: odds?.homeTeamOdds?.moneyLine || 'TBD',
+          awayTeamMoneyLine: odds?.awayTeamOdds?.moneyLine || 'TBD',
+          provider: odds?.provider?.name || 'TBD'
+        }
       };
     });
 
-    // Sort games by scheduled time
+    // Sort games by date
     games.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const weekStart = games.length > 0 ? games[0].date : null;
@@ -72,4 +129,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+} 
