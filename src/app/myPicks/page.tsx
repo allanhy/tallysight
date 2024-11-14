@@ -1,37 +1,78 @@
 'use client';
-import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+import axios from 'axios';
+
+interface Pick {
+    gameId: string;
+    teamIndex: number;
+  }
+  
+  interface Game {
+    id: string;
+    homeTeam: string;
+    awayTeam: string;
+    homeTeamLogo: string;
+    awayTeamLogo: string;
+  }
+  
+  interface TeamDetails {
+    name: string;
+    logo: string;
+  }
 
 export default function MyPicksPage() {
-    // State to track if history view is active
-    const [isHistoryActive, setIsHistoryActive] = useState(false);
+  const [isHistoryActive, setIsHistoryActive] = useState(false);
+  const [userPicks, setUserPicks] = useState<Pick[]>([]);
+  const { isSignedIn } = useUser();
+  const [isLoading, setIsLoading] = useState(true);
+  const [gamesData, setGamesData] = useState<Game[]>([]);
+  const [weekStart, setWeekStart] = useState<string | null>(null);
+  const [weekEnd, setWeekEnd] = useState<string | null>(null);
 
-    // Toggle between history and normal view
-    const handleHistoryClick = () => {
-        setIsHistoryActive(!isHistoryActive);
+  const handleHistoryClick = () => {
+    setIsHistoryActive(!isHistoryActive);
+  };
+
+  useEffect(() => {
+    if (isSignedIn) {
+        const fetchUserPicks = async () => {
+          try {
+            const response = await axios.get('/api/userPicks');
+            setUserPicks(response.data);
+          } catch (error) {
+            console.error('Error fetching user picks:', error);
+          }
+        };
+        fetchUserPicks();
+      }
+    }, [isSignedIn]);
+
+    // Fetch game data from the ESPN API for team logos and names
+  useEffect(() => {
+    const fetchGamesData = async () => {
+      try {
+        const response = await axios.get('/api/games'); // assuming the ESPN API route is set to '/api/espn'
+        setGamesData(response.data.games);
+        setWeekStart(response.data.weekStart);
+        setWeekEnd(response.data.weekEnd);
+      } catch (error) {
+        console.error('Error fetching games data:', error);
+      }
     };
+    fetchGamesData();
+  }, []);
 
-    const placeholderPicks = [
-        {
-            team: 'LA Dodgers',
-            score: '',
-            result: 'Win',
-            logo: '/dodgers-logo.png'
-        },
-        {
-            team: 'Padres',
-            score: '',
-            result: 'Loss',
-            logo: '/padres-logo.png'
-        },
-        {
-            team: 'Diamondbacks',
-            score: '',
-            result: 'W/L',
-            logo: '/dbacks-logo.png'
-        }
-    ];
+  // Helper function to get team details (name and logo) for user picks
+  const getTeamDetails = (gameId: string, teamIndex: number): TeamDetails | null => {
+    const game = gamesData.find((g) => g.id === gameId);
+    if (!game) return null;
 
+    const team = teamIndex === 0
+      ? { name: game.homeTeam, logo: game.homeTeamLogo }
+      : { name: game.awayTeam, logo: game.awayTeamLogo };
+    return team;
+  };
     return (
         <div className="picks-page">
             <h1 className="picks-title">My Picks</h1>
@@ -123,27 +164,39 @@ export default function MyPicksPage() {
                     {/* Current Picks Display */}
                     <div className="picks-list">
                         <h2 className="picks-subtitle">Picks</h2>
-                        <div className="picks-date">-</div>
+                        <div className="picks-date">
+                            {weekStart && weekEnd && (
+                            <div className="text-md text-gray-600">
+                                {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
+                                {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
+                            </div>
+                            )}
+                            </div>
                         
                         {/* Placeholder picks will be replaced with real data */}
-                        {placeholderPicks.map((pick, index) => (
-                            <div key={index} className="pick-item">
+                        {isSignedIn && userPicks.length > 0 ? (
+                            userPicks.map((pick, index) => {
+                            const teamDetails = getTeamDetails(pick.gameId, pick.teamIndex);
+                            if (!teamDetails) return null;
+
+                            return (
+                                <div key={index} className="pick-item">
                                 <div className="pick-details">
-                                    <img src={pick.logo} alt={pick.team} className="team-logo" />
+                                    <img src={teamDetails.logo} alt={teamDetails.name} className="team-logo" />
                                     <div>
-                                        <div className="team-name">{pick.team}</div>
+                                    <div className="team-name">{teamDetails.name}</div>
                                     </div>
                                 </div>
-                                <div className={`pick-result ${pick.result.toLowerCase()}`}>
-                                    <div>{pick.result}</div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                            })
+                        ) : (
+                            <div className="message">No picks available. Please make your picks!</div>
+                        )}
                     </div>
                 </div>
             )}
-
-            <style jsx>{`
+             <style jsx>{`
                 .picks-page {
                     position: relative;
                     background-color: #000;
