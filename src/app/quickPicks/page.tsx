@@ -59,64 +59,42 @@ export default function PicksPage() {
 
   // Add a loading state
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const availableGames = games.filter(game => game.isAvailable);
   const isSubmitDisabled = isSubmitting || selectedPicks.size === 0;
 
+  const fetchOdds = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/odds', {
+        cache: 'no-store',
+        next: { revalidate: 0 }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Fetched odds data:', data); // Debug log
+      setGames(data.games);
+    } catch (error) {
+      console.error('Error fetching odds:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch odds');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUserPicksAndGames = async () => {
-      try {
-        const currentTime = new Date();
-
-        // Fetch user picks if signed in
-        let pickedGameIds = new Set<string>();
-        if (isSignedIn) {
-          const picksResponse = await axios.get('/api/userPicks');
-          pickedGameIds = new Set<string>(picksResponse.data.map((pick: any) => pick.gameId));
-          setUserPicks(pickedGameIds);
-        }
-
-        const response = await fetch('api/games');
-        const data = await response.json();  
-
-        // Convert and log game IDs
-        const formattedGames = data.games.map((game: any) => {
-          const gameDate = new Date(game.date);
-          const isGameInFuture = gameDate.getTime() - currentTime.getTime() > 5 * 60 * 1000; // Available if more than 5 minutes away
-          const isAvailable = isGameInFuture && !pickedGameIds.has(game.id);
-          return {
-            id: game.id.toString(), // Convert game.id to string for matching
-            date: new Date(game.date).toLocaleString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-            }),
-            team1: { name: game.homeTeam, spread: '1.5', logo: game.homeTeamLogo },
-            team2: { name: game.awayTeam, spread: '-1.5', logo: game.awayTeamLogo },
-            week: game.week,
-            venue: game.venue,
-            broadcast: game.broadcast,
-            status: game.status,
-            isAvailable,
-          };
-        });
-        setWeek(data.games[0].week); // Set the week based on the first game or an appropriate source in the data
-        setWeekStart(data.weekStart);
-        setWeekEnd(data.weekEnd);
-        setGames(formattedGames);
-      } catch (error) {
-        console.error("Error fetching games or picks:", error);
-        setIsLoading(false);
-      } finally {
-        setIsLoading(false); // Ensure loading state is set to false after fetching is complete
-      }
-    };
-    fetchUserPicksAndGames();
-  }, [isSignedIn]);
+    fetchOdds();
+    
+    // Refresh odds every 5 minutes
+    const interval = setInterval(fetchOdds, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Prevents scrolling when previews are open
   useEffect(() => {
