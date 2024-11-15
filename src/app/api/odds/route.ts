@@ -39,18 +39,20 @@ const NFL_TEAM_LOGOS: { [key: string]: string } = {
 export async function GET() {
   try {
     const API_KEY = process.env.ODDS_API_KEY;
-    const response = await fetch(
-      `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=${API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`,
-      {
-        cache: 'no-store'
-      }
-    );
+    const [oddsResponse, espnResponse] = await Promise.all([
+      fetch(
+        `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=${API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`,
+        { cache: 'no-store' }
+      ),
+      fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')
+    ]);
 
-    if (!response.ok) {
-      throw new Error(`API responded with status: ${response.status}`);
+    if (!oddsResponse.ok) {
+      throw new Error(`Odds API responded with status: ${oddsResponse.status}`);
     }
 
-    const rawData = await response.json();
+    const rawData = await oddsResponse.json();
+    const espnData = await espnResponse.json();
 
     // Get current date and filter for upcoming week's games
     const now = new Date();
@@ -91,6 +93,27 @@ export async function GET() {
         const homeTeam = game.home_team;
         const awayTeam = game.away_team;
         
+        // Find matching ESPN game data
+        const espnGame = espnData.events?.find((event: any) => {
+          const competition = event.competitions[0];
+          return (
+            competition.competitors[0].team.displayName === homeTeam ||
+            competition.competitors[1].team.displayName === homeTeam
+          );
+        });
+
+        const competition = espnGame?.competitions[0];
+        const venue = competition?.venue;
+        const broadcast = competition?.broadcasts?.[0];
+
+        // Format venue string
+        const venueString = venue 
+          ? `${venue.fullName}${venue.address ? ` - ${venue.address.city}, ${venue.address.state}` : ''}`
+          : "TBD";
+
+        // Format broadcast string
+        const broadcastString = broadcast?.names?.join(', ') || "TBD";
+
         const bookmaker = game.bookmakers[0];
         const spreadsMarket = bookmaker?.markets.find((market: any) => market.key === 'spreads');
         
@@ -113,8 +136,8 @@ export async function GET() {
             win: "50.0%"
           },
           week: 1,
-          venue: "TBD",
-          broadcast: "TBD",
+          venue: venueString,
+          broadcast: broadcastString,
           status: "scheduled",
           isAvailable: new Date(game.commence_time) > now
         };

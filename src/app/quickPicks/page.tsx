@@ -27,13 +27,35 @@ interface Team {
 interface Game {
   id: string;
   date?: string;
-  team1: Team;
-  team2: Team;
+  team1: {
+    name: string;
+    spread: string;
+    logo: string;
+  };
+  team2: {
+    name: string;
+    spread: string;
+    logo: string;
+  };
   week: number;
   venue: string;
   broadcast: string;
   status: string;
   isAvailable?: boolean;
+  stats?: {
+    team1: {
+      points: number;
+      wins: number;
+      losses: number;
+      record?: string;
+    };
+    team2: {
+      points: number;
+      wins: number;
+      losses: number;
+      record?: string;
+    };
+  };
 }
 
 export default function PicksPage() {
@@ -67,21 +89,35 @@ export default function PicksPage() {
   const fetchOdds = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/odds', {
-        cache: 'no-store',
-        next: { revalidate: 0 }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      
+      // Fetch both odds and team stats
+      const [oddsResponse, statsResponse] = await Promise.all([
+        fetch('/api/odds'),
+        fetch('/api/teamStats/preview')  // adjust path as needed
+      ]);
+      
+      if (!oddsResponse.ok || !statsResponse.ok) {
+        throw new Error(`API failed: ${oddsResponse.status || statsResponse.status}`);
       }
 
-      const data = await response.json();
-      console.log('Fetched odds data:', data); // Debug log
-      setGames(data.games);
-    } catch (error) {
-      console.error('Error fetching odds:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch odds');
+      const oddsData = await oddsResponse.json();
+      const statsData = await statsResponse.json();
+
+      // Merge the data
+      const mergedGames = oddsData.games.map((game: any) => ({
+        ...game,
+        stats: statsData.games.find((statGame: any) => 
+          statGame.team1.name === game.team1.name || 
+          statGame.team2.name === game.team2.name
+        )?.stats || {}
+      }));
+
+      setGames(mergedGames);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      console.error('API Error:', errorMessage);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -194,6 +230,12 @@ export default function PicksPage() {
     }
   };
 
+  // Add this handler near your other handlers
+  const handleReset = () => {
+    setSelectedPicks(new Set());
+    setStarredPicks(new Set());
+  };
+
   return (
     <div className="min-h-screen bg-black-100">
       {/* Week Header: Displays current week number and date range */}
@@ -297,9 +339,17 @@ export default function PicksPage() {
                 </button>
                 <span className="text-black">Review picks: {picksCount}</span>
               </div>
-              <button onClick={() => setIsReviewOpen(false)} className="text-black">
-                Close
-              </button>
+              <div className="flex gap-4">
+                <button 
+                  onClick={handleReset}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Reset
+                </button>
+                <button onClick={() => setIsReviewOpen(false)} className="text-black">
+                  Close
+                </button>
+              </div>
             </div>
 
             {/* Two-column layout */}
@@ -409,80 +459,73 @@ export default function PicksPage() {
       {/* Preview Modal */}
       {isPreviewOpen && previewedGame && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-11/12 max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-black">Game Preview</h2>
-              {/* Close Button */}
+          <div className="bg-white p-8 rounded-xl w-11/12 max-w-lg shadow-2xl">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold text-black">Game Preview</h2>
               <button
                 onClick={() => setIsPreviewOpen(false)}
-                className="text-gray-500 hover:text-gray-700 text-3xl p-2"
+                className="text-gray-500 hover:text-gray-700 text-2xl"
               >
-                &times;
-              </button>            
+                ×
+              </button>
             </div>
-            {/* Team Logos */}
-            <div className="flex items-center justify-center gap-4 mb-4">
-            <div className="flex flex-col items-center" style={{ width: '175px', height: '175px' }}> {/* Added padding and background */}
+
+            {/* Teams Container */}
+            <div className="flex items-start justify-between mb-10">
+              {/* Team 1 */}
+              <div className="text-center w-1/3">
                 <img
                   src={previewedGame.team1.logo}
                   alt={previewedGame.team1.name}
-                  className="w-full h-full object-contain"
+                  className="w-28 h-28 mx-auto mb-8"
                 />
-                <p className="font-semibold text-black text-center">{previewedGame.team1.name}</p>
-            </div>
-              <span className="text-black text-lg font-semibold">vs</span>
-              <div className="flex flex-col items-center" style={{ width: '175px', height: '175px' }}> {/* Added padding and background */}
+                <h3 className="font-bold text-lg mb-8">{previewedGame.team1.name}</h3>
+                <p className="text-2xl font-bold text-blue-600 mb-8">{previewedGame.team1.spread}</p>
+                <p className="text-gray-600">{previewedGame.stats?.team1?.wins}-{previewedGame.stats?.team1?.losses}</p>
+              </div>
+
+              {/* Center Column - Reduced spacing between Spread and W-L */}
+              <div className="text-center w-1/3 pt-36">
+                <p className="font-bold text-xl mb-12">vs</p>
+                <div className="space-y-[3.5rem] text-gray-600">
+                  <p className="font-semibold">Spread</p>
+                  <p className="font-semibold">W-L</p>
+                </div>
+              </div>
+
+              {/* Team 2 */}
+              <div className="text-center w-1/3">
                 <img
-                    src={previewedGame.team2.logo}
-                    alt={previewedGame.team2.name}
-                    className="w-full h-full object-contain"
-                  />
-                <p className="font-semibold text-black text-center">{previewedGame.team2.name}</p>
-              </div>
-            </div>         
-
-            {/* Odds and Stats Columns */}
-            <div className="grid grid-cols-3 gap-6 p-4 mb-4">
-              {/* Team 1 Stats */}
-              <div className="text-center text-black">
-                <p>{previewedGame.team1.spread || 'N/A'}</p>
-                <p>{previewedGame.team1.spread || 'N/A'}</p>
-                <p>{previewedGame.team1.spread || 'N/A'}</p>
-                <p>{previewedGame.team1.spread || 'N/A'}</p>
-              </div>
-
-              <div className="text-center text-black">
-                <p><strong>Odds</strong></p>
-                <p><strong>Points</strong></p>
-                <p><strong>Wins</strong></p>
-                <p><strong>Losses</strong></p>
-              </div>
-
-              {/* Team 2 Stats */}
-              <div className="text-center text-black">
-                <p>{previewedGame.team2.spread || 'N/A'}</p>
-                <p>{previewedGame.team2.spread || 'N/A'}</p>
-                <p>{previewedGame.team2.spread || 'N/A'}</p>
-                <p>{previewedGame.team2.spread || 'N/A'}</p>
+                  src={previewedGame.team2.logo}
+                  alt={previewedGame.team2.name}
+                  className="w-28 h-28 mx-auto mb-8"
+                />
+                <h3 className="font-bold text-lg mb-8">{previewedGame.team2.name}</h3>
+                <p className="text-2xl font-bold text-red-600 mb-8">{previewedGame.team2.spread}</p>
+                <p className="text-gray-600">{previewedGame.stats?.team2?.wins}-{previewedGame.stats?.team2?.losses}</p>
               </div>
             </div>
 
             {/* Game Details */}
-            <div className="text-black p-2">
-              {[
-                { label: 'Date:', value: previewedGame.date },
-                { label: 'Spread:', value: `${previewedGame.team1.spread} / ${previewedGame.team2.spread}` },
-                { label: 'Venue:', value: previewedGame.venue || 'Unknown Venue' },
-                { label: 'Broadcast:', value: previewedGame.broadcast },
-                { label: 'Status:', value: previewedGame.status }
-              ].map((detail, index) => (
-                <div key={index} className="flex mb-1">
-                  <p className="w-1/3 font-semibold">{detail.label}</p>
-                  <p className="w-2/3">{detail.value}</p>
-                </div>
-              ))}
+            <div className="space-y-2 text-sm">
+              <div className="flex">
+                <span className="w-24 font-semibold">Date:</span>
+                <span>{previewedGame.date || 'TBD'}</span>
+              </div>
+              <div className="flex">
+                <span className="w-24 font-semibold">Venue:</span>
+                <span>{previewedGame.venue || 'TBD'}</span>
+              </div>
+              <div className="flex">
+                <span className="w-24 font-semibold">Broadcast:</span>
+                <span>{previewedGame.broadcast || 'TBD'}</span>
+              </div>
+              <div className="flex">
+                <span className="w-24 font-semibold">Status:</span>
+                <span>{previewedGame.status || 'scheduled'}</span>
+              </div>
             </div>
-
           </div>
         </div>
       )}
