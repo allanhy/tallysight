@@ -33,6 +33,7 @@ li a:hover {
 
 .nav-active {
     border-bottom: 3px inset #008AFF;
+    font-weight: 700;
 }
 
 .cl-avatarBox {
