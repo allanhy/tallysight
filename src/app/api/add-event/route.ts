@@ -2,6 +2,7 @@ import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
+  const client = await db.connect();
   const { searchParams } = new URL(req.url);
   const event_id = searchParams.get('event_id');
   const game_name = searchParams.get('game_name');
@@ -11,11 +12,12 @@ export async function GET(req: Request) {
 
 try{
   if (!event_id || !game_name || !date || !odds || !sport_type) throw new Error('event_id, game_name, date, odds, and sport_type are required');
-    await db`INSERT INTO events (event_id, game_name, date, odds, sport_type) VALUES (${event_id}, ${game_name}, ${date}, ${odds}, ${sport_type})  ON CONFLICT (event_id) DO NOTHING;`;
+    await client.sql`INSERT INTO events (event_id, game_name, date, odds, sport_type) VALUES (${event_id}, ${game_name}, ${date}, ${odds}, ${sport_type})  ON CONFLICT (event_id) DO NOTHING;`;
   } catch (error) {
     return NextResponse.json({ error }, { status: 500 });
   }
 
-    const events = await db`SELECT * FROM events;`;
+    const events = await client.sql`SELECT * FROM events;`;
+    client.release();
     return NextResponse.json({ events }, { status: 200 });
 }
