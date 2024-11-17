@@ -240,71 +240,70 @@ export default function PicksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black-100">
-      {/* Week Header: Displays current week number and date range */}
-      <div className="bg-gray-900 p-4">
-      <div className="inline-block bg-gray-800 rounded-lg p-4 text-white text-center">
-        <div className="font-bold">WEEK {week}</div>
-        {weekStart && weekEnd && (
-          <div className="text-sm text-gray-400">
-            {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
-            {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen bg-gradient-to-r from-gray-900 to-black">
+      {/* Week Header: Updated background */}
+      <div className="bg-gradient-to-r from-gray-900 to-black p-4">
+        <div className="inline-block bg-gray-800/50 rounded-lg p-4 text-white text-center">
+          <div className="font-bold">WEEK {week}</div>
+          {weekStart && weekEnd && (
+            <div className="text-sm text-gray-400">
+              {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
+              {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Status Bar: Shows game status and pick deadline information */}
+      {/* Status Bar: Updated colors */}
       <div className="text-center py-2 text-sm">
-        <div className="text-gray-100">Spread finalized | Picks lock: At the start of each game</div>
-        <div className="bg-red-200 py-2 mt-1 text-black">Make your picks</div>
+        <div className="text-gray-300">Spread finalized | Picks lock: At the start of each game</div>
+        <div className="bg-blue-600 py-2 mt-1 text-white">Make your picks</div>
       </div>
 
-      {/* Games Grid: Main container for all game cards */}
+      {/* Games Grid: Updated card styling */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 pb-24">
         {games.map((game) => (
-          <div key={game.id} className="bg-white rounded-lg shadow">
-            {/* Game Card Structure:
-                - Game date and preview button
-                - Team selection buttons with logos and spreads
-                - Best pick star toggle
-            */}
+          <div key={game.id} className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg shadow border border-gray-700">
             {/* Game Header */}
             <div className="flex justify-between p-4">
-              <span className="text-gray-600">{game.date}</span>
-              <button className="text-cyan-500" onClick={() => { setPreviewedGame(game); setIsPreviewOpen(true); }}>Preview</button>
-              </div>
+              <span className="text-gray-300">{game.date}</span>
+              <button className="text-blue-400 hover:text-blue-300" 
+                      onClick={() => { setPreviewedGame(game); setIsPreviewOpen(true); }}>
+                Preview
+              </button>
+            </div>
 
             {/* Teams */}
             {[game.team1, game.team2].map((team, idx) => (
               <button
                 key={idx}
                 onClick={() => handleTeamSelection(game.id, idx)}
-                disabled={!game.isAvailable} // Disable if game is unavailable
+                disabled={!game.isAvailable}
                 className={`w-full p-4 flex items-center justify-between border-2 ${
                   selectedPicks.has(`${game.id}-${idx}`)
-                    ? 'border-cyan-500 rounded-lg'
+                    ? 'border-blue-500 rounded-lg'
                     : 'border-transparent'
-                  } ${!game.isAvailable ? 'opacity-25 cursor-not-allowed' : ''}`}
+                  } ${!game.isAvailable ? 'opacity-25 cursor-not-allowed' : ''} 
+                  hover:bg-gray-700/50 transition-colors`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full">
+                  <div className="w-8 h-8 bg-gray-700 rounded-full">
                     <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
                   </div>
-                  <span className="text-black">{team.name}</span>
-                  <span className="text-gray-600">{team.spread}</span>
+                  <span className="text-white">{team.name}</span>
+                  <span className="text-gray-300">{team.spread}</span>
                 </div>
                 <div className={`w-6 h-6 rounded-full border-2 ${
                   selectedPicks.has(`${game.id}-${idx}`)
-                    ? 'bg-cyan-500 border-cyan-500'
-                    : 'border-gray-300'
+                    ? 'bg-blue-500 border-blue-500'
+                    : 'border-gray-500'
                 }`} />
               </button>
             ))}
 
-            {/* Updated Best Pick section */}
-            <div className="border-t flex justify-between p-4">
-              <span className="text-gray-600">Best pick</span>
+            {/* Best Pick section */}
+            <div className="border-t border-gray-700 flex justify-between p-4">
+              <span className="text-gray-300">Best pick</span>
               <button 
                 onClick={() => {
                   const newStarred = new Set(starredPicks);
@@ -315,7 +314,7 @@ export default function PicksPage() {
                   }
                   setStarredPicks(newStarred);
                 }}
-                className="text-2xl" // Increased star size
+                className="text-2xl"
               >
                 {starredPicks.has(game.id) ? '⭐' : '☆'}
               </button>
@@ -324,16 +323,11 @@ export default function PicksPage() {
         ))}
       </div>
 
-      {/* Review Panel: Slide-up panel showing selected picks and entry options 
-          - Left column: List of selected picks with delete option
-          - Right column: Entry fee selection and sign-in button
-      */}
+      {/* Review Panel: Updated colors */}
       {isReviewOpen && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-300 z-50 rounded-t-xl shadow-lg" 
-             style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-gray-800 to-gray-900 z-50 rounded-t-xl shadow-lg border-t border-gray-700">
           <div className="p-4">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-4 border-b pb-4">
+            <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-4">
               <div className="flex items-center gap-2">
                 <button onClick={() => setIsReviewOpen(false)}>
                   <svg className="w-6 h-6 transform rotate-180" fill="none" stroke="gray" viewBox="0 0 24 24">
@@ -355,15 +349,14 @@ export default function PicksPage() {
               </div>
             </div>
 
-            {/* Two-column layout */}
+            {/* Selected picks styling */}
             <div className="flex gap-6">
-              {/* Left column - Selected picks */}
               <div className="flex-1 space-y-4">
                 {Array.from(selectedPicks).map(pickId => {
                   const team = getPickDetails(pickId);
                   if (!team) return null;
                   return (
-                    <div key={pickId} className="flex items-center justify-between p-4 bg-gray-200 rounded-lg">
+                    <div key={pickId} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
                           <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
@@ -384,9 +377,9 @@ export default function PicksPage() {
                 })}
               </div>
 
-              {/* Right column - Entry fee */}
+              {/* Entry fee section */}
               <div className="w-96">
-                <div className="bg-gray-900 text-white p-4 rounded-lg sticky top-4">
+                <div className="bg-gray-800 text-white p-4 rounded-lg border border-gray-700 sticky top-4">
                   <h3 className="font-bold mb-4">Select an entry fee</h3>
                   <div className="grid grid-cols-5 gap-2 mb-4">
                     {['$5', '$10', '$20', '$50', '$100'].map(fee => (
@@ -395,8 +388,8 @@ export default function PicksPage() {
                         onClick={() => setSelectedFee(fee)}
                         className={`p-2 rounded-lg transition-colors ${
                           selectedFee === fee 
-                            ? 'bg-white text-black' 
-                            : 'bg-gray-800 hover:bg-gray-700'
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-700 hover:bg-gray-600 text-white'
                         }`}
                       >
                         {fee}
@@ -429,12 +422,8 @@ export default function PicksPage() {
         </div>
       )}
 
-      {/* Progress Footer: 
-          - Shows number of picks made out of the number of games
-          - Visual progress indicator
-          - Opens review panel when clicked
-      */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-200 shadow-lg">
+      {/* Progress Footer: Updated colors */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-gray-800 to-gray-900 shadow-lg border-t border-gray-700">
         <div className="max-w-md mx-auto p-4">
           <button 
             onClick={() => setIsReviewOpen(true)}
@@ -458,11 +447,12 @@ export default function PicksPage() {
             </div>
           </button>
         </div>
+      </div>
 
-      {/* Preview Modal */}
+      {/* Preview Modal: Updated colors */}
       {isPreviewOpen && previewedGame && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-xl w-11/12 max-w-lg shadow-2xl">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-8 rounded-xl w-11/12 max-w-lg shadow-2xl border border-gray-700">
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-bold text-black">Game Preview</h2>
@@ -532,7 +522,6 @@ export default function PicksPage() {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

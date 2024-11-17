@@ -94,11 +94,13 @@ export default function Page() {
                 }
 
                 .leaderboard-container {
-                    background: white;
+                    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
                     padding: 20px;
                     border-radius: 8px;
                     width: 100%;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    color: white;
                 }
 
                 .leaderboard-controls {
@@ -111,6 +113,14 @@ export default function Page() {
                     padding: 8px;
                     border-radius: 5px;
                     width: 48%;
+                    background-color: rgba(255, 255, 255, 0.1);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+
+                .select option {
+                    background-color: #1f2937;
+                    color: white;
                 }
 
                 .leaderboard-table {
@@ -124,17 +134,19 @@ export default function Page() {
                 }
 
                 .leaderboard-table th {
-                    background-color: #e0e0e0;
+                    background-color: rgba(255, 255, 255, 0.1);
                     text-transform: uppercase;
                     font-size: 14px;
+                    color: white;
                 }
 
                 .leaderboard-table td {
-                    background-color: #f7f7f7;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    color: white;
                 }
 
                 .leaderboard-table tbody tr:hover {
-                    background-color: #eaeaea;
+                    background-color: rgba(255, 255, 255, 0.1);
                 }
 
                 .leaderboard-table td:first-child, .leaderboard-table th:first-child {
@@ -146,7 +158,7 @@ export default function Page() {
                 }
 
                 .auth-container {
-                    background: #f7f7f7;
+                    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
                     padding: 24px;
                     border-radius: 8px;
                     text-align: center;
@@ -155,19 +167,20 @@ export default function Page() {
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                     margin-top: 50px;
                     align-self: center;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                 }
 
                 .auth-title {
                     font-size: 24px;
                     font-weight: bold;
                     margin-bottom: 20px;
-                    color: #000;
+                    color: white;
                 }
 
                 .sign-up-button {
                     width: 100%;
                     padding: 12px;
-                    background-color: #3b82f6;
+                    background-color: #2563eb;
                     color: white;
                     border: none;
                     border-radius: 4px;
@@ -179,15 +192,15 @@ export default function Page() {
                 }
 
                 .sign-up-button:hover {
-                    background-color: #2563eb;
+                    background-color: #1d4ed8;
                 }
 
                 .sign-in-button {
                     width: 100%;
                     padding: 12px;
                     background-color: transparent;
-                    color: #3b82f6;
-                    border: 2px solid #3b82f6;
+                    color: white;
+                    border: 2px solid rgba(255, 255, 255, 0.1);
                     border-radius: 4px;
                     font-size: 16px;
                     cursor: pointer;
@@ -196,7 +209,7 @@ export default function Page() {
                 }
 
                 .sign-in-button:hover {
-                    background-color: rgba(59, 130, 246, 0.1);
+                    background-color: rgba(255, 255, 255, 0.1);
                 }
             `}</style>
         </div>

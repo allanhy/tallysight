@@ -86,7 +86,7 @@ export default function MyPicksPage() {
                     <div className="picks-container">
                         {isHistoryActive ? (
                             // History View Container
-                            <div className="picks-container">
+                            <div className="picks-container bg-gradient-to-r from-gray-900 to-black text-white">
                                 {/* History Button */}
                                 <div className="history-button-container">
                                     <button 
@@ -97,32 +97,30 @@ export default function MyPicksPage() {
                                     </button>
                                 </div>
                                 
-                                <h2 className="history-title">History</h2>
+                                <h2 className="history-title text-white">History</h2>
                                 
                                 {/* History Data Table */}
-                                <table className="history-table">
+                                <table className="history-table w-full">
                                     <thead>
                                         <tr>
-                                            <th>Date</th>
-                                            <th>Sport</th>
-                                            <th>Week</th>
-                                            <th>Result</th>
+                                            <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Date</th>
+                                            <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Sport</th>
+                                            <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Week</th>
+                                            <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Result</th>
                                         </tr>
                                     </thead>
-                                    {/* Placeholder data rows */}
                                     <tbody>
                                         <tr>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>-</td>
-                                            <td>-</td>
+                                            <td className="bg-gray-800/30 text-gray-300 p-4 border border-gray-700">-</td>
+                                            <td className="bg-gray-800/30 text-gray-300 p-4 border border-gray-700">-</td>
+                                            <td className="bg-gray-800/30 text-gray-300 p-4 border border-gray-700">-</td>
+                                            <td className="bg-gray-800/30 text-gray-300 p-4 border border-gray-700">-</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         ) : (
-                            // Normal View Container
-                            <div className="picks-container">
+                            <div className="picks-container bg-gradient-to-r from-gray-900 to-black text-white">
                                 {/* History Button */}
                                 <div className="history-button-container">
                                     <button 
@@ -208,7 +206,7 @@ export default function MyPicksPage() {
                 </div>
 
                 {/* Add the auth container here */}
-                <div className="auth-container">
+                <div className="auth-container bg-gradient-to-r from-gray-900 to-black text-white">
                     <h2 className="auth-title">New to TallySight?</h2>
                     <button 
                         onClick={() => router.push('/sign-up')}
@@ -280,11 +278,11 @@ export default function MyPicksPage() {
                 }
 
                 .picks-container {
-                    background: white;
                     padding: 20px;
                     border-radius: 8px;
                     width: 100%;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                 }
 
                 .picks-controls {
@@ -297,6 +295,14 @@ export default function MyPicksPage() {
                     padding: 8px;
                     border-radius: 5px;
                     width: 48%;
+                    background-color: rgba(255, 255, 255, 0.1);
+                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+
+                .select option {
+                    background-color: #1f2937;
+                    color: white;
                 }
 
                 .stats-table {
@@ -306,18 +312,20 @@ export default function MyPicksPage() {
                 }
 
                 .stats-table th {
-                    background-color: #e0e0e0;
+                    background-color: rgba(255, 255, 255, 0.1);
                     padding: 12px;
                     text-align: left;
                     text-transform: uppercase;
                     font-size: 14px;
                     font-weight: bold;
+                    color: white;
                 }
 
                 .stats-table td {
                     padding: 12px;
                     text-align: left;
-                    background-color: #f7f7f7;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    color: white;
                 }
 
                 .stats-table td:first-child,
@@ -331,7 +339,7 @@ export default function MyPicksPage() {
                 }
 
                 .stats-table tbody tr:hover {
-                    background-color: #eaeaea;
+                    background-color: rgba(255, 255, 255, 0.1);
                 }
 
                 .picks-list {
@@ -344,7 +352,7 @@ export default function MyPicksPage() {
                 }
 
                 .picks-date {
-                    color: #666;
+                    color: #9ca3af;
                     margin-bottom: 20px;
                 }
 
@@ -353,7 +361,7 @@ export default function MyPicksPage() {
                     justify-content: space-between;
                     align-items: center;
                     padding: 15px 0;
-                    border-bottom: 1px solid #e0e0e0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                 }
 
                 .pick-details {
@@ -421,8 +429,8 @@ export default function MyPicksPage() {
                 }
 
                 .message {
-                    background-color: #e3f2fd;
-                    color: #1976d2;
+                    background-color: rgba(59, 130, 246, 0.1);
+                    color: white;
                     padding: 10px;
                     border-radius: 4px;
                     margin: 10px 0;
@@ -440,26 +448,32 @@ export default function MyPicksPage() {
                     width: 100%;
                     border-collapse: collapse;
                     margin-top: 20px;
+                    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
                 }
 
                 .history-table th,
                 .history-table td {
                     padding: 12px;
                     text-align: left;
-                    border: 1px solid #e0e0e0;
+                    border: 1px solid rgba(75, 85, 99, 0.4);
                 }
 
                 .history-table th {
-                    background-color: #e0e0e0;
+                    background-color: rgba(31, 41, 55, 0.5);
                     font-weight: bold;
+                    color: white;
+                }
+
+                .history-table tbody tr {
+                    background-color: rgba(31, 41, 55, 0.3);
                 }
 
                 .history-table tbody tr:hover {
-                    background-color: #f5f5f5;
+                    background-color: rgba(55, 65, 81, 0.4);
                 }
 
                 .auth-container {
-                    background: #f7f7f7;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                     padding: 24px;
                     border-radius: 8px;
                     text-align: center;
@@ -474,13 +488,13 @@ export default function MyPicksPage() {
                     font-size: 24px;
                     font-weight: bold;
                     margin-bottom: 20px;
-                    color: #000;
+                    color: white;
                 }
 
                 .sign-up-button {
                     width: 100%;
                     padding: 12px;
-                    background-color: #3b82f6;
+                    background-color: #2563eb;
                     color: white;
                     border: none;
                     border-radius: 4px;
@@ -492,15 +506,15 @@ export default function MyPicksPage() {
                 }
 
                 .sign-up-button:hover {
-                    background-color: #2563eb;
+                    background-color: #1d4ed8;
                 }
 
                 .sign-in-button {
                     width: 100%;
                     padding: 12px;
                     background-color: transparent;
-                    color: #3b82f6;
-                    border: 2px solid #3b82f6;
+                    color: white;
+                    border: 2px solid rgba(255, 255, 255, 0.1);
                     border-radius: 4px;
                     font-size: 16px;
                     cursor: pointer;
@@ -509,7 +523,7 @@ export default function MyPicksPage() {
                 }
 
                 .sign-in-button:hover {
-                    background-color: rgba(59, 130, 246, 0.1);
+                    background-color: rgba(255, 255, 255, 0.1);
                 }
             `}</style>
         </div>
