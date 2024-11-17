@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 interface Pick {
     gameId: string;
@@ -29,6 +30,7 @@ export default function MyPicksPage() {
   const [gamesData, setGamesData] = useState<Game[]>([]);
   const [weekStart, setWeekStart] = useState<string | null>(null);
   const [weekEnd, setWeekEnd] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleHistoryClick = () => {
     setIsHistoryActive(!isHistoryActive);
@@ -75,151 +77,213 @@ export default function MyPicksPage() {
   };
     return (
         <div className="picks-page">
-            <h1 className="picks-title">My Picks</h1>
-            {isHistoryActive ? (
-                // History View Container
-                <div className="picks-container">
-                    {/* History Button */}
-                    <div className="history-button-container">
-                        <button 
-                            className={`history-button ${isHistoryActive ? 'active' : ''}`}
-                            onClick={handleHistoryClick}
-                        >
-                            History
-                        </button>
-                    </div>
-                    
-                    <h2 className="history-title">History</h2>
-                    
-                    {/* History Data Table */}
-                    <table className="history-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Sport</th>
-                                <th>Week</th>
-                                <th>Result</th>
-                            </tr>
-                        </thead>
-                        {/* Placeholder data rows */}
-                        <tbody>
-                            <tr>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                // Normal View Container
-                <div className="picks-container">
-                    {/* History Button */}
-                    <div className="history-button-container">
-                        <button 
-                            className={`history-button ${isHistoryActive ? 'active' : ''}`}
-                            onClick={handleHistoryClick}
-                        >
-                            History
-                        </button>
-                    </div>
-
-                    {/* Sport and Week Selection Dropdowns */}
-                    <div className="picks-controls">
-                        <select className="select">
-                            <option value="">Select Sport</option>
-                            <option value="nfl">NFL</option>
-                            <option value="mlb">MLB</option>
-                            <option value="nba">NBA</option>
-                        </select>
-                        <select className="select">
-                            <option value="">Select Week</option>
-                            {[...Array(17)].map((_, i) => (
-                                <option key={i} value={i + 1}>Week {i + 1}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Stats Summary Table */}
-                    <table className="stats-table">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Performance</th>
-                                <th>Profit/ROI</th>
-                                <th>Points</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {/* Current Picks Display */}
-                    <div className="picks-list">
-                        <h2 className="picks-subtitle">Picks</h2>
-                        <div className="picks-date">
-                            {weekStart && weekEnd && (
-                            <div className="text-md text-gray-600">
-                                {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
-                                {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
-                            </div>
-                            )}
-                            </div>
-                        
-                        {/* Placeholder picks will be replaced with real data */}
-                        {isSignedIn && userPicks.length > 0 ? (
-                            userPicks.map((pick, index) => {
-                            const teamDetails = getTeamDetails(pick.gameId, pick.teamIndex);
-                            if (!teamDetails) return null;
-
-                            return (
-                                <div key={index} className="pick-item">
-                                <div className="pick-details">
-                                    <img src={teamDetails.logo} alt={teamDetails.name} className="team-logo" />
-                                    <div>
-                                    <div className="team-name">{teamDetails.name}</div>
-                                    </div>
+            <div className="history-button-container">
+                <button className="history-button">History</button>
+            </div>
+            <div className="content-wrapper">
+                <div className="main-content">
+                    <h1 className="picks-title">My Picks</h1>
+                    <div className="picks-container">
+                        {isHistoryActive ? (
+                            // History View Container
+                            <div className="picks-container">
+                                {/* History Button */}
+                                <div className="history-button-container">
+                                    <button 
+                                        className={`history-button ${isHistoryActive ? 'active' : ''}`}
+                                        onClick={handleHistoryClick}
+                                    >
+                                        History
+                                    </button>
                                 </div>
-                                </div>
-                            );
-                            })
+                                
+                                <h2 className="history-title">History</h2>
+                                
+                                {/* History Data Table */}
+                                <table className="history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Sport</th>
+                                            <th>Week</th>
+                                            <th>Result</th>
+                                        </tr>
+                                    </thead>
+                                    {/* Placeholder data rows */}
+                                    <tbody>
+                                        <tr>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         ) : (
-                            <div className="message">No picks available. Please make your picks!</div>
+                            // Normal View Container
+                            <div className="picks-container">
+                                {/* History Button */}
+                                <div className="history-button-container">
+                                    <button 
+                                        className={`history-button ${isHistoryActive ? 'active' : ''}`}
+                                        onClick={handleHistoryClick}
+                                    >
+                                        History
+                                    </button>
+                                </div>
+
+                                {/* Sport and Week Selection Dropdowns */}
+                                <div className="picks-controls">
+                                    <select className="select">
+                                        <option value="">Select Sport</option>
+                                        <option value="nfl">NFL</option>
+                                        <option value="mlb">MLB</option>
+                                        <option value="nba">NBA</option>
+                                    </select>
+                                    <select className="select">
+                                        <option value="">Select Week</option>
+                                        {[...Array(17)].map((_, i) => (
+                                            <option key={i} value={i + 1}>Week {i + 1}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Stats Summary Table */}
+                                <table className="stats-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Performance</th>
+                                            <th>Profit/ROI</th>
+                                            <th>Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                {/* Current Picks Display */}
+                                <div className="picks-list">
+                                    <h2 className="picks-subtitle">Picks</h2>
+                                    <div className="picks-date">
+                                        {weekStart && weekEnd && (
+                                        <div className="text-md text-gray-600">
+                                            {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
+                                            {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
+                                        </div>
+                                        )}
+                                        </div>
+                                    
+                                    {/* Placeholder picks will be replaced with real data */}
+                                    {isSignedIn && userPicks.length > 0 ? (
+                                        userPicks.map((pick, index) => {
+                                        const teamDetails = getTeamDetails(pick.gameId, pick.teamIndex);
+                                        if (!teamDetails) return null;
+
+                                        return (
+                                            <div key={index} className="pick-item">
+                                            <div className="pick-details">
+                                                <img src={teamDetails.logo} alt={teamDetails.name} className="team-logo" />
+                                                <div>
+                                                <div className="team-name">{teamDetails.name}</div>
+                                                </div>
+                                            </div>
+                                            </div>
+                                        );
+                                        })
+                                    ) : (
+                                        <div className="message">No picks available. Please make your picks!</div>
+                                    )}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
-            )}
-             <style jsx>{`
+
+                {/* Add the auth container here */}
+                <div className="auth-container">
+                    <h2 className="auth-title">New to TallySight?</h2>
+                    <button 
+                        onClick={() => router.push('/sign-up')}
+                        className="sign-up-button"
+                    >
+                        Sign up
+                    </button>
+                    <button 
+                        onClick={() => router.push('/sign-in')}
+                        className="sign-in-button"
+                    >
+                        Log in
+                    </button>
+                </div>
+            </div>
+
+            <style jsx>{`
                 .picks-page {
-                    position: relative;
-                    background-color: #000;
                     min-height: 100vh;
                     display: flex;
-                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    background: black;
+                    position: relative;
+                }
+
+                .history-button-container {
+                    position: absolute;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 10;
+                }
+
+                .history-button {
+                    background-color: #3b82f6;
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    border: none;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: background-color 0.2s;
+                }
+
+                .history-button:hover {
+                    background-color: #2563eb;
+                }
+
+                .content-wrapper {
+                    display: flex;
+                    gap: 24px;
                     justify-content: center;
                     align-items: center;
-                    color: #fff;
+                    width: 100%;
+                    max-width: 1200px;
+                    margin-left: 200px;
+                }
+
+                .main-content {
+                    max-width: 1000px;
+                    width: 100%;
                 }
 
                 .picks-title {
                     font-size: 32px;
+                    color: white;
                     margin-bottom: 20px;
+                    text-align: center;
                 }
 
                 .picks-container {
+                    background: white;
                     padding: 20px;
-                    background-color: #f7f7f7;
-                    color: #000;
-                    max-width: 800px;
-                    width: 100%;
                     border-radius: 8px;
+                    width: 100%;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                 }
 
@@ -241,15 +305,33 @@ export default function MyPicksPage() {
                     border-collapse: collapse;
                 }
 
-                .stats-table th, .stats-table td {
-                    padding: 12px;
-                    text-align: center;
-                    border: 1px solid #e0e0e0;
-                }
-
                 .stats-table th {
                     background-color: #e0e0e0;
+                    padding: 12px;
+                    text-align: left;
+                    text-transform: uppercase;
+                    font-size: 14px;
                     font-weight: bold;
+                }
+
+                .stats-table td {
+                    padding: 12px;
+                    text-align: left;
+                    background-color: #f7f7f7;
+                }
+
+                .stats-table td:first-child,
+                .stats-table th:first-child {
+                    text-align: center;
+                }
+
+                .stats-table td:last-child,
+                .stats-table th:last-child {
+                    text-align: right;
+                }
+
+                .stats-table tbody tr:hover {
+                    background-color: #eaeaea;
                 }
 
                 .picks-list {
@@ -316,21 +398,22 @@ export default function MyPicksPage() {
                     position: absolute;
                     top: 20px;
                     right: 20px;
+                    z-index: 10;
                 }
 
                 .history-button {
-                    background-color: ${isHistoryActive ? '#1976d2' : '#2196f3'};
+                    background-color: #3b82f6;
                     color: white;
                     padding: 8px 16px;
-                    border: none;
                     border-radius: 4px;
+                    border: none;
                     cursor: pointer;
-                    font-weight: bold;
+                    font-weight: 500;
                     transition: background-color 0.2s;
                 }
 
                 .history-button:hover {
-                    background-color: #1976d2;
+                    background-color: #2563eb;
                 }
 
                 .history-button.active {
@@ -373,6 +456,60 @@ export default function MyPicksPage() {
 
                 .history-table tbody tr:hover {
                     background-color: #f5f5f5;
+                }
+
+                .auth-container {
+                    background: #f7f7f7;
+                    padding: 24px;
+                    border-radius: 8px;
+                    text-align: center;
+                    width: 300px;
+                    height: fit-content;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    margin-top: 50px;
+                    align-self: center;
+                }
+
+                .auth-title {
+                    font-size: 24px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                    color: #000;
+                }
+
+                .sign-up-button {
+                    width: 100%;
+                    padding: 12px;
+                    background-color: #3b82f6;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 16px;
+                    margin-bottom: 12px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    transition: background-color 0.2s;
+                }
+
+                .sign-up-button:hover {
+                    background-color: #2563eb;
+                }
+
+                .sign-in-button {
+                    width: 100%;
+                    padding: 12px;
+                    background-color: transparent;
+                    color: #3b82f6;
+                    border: 2px solid #3b82f6;
+                    border-radius: 4px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    transition: all 0.2s;
+                }
+
+                .sign-in-button:hover {
+                    background-color: rgba(59, 130, 246, 0.1);
                 }
             `}</style>
         </div>

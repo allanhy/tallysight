@@ -1,3 +1,4 @@
+import { useRouter } from 'next/navigation';
 import { Contest } from '@/app/types/contest';
 
 // Props for the GamePicksModal component
@@ -8,6 +9,8 @@ interface GamePicksModalProps {
 
 // Modal for making game picks in a specific contest
 export default function GamePicksModal({ contest, onClose }: GamePicksModalProps) {
+    const router = useRouter();
+
     return (
         // Fullscreen overlay with semi-transparent black background
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -55,9 +58,10 @@ export default function GamePicksModal({ contest, onClose }: GamePicksModalProps
                     </button>
                     {/* Submit button for finalizing picks */}
                     <button 
+                        onClick={() => router.push('/sign-in')}
                         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                     >
-                        Submit Picks
+                        Sign in to Submit Picks
                     </button>
                 </div>
             </div>
