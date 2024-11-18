@@ -122,7 +122,45 @@ export default function PicksPage() {
       setIsLoading(false);
     }
   };
-
+  //updating current week based on the NFL season start date
+  useEffect(() => {
+    const seasonStart = new Date("2024-09-08"); // First Sunday of the 2024 NFL season
+    const today = new Date();
+  
+    const currentWeek = getCurrentWeek(today, seasonStart);
+    setWeek(currentWeek);
+  
+    const weekStartDate = new Date(seasonStart.getTime() + (currentWeek - 1) * 7 * 24 * 60 * 60 * 1000);
+    const weekEndDate = new Date(weekStartDate.getTime() + 6 * 24 * 60 * 60 * 1000);
+  
+    // Format the week start and end dates
+    setWeekStart(
+      weekStartDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    );
+    setWeekEnd(
+      weekEndDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })
+    );
+  }, []);
+  
+  function getCurrentWeek(today: Date, seasonStart: Date): number {
+    // Ensure today's date is after the season start date
+    if (today < seasonStart) {
+      return 1; // Before the season starts, default to Week 1
+    }
+  
+    // Calculate the difference in days since the season started
+    const timeDifference = today.getTime() - seasonStart.getTime();
+    const daysSinceStart = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+  
+    // Divide days by 7 to determine the current week (Sunday-to-Saturday)
+    return Math.floor(daysSinceStart / 7) + 1;
+  }
   useEffect(() => {
     fetchOdds();
     
@@ -244,7 +282,7 @@ export default function PicksPage() {
       {/* Week Header: Updated background */}
       <div className="bg-gradient-to-r from-gray-900 to-black p-4">
         <div className="inline-block bg-gray-800/50 rounded-lg p-4 text-white text-center">
-          <div className="font-bold">WEEK {week}</div>
+          <div className="font-bold">WEEK {week|| 0}</div>
           {weekStart && weekEnd && (
             <div className="text-sm text-gray-400">
               {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
@@ -455,7 +493,7 @@ export default function PicksPage() {
           <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-8 rounded-xl w-11/12 max-w-lg shadow-2xl border border-gray-700">
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-black">Game Preview</h2>
+              <h2 className="text-3xl font-bold text-white">Game Preview</h2>
               <button
                 onClick={() => setIsPreviewOpen(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -465,13 +503,13 @@ export default function PicksPage() {
             </div>
 
             {/* Teams Container */}
-            <div className="flex items-start justify-between mb-10">
+            <div className="flex items-center justify-between mb-10">
               {/* Team 1 */}
-              <div className="text-center w-1/3">
+              <div className="text-center w-1/3 text-white flex flex-col items-center gap-2">
                 <img
                   src={previewedGame.team1.logo}
                   alt={previewedGame.team1.name}
-                  className="w-28 h-28 mx-auto mb-8"
+                  className="w-20 h-20 mx-auto mb-8"
                 />
                 <h3 className="font-bold text-lg mb-8">{previewedGame.team1.name}</h3>
                 <p className="text-2xl font-bold text-blue-600 mb-8">{previewedGame.team1.spread}</p>
@@ -488,11 +526,11 @@ export default function PicksPage() {
               </div>
 
               {/* Team 2 */}
-              <div className="text-center w-1/3">
+              <div className="text-center w-1/3 text-white flex flex-col items-center gap-2">
                 <img
                   src={previewedGame.team2.logo}
                   alt={previewedGame.team2.name}
-                  className="w-28 h-28 mx-auto mb-8"
+                  className="w-20 h-20 mx-auto mb-8"
                 />
                 <h3 className="font-bold text-lg mb-8">{previewedGame.team2.name}</h3>
                 <p className="text-2xl font-bold text-red-600 mb-8">{previewedGame.team2.spread}</p>
