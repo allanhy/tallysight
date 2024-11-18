@@ -1,4 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Contest } from '../types/contest';
+import ContestsPage from './page';
+
+const now = Date.now();
+const offsetDays = (days: number) => new Date(now + days * 86400000).toString();
+
+export enum ContestStatus {
+    Open = 'open',
+    Completed = 'completed'
+}
+
 // Mock data for contests
 export const mockContests: Contest[] = [
     {
@@ -6,11 +17,12 @@ export const mockContests: Contest[] = [
         title: "NFL Weekly Challenge", 
         description: "Test your NFL knowledge! Make your picks for this week's games.",
         category: "NFL",
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 86400000).toISOString(),
+        startDate: offsetDays(0),
+        endDate: offsetDays(1),
         participants: 45,
         maxParticipants: 100,
-        status: 'open',
+        status: ContestStatus.Open,
+        prize: -1,
         maxEntries: 1,
         currentEntries: 0,
         userResult: {
@@ -23,11 +35,12 @@ export const mockContests: Contest[] = [
         title: "NBA Daily Picks",
         description: "Make your predictions for today's NBA matchups!",
         category: "NBA",
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 43200000).toISOString(),
+        startDate: offsetDays(0),
+        endDate: offsetDays(.5),
         participants: 23,
         maxParticipants: 50,
-        status: 'open',
+        status: ContestStatus.Open,
+        prize: -1,
         maxEntries: 1,
         currentEntries: 0,
         userResult: {
@@ -45,11 +58,12 @@ export const weeklyContests = {
             title: "MLB Weekly Challenge",
             description: "Week 1 baseball predictions results",
             category: "MLB",
-            startDate: new Date(Date.now() - 7 * 86400000).toISOString(),
-            endDate: new Date(Date.now() - 6 * 86400000).toISOString(),
+            startDate: offsetDays(-7),
+            endDate: offsetDays(-6),
             participants: 98,
             maxParticipants: 100,
-            status: 'completed',
+            status: ContestStatus.Completed,
+            prize: -1,
             maxEntries: 1,
             currentEntries: 1,
             userResult: {
@@ -64,11 +78,12 @@ export const weeklyContests = {
             title: "NFL Weekly Picks",
             description: "Week 1 football predictions results",
             category: "NFL",
-            startDate: new Date(Date.now() - 7 * 86400000).toISOString(),
-            endDate: new Date(Date.now() - 6 * 86400000).toISOString(),
+            startDate: offsetDays(-7),
+            endDate: offsetDays(-6),
             participants: 75,
             maxParticipants: 100,
-            status: 'completed',
+            status: ContestStatus.Completed,
+            prize: -1,
             maxEntries: 1,
             currentEntries: 1,
             userResult: {
@@ -85,11 +100,12 @@ export const weeklyContests = {
             title: "NBA Daily Challenge",
             description: "Week 2 basketball predictions results",
             category: "NBA",
-            startDate: new Date(Date.now() - 14 * 86400000).toISOString(),
-            endDate: new Date(Date.now() - 13 * 86400000).toISOString(),
+            startDate: offsetDays(-14),
+            endDate: offsetDays(-13),
             participants: 85,
             maxParticipants: 100,
-            status: 'completed',
+            status: ContestStatus.Completed,
+            prize: -1,
             maxEntries: 1,
             currentEntries: 1,
             userResult: {
@@ -104,11 +120,12 @@ export const weeklyContests = {
             title: "MLB Weekly Challenge",
             description: "Week 2 baseball predictions results",
             category: "MLB",
-            startDate: new Date(Date.now() - 14 * 86400000).toISOString(),
-            endDate: new Date(Date.now() - 13 * 86400000).toISOString(),
+            startDate: offsetDays(-14),
+            endDate: offsetDays(-13),
             participants: 92,
             maxParticipants: 100,
-            status: 'completed',
+            status: ContestStatus.Completed,
+            prize: -1,
             maxEntries: 1,
             currentEntries: 1,
             userResult: {
@@ -125,11 +142,12 @@ export const weeklyContests = {
             title: "NFL Weekly Challenge",
             description: "Week 3 football predictions results",
             category: "NFL",
-            startDate: new Date(Date.now() - 21 * 86400000).toISOString(),
-            endDate: new Date(Date.now() - 20 * 86400000).toISOString(),
+            startDate: offsetDays(-21),
+            endDate: offsetDays(-20),
             participants: 88,
             maxParticipants: 100,
-            status: 'completed',
+            status: ContestStatus.Completed,
+            prize: -1,
             maxEntries: 1,
             currentEntries: 1,
             userResult: {
@@ -146,11 +164,12 @@ export const weeklyContests = {
             title: "NBA Daily Challenge",
             description: "Week 4 basketball predictions results",
             category: "NBA",
-            startDate: new Date(Date.now() - 28 * 86400000).toISOString(),
-            endDate: new Date(Date.now() - 27 * 86400000).toISOString(),
+            startDate: offsetDays(-28),
+            endDate: offsetDays(-27),
             participants: 95,
             maxParticipants: 100,
-            status: 'completed',
+            status: ContestStatus.Completed,
+            prize: -1,
             maxEntries: 1,
             currentEntries: 1,
             userResult: {
