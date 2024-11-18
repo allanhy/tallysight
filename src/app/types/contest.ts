@@ -18,6 +18,7 @@ export interface Contest {
     participants: number;
     maxParticipants: number;
     status: 'open' | 'completed' | 'closed';
+    prize: number;
     userResult?: UserResult;
     entryFee?: number;
 }

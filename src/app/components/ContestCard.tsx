@@ -72,7 +72,7 @@ export default function ContestCard({ contest, isActive, userResult }: ContestCa
                     userResult && (
                         <div className="mt-6 pt-4 border-t border-gray-700">
                             {/* Section title for the users results */}
-                            <h3 className="font-semibold mb-3 text-white">Last Week's Results</h3>
+                            <h3 className="font-semibold mb-3 text-white">Last Week&apos;s Results</h3>
                             <div className="grid grid-cols-2 gap-4 text-sm bg-gray-800 p-4 rounded-lg">
                                 <div>
                                     {/* Users position in the contest */}
