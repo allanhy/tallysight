@@ -334,7 +334,7 @@ export default function PicksPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                <span className="text-black">Review picks: {picksCount}</span>
+                <span className="text-white">Review picks: {picksCount}</span>
               </div>
               <div className="flex gap-4">
                 <button 
@@ -343,7 +343,7 @@ export default function PicksPage() {
                 >
                   Reset
                 </button>
-                <button onClick={() => setIsReviewOpen(false)} className="text-black">
+                <button onClick={() => setIsReviewOpen(false)} className="text-white hover:text-gray-300">
                   Close
                 </button>
               </div>
@@ -356,14 +356,14 @@ export default function PicksPage() {
                   const team = getPickDetails(pickId);
                   if (!team) return null;
                   return (
-                    <div key={pickId} className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-300 rounded-full overflow-hidden">
+                    <div key={pickId} className="flex items-center justify-between bg-gray-700/50 p-4 rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 bg-gray-700 rounded-full">
                           <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <div className="font-bold text-black">{team.name}</div>
-                          <div className="text-sm text-gray-600">{team.spread}</div>
+                          <div className="font-bold text-white">{team.name}</div>
+                          <div className="text-sm text-white">{team.spread}</div>
                         </div>
                       </div>
                       <button 
@@ -430,10 +430,10 @@ export default function PicksPage() {
             className="w-full flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <svg className={`w-5 h-5 transform ${isReviewOpen ? 'rotate-180' : ''}`} fill="none" stroke="#333333" viewBox="0 0 24 24">
+              <svg className={`w-5 h-5 transform ${isReviewOpen ? 'rotate-180' : ''}`} fill="none" stroke="white" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
               </svg>
-              <span className="text-black">{picksCount}/{availableGames.length} picks made</span>
+              <span className="text-white">{picksCount}/{availableGames.length} picks made</span>
             </div>
             <div className="flex gap-1 justify-center w-full">
               {availableGames.map((_, i) => (
@@ -453,9 +453,9 @@ export default function PicksPage() {
       {isPreviewOpen && previewedGame && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-8 rounded-xl w-11/12 max-w-lg shadow-2xl border border-gray-700">
-            {/* Header */}
+            {/* Header - Changed text-black to text-white */}
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-black">Game Preview</h2>
+              <h2 className="text-2xl font-bold text-white">Game Preview</h2>
               <button
                 onClick={() => setIsPreviewOpen(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -464,7 +464,7 @@ export default function PicksPage() {
               </button>
             </div>
 
-            {/* Teams Container */}
+            {/* Teams Container - Changed text colors to white */}
             <div className="flex items-start justify-between mb-10">
               {/* Team 1 */}
               <div className="text-center w-1/3">
@@ -473,15 +473,15 @@ export default function PicksPage() {
                   alt={previewedGame.team1.name}
                   className="w-28 h-28 mx-auto mb-8"
                 />
-                <h3 className="font-bold text-lg mb-8">{previewedGame.team1.name}</h3>
+                <h3 className="font-bold text-lg mb-8 text-white">{previewedGame.team1.name}</h3>
                 <p className="text-2xl font-bold text-blue-600 mb-8">{previewedGame.team1.spread}</p>
-                <p className="text-gray-600">{previewedGame.stats?.team1?.wins}-{previewedGame.stats?.team1?.losses}</p>
+                <p className="text-gray-400">{previewedGame.stats?.team1?.wins}-{previewedGame.stats?.team1?.losses}</p>
               </div>
 
-              {/* Center Column - Reduced spacing between Spread and W-L */}
+              {/* Center Column */}
               <div className="text-center w-1/3 pt-36">
-                <p className="font-bold text-xl mb-12">vs</p>
-                <div className="space-y-[3.5rem] text-gray-600">
+                <p className="font-bold text-xl mb-12 text-white">vs</p>
+                <div className="space-y-[3.5rem] text-gray-400">
                   <p className="font-semibold">Spread</p>
                   <p className="font-semibold">W-L</p>
                 </div>
@@ -494,29 +494,29 @@ export default function PicksPage() {
                   alt={previewedGame.team2.name}
                   className="w-28 h-28 mx-auto mb-8"
                 />
-                <h3 className="font-bold text-lg mb-8">{previewedGame.team2.name}</h3>
+                <h3 className="font-bold text-lg mb-8 text-white">{previewedGame.team2.name}</h3>
                 <p className="text-2xl font-bold text-red-600 mb-8">{previewedGame.team2.spread}</p>
-                <p className="text-gray-600">{previewedGame.stats?.team2?.wins}-{previewedGame.stats?.team2?.losses}</p>
+                <p className="text-gray-400">{previewedGame.stats?.team2?.wins}-{previewedGame.stats?.team2?.losses}</p>
               </div>
             </div>
 
-            {/* Game Details */}
+            {/* Game Details - Changed text colors */}
             <div className="space-y-2 text-sm">
               <div className="flex">
-                <span className="w-24 font-semibold">Date:</span>
-                <span>{previewedGame.date || 'TBD'}</span>
+                <span className="w-24 font-semibold text-white">Date:</span>
+                <span className="text-gray-300">{previewedGame.date || 'TBD'}</span>
               </div>
               <div className="flex">
-                <span className="w-24 font-semibold">Venue:</span>
-                <span>{previewedGame.venue || 'TBD'}</span>
+                <span className="w-24 font-semibold text-white">Venue:</span>
+                <span className="text-gray-300">{previewedGame.venue || 'TBD'}</span>
               </div>
               <div className="flex">
-                <span className="w-24 font-semibold">Broadcast:</span>
-                <span>{previewedGame.broadcast || 'TBD'}</span>
+                <span className="w-24 font-semibold text-white">Broadcast:</span>
+                <span className="text-gray-300">{previewedGame.broadcast || 'TBD'}</span>
               </div>
               <div className="flex">
-                <span className="w-24 font-semibold">Status:</span>
-                <span>{previewedGame.status || 'scheduled'}</span>
+                <span className="w-24 font-semibold text-white">Status:</span>
+                <span className="text-gray-300">{previewedGame.status || 'scheduled'}</span>
               </div>
             </div>
           </div>
