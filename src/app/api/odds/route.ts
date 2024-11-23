@@ -36,23 +36,6 @@ const NFL_TEAM_LOGOS: { [key: string]: string } = {
   'Tampa Bay Buccaneers': 'https://a.espncdn.com/i/teamlogos/nfl/500/tb.png'
 };
 
-function isGameInCurrentWeek(gameDate: string): boolean {
-  const gameTime = new Date(gameDate);
-  const now = new Date();
-  
-  // Get the current week's Tuesday (reset day) at 12:00 AM
-  const tuesday = new Date(now);
-  tuesday.setDate(now.getDate() - ((now.getDay() + 5) % 7));
-  tuesday.setHours(0, 0, 0, 0);
-  
-  // Get next Tuesday at 12:00 AM
-  const nextTuesday = new Date(tuesday);
-  nextTuesday.setDate(tuesday.getDate() + 7);
-  
-  // Check if game is between this Tuesday and next Tuesday
-  return gameTime >= tuesday && gameTime < nextTuesday;
-}
-
 export async function GET() {
   try {
     const API_KEY = process.env.ODDS_API_KEY;
@@ -71,20 +54,24 @@ export async function GET() {
     const rawData = await oddsResponse.json();
     const espnData = await espnResponse.json();
 
-    // Filter games to only show current week
-    const currentWeekGames = rawData.filter((game: any) => 
-      isGameInCurrentWeek(game.commence_time)
-    );
-
+    // Get current date and filter for upcoming week's games
     const now = new Date();
+    const dayOfWeek = now.getDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
+    const daysFromWednesday = (dayOfWeek + 4) % 8; // Days since last Wednesday 
+    const daysUntilTuesday = (8 - dayOfWeek) % 7; // Days until next Tuesday
+
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - ((now.getDay() + 5) % 7));
+    startOfWeek.setDate(now.getDate() - daysFromWednesday);
     startOfWeek.setHours(0, 0, 0, 0);
-    
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
-    
-    const week = Math.ceil((now.getTime() - new Date(2023, 8, 5).getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+    const endOfWeek = new Date(now);
+    endOfWeek.setDate(now.getDate() + daysUntilTuesday);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Calculate week number (NFL week logic could vary)
+    const week = Math.ceil((Number(now) - Number(new Date(startOfWeek.getFullYear(), 8, 1))) / (7 * 24 * 60 * 60 * 1000));
+
+    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const formatSpread = (spread: number | undefined): string => {
       if (!spread) return '0';
@@ -112,7 +99,11 @@ export async function GET() {
       return `${dayStr} · ${timeStr} ET`;
     };
 
-    const games = currentWeekGames
+    const games = rawData
+      .filter((game: any) => {
+        const gameDate = new Date(game.commence_time);
+        return gameDate >= now && gameDate <= oneWeekFromNow;
+      })
       .map((game: any) => {
         const homeTeam = game.home_team;
         const awayTeam = game.away_team;
@@ -168,7 +159,7 @@ export async function GET() {
         };
       });
 
-    return NextResponse.json({ games, weekStart: startOfWeek.toISOString(), weekEnd: endOfWeek.toISOString(), week });
+    return NextResponse.json({ games, weekStart: startOfWeek.toISOString(), weekEnd: endOfWeek.toISOString(), week,});
   } catch (error) {
     console.error('Error in odds API:', error);
     return NextResponse.json(
