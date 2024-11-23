@@ -11,7 +11,7 @@ export default function SignUpPage() {
           <div className='text-3xl font-extrabold text-black'>
             Sign up
           </div>
-          <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-800">
+          <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-100">
             Never miss out on the action.
           </h1>
         </header>
@@ -45,9 +45,9 @@ export default function SignUpPage() {
             </div>
 
             <div className="flex items-center space-x-2">
-              <div className="flex-grow text-center text-gray-400 text-xs">- - - - - - - - - - - - - - - - - - - -</div>
+              <hr className="flex-grow border-t border-gray-300" />
               <p className="text-sm font-medium text-gray-400">OR</p>
-              <div className="flex-grow text-center text-gray-400 text-xs">- - - - - - - - - - - - - - - - - - - -</div>
+              <hr className="flex-grow border-t border-gray-300" />
             </div>
 
             <div className="space-y-4">

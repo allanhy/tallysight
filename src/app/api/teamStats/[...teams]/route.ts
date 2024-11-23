@@ -11,11 +11,11 @@ export async function GET() {
     // Transform ESPN data to match your Game interface
     const games = scheduleData.events.map((event: any) => {
       const { id, name, date, status, competitions } = event;
-      const game = competitions[0];
+      const game = event.competitions[0];
       const [team1, team2] = game.competitors;
 
       return {
-        id,
+        id: game.id,
         date: new Date(date).toLocaleString(),
         team1: {
           name: team1.team.displayName,

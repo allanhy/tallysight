@@ -56,6 +56,21 @@ export async function GET() {
 
     // Get current date and filter for upcoming week's games
     const now = new Date();
+    const dayOfWeek = now.getDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
+    const daysFromWednesday = (dayOfWeek + 4) % 8; // Days since last Wednesday 
+    const daysUntilTuesday = (8 - dayOfWeek) % 7; // Days until next Tuesday
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - daysFromWednesday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(now);
+    endOfWeek.setDate(now.getDate() + daysUntilTuesday);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Calculate week number (NFL week logic could vary)
+    const week = Math.ceil((Number(now) - Number(new Date(startOfWeek.getFullYear(), 8, 1))) / (7 * 24 * 60 * 60 * 1000));
+
     const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const formatSpread = (spread: number | undefined): string => {
@@ -101,6 +116,7 @@ export async function GET() {
             competition.competitors[1].team.displayName === homeTeam
           );
         });
+        const espnID = espnGame?.id; // Use ESPN's id for the match
 
         const competition = espnGame?.competitions[0];
         const venue = competition?.venue;
@@ -143,7 +159,7 @@ export async function GET() {
         };
       });
 
-    return NextResponse.json({ games });
+    return NextResponse.json({ games, weekStart: startOfWeek.toISOString(), weekEnd: endOfWeek.toISOString(), week,});
   } catch (error) {
     console.error('Error in odds API:', error);
     return NextResponse.json(

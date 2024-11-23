@@ -37,6 +37,11 @@ export default function MyPicksPage() {
   };
 
   useEffect(() => {
+    console.log("Fetched user picks:", userPicks);
+    console.log("Fetched games data:", gamesData);
+  }, [userPicks, gamesData]);
+  
+  useEffect(() => {
     if (isSignedIn) {
         const fetchUserPicks = async () => {
           try {
@@ -55,7 +60,34 @@ export default function MyPicksPage() {
     const fetchGamesData = async () => {
       try {
         const response = await axios.get('/api/games'); // assuming the ESPN API route is set to '/api/espn'
-        setGamesData(response.data.games);
+
+        const [oddsResponse, statsResponse] = await Promise.all([
+            fetch('/api/odds'),
+            fetch('/api/teamStats/preview'),
+          ]);
+    
+          if (!oddsResponse.ok || !statsResponse.ok) {
+            throw new Error('Failed to fetch data');
+          }
+    
+          const oddsData = await oddsResponse.json();
+          const statsData = await statsResponse.json();
+
+        // Combine odds and stats
+        const mergedGames = oddsData.games.map((game: any) => {
+            const matchingStats = statsData.games.find(
+              (statGame: any) => statGame.id === game.id // Adjust logic if IDs differ
+            );
+      
+            return {
+              id: game.id,
+              homeTeam: game.team1.name,
+              awayTeam: game.team2.name,
+              homeTeamLogo: game.team1.logo,
+              awayTeamLogo: game.team2.logo,
+            };
+      });
+        setGamesData(mergedGames);
         setWeekStart(response.data.weekStart);
         setWeekEnd(response.data.weekEnd);
       } catch (error) {
@@ -173,8 +205,7 @@ export default function MyPicksPage() {
                                     <div className="picks-date">
                                         {weekStart && weekEnd && (
                                         <div className="text-md text-gray-600">
-                                            {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
-                                            {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
+                                            {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
                                         </div>
                                         )}
                                         </div>

@@ -80,12 +80,13 @@ export async function GET() {
       );
     }
 
+    const currentWeek = data.week?.number || '0';
+
     // Transform the games data directly from events
     const games = data.events.map((game: any) => {
-      const odds = game.competitions[0].odds?.[0];
-      
+      const competition = game.competitions[0];
       return {
-        id: game.id,
+        id: competition.id,
         homeTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.team.name,
         awayTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name,
         date: new Date(game.date).toISOString(),
@@ -100,17 +101,9 @@ export async function GET() {
         awayTeamLogo: getTeamLogo(game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name),
         venue: game.competitions[0].venue?.fullName,
         broadcast: game.competitions[0].broadcasts?.[0]?.names?.[0] || 'TBD',
-        week: game.week.number,
+        week: game.week?.number,
         homeScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.score,
         awayScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.score,
-        odds: {
-          favorite: odds?.details || 'TBD',
-          spread: odds?.spread || 'TBD',
-          overUnder: odds?.overUnder || 'TBD',
-          homeTeamMoneyLine: odds?.homeTeamOdds?.moneyLine || 'TBD',
-          awayTeamMoneyLine: odds?.awayTeamOdds?.moneyLine || 'TBD',
-          provider: odds?.provider?.name || 'TBD'
-        }
       };
     });
 
@@ -120,7 +113,7 @@ export async function GET() {
     const weekStart = games.length > 0 ? games[0].date : null;
     const weekEnd = games.length > 0 ? games[games.length - 1].date : null;
 
-    return NextResponse.json({ games, weekStart, weekEnd });
+    return NextResponse.json({ games, weekStart, weekEnd, week: currentWeek });
 
   } catch (error) {
     console.error('Error fetching NFL games:', error);

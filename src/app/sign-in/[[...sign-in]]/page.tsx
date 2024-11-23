@@ -11,7 +11,7 @@ export default function SignInPage() {
           <div className='text-3xl font-extrabold text-black'>
             Log in
           </div>
-          <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-800">
+          <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-100">
             Welcome back, let's play!
           </h1>
         </header>
@@ -45,9 +45,9 @@ export default function SignInPage() {
             </div>
 
             <div className="flex items-center space-x-2">
-                <div className="flex-grow text-center text-gray-400 text-xs">- - - - - - - - - - - - - - - - - - - -</div>
+                <hr className="flex-grow border-t border-gray-300" />
                 <p className="text-sm font-medium text-gray-400">OR</p>
-                <div className="flex-grow text-center text-gray-400 text-xs">- - - - - - - - - - - - - - - - - - - -</div>
+                <hr className="flex-grow border-t border-gray-300" />
             </div>
 
             <Clerk.Field name="identifier" className="group/field relative">

@@ -89,6 +89,17 @@ export default function PicksPage() {
   const fetchOdds = async () => {
     try {
       setIsLoading(true);
+      const currentTime = new Date();
+
+      // Fetch user picks if signed in
+      let pickedGameIds = new Set<string>();
+      if (isSignedIn) {
+        const picksResponse = await axios.get('/api/userPicks');
+        pickedGameIds = new Set<string>(picksResponse.data.map((pick: any) => pick.gameId));
+        setUserPicks(pickedGameIds);
+      }
+      const response = await axios.get('/api/odds');
+      const { weekStart, weekEnd, week } = response.data;
       
       // Fetch both odds and team stats
       const [oddsResponse, statsResponse] = await Promise.all([
@@ -103,17 +114,27 @@ export default function PicksPage() {
       const oddsData = await oddsResponse.json();
       const statsData = await statsResponse.json();
 
-      // Merge the data
-      const mergedGames = oddsData.games.map((game: any) => ({
-        ...game,
-        stats: statsData.games.find((statGame: any) => 
-          statGame.team1.name === game.team1.name || 
-          statGame.team2.name === game.team2.name
-        )?.stats || {}
-      }));
+      // Combine odds and stats data
+      const mergedGames = oddsData.games.map((game: any) => {
+        const isAvailable = !pickedGameIds.has(game.id);
+
+        return {
+          ...game,
+          stats: statsData.games.find(
+            (statGame: any) =>
+              statGame.team1.name === game.team1.name ||
+              statGame.team2.name === game.team2.name
+          )?.stats || {},
+          isAvailable,
+        };
+      });
+      console.log('Merged Games:', mergedGames);
+      console.log(currentTime);
 
       setGames(mergedGames);
-
+      setWeek(week);
+      setWeekStart(weekStart);
+      setWeekEnd(weekEnd);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       console.error('API Error:', errorMessage);
@@ -125,7 +146,6 @@ export default function PicksPage() {
 
   useEffect(() => {
     fetchOdds();
-    
     // Refresh odds every 5 minutes
     const interval = setInterval(fetchOdds, 5 * 60 * 1000);
     
@@ -247,8 +267,7 @@ export default function PicksPage() {
           <div className="font-bold">WEEK {week}</div>
           {weekStart && weekEnd && (
             <div className="text-sm text-gray-400">
-              {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - 
-              {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
+              {new Date(weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} - {new Date(weekEnd).toLocaleDateString('en-US', { day: 'numeric' })}         
             </div>
           )}
         </div>
