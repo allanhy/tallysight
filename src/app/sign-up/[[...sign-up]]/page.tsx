@@ -1,17 +1,29 @@
 'use client'
 
+import React, { useState, useEffect } from 'react';
 import * as Clerk from '@clerk/elements/common'
 import * as SignUp from '@clerk/elements/sign-up'
 
 export default function SignUpPage() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === 'dark') {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  }, [theme]);
+
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
       <div className="w-full flex justify-center flex-col items-center">
         <header className="text-center w-full mb-4">
-          <div className='text-3xl font-extrabold text-black'>
+          <div className='text-3xl font-extrabold text-black dark:text-white'>
             Sign up
           </div>
-          <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-100">
+          <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
             Never miss out on the action.
           </h1>
         </header>

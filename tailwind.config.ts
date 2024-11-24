@@ -16,4 +16,11 @@ const config: Config = {
   },
   plugins: [],
 };
+module.exports = {
+  darkMode: 'media', // or 'media' if you want to rely on system preferences
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
 export default config;

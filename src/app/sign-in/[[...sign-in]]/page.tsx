@@ -1,20 +1,36 @@
 'use client'
 
+import React, { useState, useEffect } from 'react';
 import * as Clerk from '@clerk/elements/common'
 import * as SignIn from '@clerk/elements/sign-in'
 
 export default function SignInPage() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === 'dark') {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4">
-      <div className="w-full flex justify-center flex-col items-center">
-        <header className="text-center w-full mb-4">
-          <div className='text-3xl font-extrabold text-black'>
-            Log in
-          </div>
-          <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-100">
-            Welcome back, let's play!
-          </h1>
-        </header>
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
+    <div className="w-full flex justify-center flex-col items-center">
+      <header className="text-center w-full mb-4">
+        <div className="text-3xl font-extrabold text-black dark:text-white">
+          Log in
+        </div>
+        <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
+          Welcome back, let's play!
+        </h1>
+      </header>
 
         <SignIn.Root>
           <SignIn.Step
