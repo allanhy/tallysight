@@ -47,7 +47,6 @@ Primary users include:
 - **Performance Tracking**: Enables users to track their picks, view past performance, and analyze selections over time with a secure and dynamic database.
 
 ### Dynamic Content & Engaging UX
-- **Search & Filters**: Intuitive search capabilities with advanced filtering options for discovering sports creators and brands.
 - **Interactive Leaderboards**: Weekly and cumulative leaderboards to highlight top-performing users and foster a competitive community.
 - **Customized Profiles**: Users can personalize their profiles with preferences and favorite teams for a tailored experience.
 
