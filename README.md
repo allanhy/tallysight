@@ -1,7 +1,7 @@
 <div align="center">
 
   <img src="assets/tallysight-logo.png" alt="Tallysight Logo" width="200" height="auto" />
-  <h1>Tallysight – A Free Sports Picking Web Application</h1>
+  <h1><a href="https://tallysight-kappa.vercel.app" target="_blank">Tallysight</a> – A Free Sports Picking Web Application</h1>
   
   <p>
     Engage with the sports community, participate in free-to-play contests, and climb the leaderboard—all without real money!
