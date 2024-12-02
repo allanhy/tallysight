@@ -121,13 +121,14 @@ Primary users include:
 ## :date: Timeline
 Based on user stories in our JIRA backlog, the following milestones will guide development during CSC 191:
 
-| Milestone                               | Deadline           |
-|-----------------------------------------|--------------------|
-| Database Integration w/ Entire Page     | February 3, 2025   |
-| Admin Page & Functions                  | February 16, 2025  |
-| Email Notifications                     | March 2, 2025      |
-| Bug Fixes and Optimization for Mobile   | March 16, 2025     |
-| Final Deliverable                       | May 22, 2025       |
+| Milestone                                   | Deadline           |
+|---------------------------------------------|--------------------|
+| Database Integration w/ Entire Page         | February 3, 2025   |
+| Admin Page & Functions                      | February 16, 2025  |
+| Email Notifications                         | March 2, 2025      |
+| Integration of Tallysight & other Features  | March 16, 2025     |
+| Bug Fixes and Optimization for Mobile       | March 30, 2025     |
+| Final Deliverable                           | May 22, 2025       |
 
 ---
 
