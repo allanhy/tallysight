@@ -14,7 +14,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ imageFile, onCropComplete, 
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
     const [loading, setLoading] = useState(false);
     const [imageSrc, setImageSrc] = useState<string>("");
-
+    const [error, setError] = useState<string | null>(null);
 
     // By using objectURL, makes it a bit faster, https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications#example_using_object_urls_to_display_images
     useEffect(() => {
@@ -39,12 +39,26 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ imageFile, onCropComplete, 
 
     const handleCrop = async () => {
         if (!croppedAreaPixels) return;
-
+    
         setLoading(true);
-        const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+        setError(null); // Reset error
+    
+        try {
+            const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+            
+            if (croppedBlob.size > 10 * 1024 * 1024) { // Check if size > 10MB
+                setError("Cropped image is too large. Please choose a smaller area.");
+                setLoading(false);
+                return;
+            }
+    
+            const croppedImageUrl = URL.createObjectURL(croppedBlob);
+            onCropComplete(croppedImageUrl);
+        } catch (error) {
+            setError("Failed to process image. Please try again.");
+        }
+    
         setLoading(false);
-
-        onCropComplete(croppedImage);
     };
 
     return (
@@ -62,8 +76,12 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ imageFile, onCropComplete, 
                         onCropComplete={onCropCompleteHandler}
                     />
                 </div>
+    
+                {/* Error Message Display */}
+                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+    
                 <div className="flex justify-end space-x-2 mt-4">
-                    <button className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition" onClick={onCancel}>
+                    <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition" onClick={onCancel}>
                         Cancel
                     </button>
                     <button
@@ -80,7 +98,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ imageFile, onCropComplete, 
 };
 
 // Helper function to crop the image, for more information https://stackoverflow.com/questions/26015497/how-to-resize-then-crop-an-image-with-canvas
-const getCroppedImg = async (imageSrc: string, croppedAreaPixels: { width: number; height: number; x: number; y: number }): Promise<string> => {
+const getCroppedImg = async (imageSrc: string, croppedAreaPixels: { width: number; height: number; x: number; y: number }): Promise<Blob> => {
     return new Promise((resolve, reject) => {
         const image = new Image();
         image.src = imageSrc;
@@ -113,7 +131,7 @@ const getCroppedImg = async (imageSrc: string, croppedAreaPixels: { width: numbe
                     reject("Failed to generate cropped image");
                     return;
                 }
-                resolve(URL.createObjectURL(blob));
+                resolve(blob);
             }, "image/png");
         };
 
