@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 
@@ -32,6 +32,8 @@ export default function DailyPicksPage() {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const { isSignedIn } = useUser();
+    const searchParams = useSearchParams();
+    const dateParam = searchParams.get('date');
 
     const fetchGames = async () => {
         try {
@@ -42,18 +44,18 @@ export default function DailyPicksPage() {
                 throw new Error('Invalid response format from API');
             }
             
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            const targetDate = dateParam ? new Date(dateParam) : new Date();
+            targetDate.setHours(0, 0, 0, 0);
             
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
+            const nextDay = new Date(targetDate);
+            nextDay.setDate(nextDay.getDate() + 1);
             
-            const todaysGames = response.data.games.filter((game: Game) => {
+            const filteredGames = response.data.games.filter((game: Game) => {
                 const gameDate = new Date(game.date);
-                return gameDate >= today && gameDate < tomorrow;
+                return gameDate >= targetDate && gameDate < nextDay;
             });
             
-            setGames(todaysGames);
+            setGames(filteredGames);
         } catch (error) {
             console.error('Error fetching games:', error);
             if (axios.isAxiosError(error)) {
@@ -72,7 +74,7 @@ export default function DailyPicksPage() {
         fetchGames();
         const interval = setInterval(fetchGames, 5 * 60 * 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [dateParam]);
 
     const handleTeamSelection = (gameId: string, teamIndex: number) => {
         const newPicks = new Set(selectedPicks);
