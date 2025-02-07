@@ -1,0 +1,391 @@
+.picks-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: black;
+    position: relative;
+}
+
+.history-button-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+}
+
+.history-button {
+    background-color: #3b82f6;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.history-button:hover {
+    background-color: #2563eb;
+}
+
+.content-wrapper {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.content-wrapper.centered {
+    justify-content: center;
+}
+
+.main-content {
+    max-width: 1000px;
+    width: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.picks-title {
+    font-size: 32px;
+    color: white;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.picks-container {
+    padding: 20px;
+    border-radius: 8px;
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.picks-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.select {
+    padding: 8px;
+    border-radius: 5px;
+    width: 48%;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.select option {
+    background-color: #1f2937;
+    color: white;
+}
+
+.stats-table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+}
+
+.stats-table th {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+}
+
+.stats-table td {
+    padding: 12px;
+    text-align: left;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.stats-table td:first-child,
+.stats-table th:first-child {
+    text-align: center;
+}
+
+.stats-table td:last-child,
+.stats-table th:last-child {
+    text-align: right;
+}
+
+.stats-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.picks-list {
+    text-align: left;
+}
+
+.picks-subtitle {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.picks-date {
+    color: #9ca3af;
+    margin-bottom: 20px;
+}
+
+.pick-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pick-details {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.team-logo {
+    width: 40px;
+    height: 40px;
+}
+
+.team-name {
+    font-weight: bold;
+}
+
+.game-score {
+    color: #666;
+}
+
+.pick-result {
+    text-align: right;
+}
+
+.pick-result.win {
+    color: #2196f3;
+    font-weight: bold;
+}
+
+.pick-result.loss {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.pick-result.w\\/l {
+    color: #2196f3;
+    font-weight: bold;
+}
+
+.history-button-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+}
+
+.history-button {
+    background-color: #3b82f6;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.history-button:hover {
+    background-color: #2563eb;
+}
+
+.history-button.active {
+    background-color: #1565c0;
+}
+
+.message {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    text-align: center;
+    font-weight: bold;
+}
+
+.history-title {
+    font-size: 24px;
+    margin: 40px 0 20px;
+    text-align: center;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
+}
+
+.history-table th,
+.history-table td {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid rgba(75, 85, 99, 0.4);
+}
+
+.history-table th {
+    background-color: rgba(31, 41, 55, 0.5);
+    font-weight: bold;
+    color: white;
+}
+
+.history-table tbody tr {
+    background-color: rgba(31, 41, 55, 0.3);
+}
+
+.history-table tbody tr:hover {
+    background-color: rgba(55, 65, 81, 0.4);
+}
+
+.auth-container {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 24px;
+    border-radius: 8px;
+    text-align: center;
+    width: 300px;
+    height: fit-content;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    margin-top: 50px;
+    align-self: center;
+}
+
+.auth-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.sign-up-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.sign-up-button:hover {
+    background-color: #1d4ed8;
+}
+
+.sign-in-button {
+    width: 100%;
+    padding: 12px;
+    background-color: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.sign-in-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure the layout adapts for mobile screens */
+@media (max-width: 768px) {
+    .picks-page {
+        flex-direction: column;
+        padding: 16px;
+    }
+    
+    .content-wrapper {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    
+    .main-content {
+        width: 100%;
+    }
+    
+    .picks-container {
+        padding: 16px;
+        box-shadow: none;
+    }
+    
+    .history-button-container {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .history-button {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .picks-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .select {
+        width: 100%;
+        padding: 10px;
+    }
+    
+    .stats-table {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        display: block;
+        margin-bottom: 0;
+    }
+    
+    .stats-table th, .stats-table td {
+        padding: 12px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+    
+    .pick-item {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .pick-details {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .team-logo {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .auth-container {
+        width: 100%;
+        padding: 16px;
+    }
+    
+    .sign-up-button, .sign-in-button {
+        font-size: 14px;
+        padding: 10px;
+    }
+}
