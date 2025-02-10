@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image'
-import styles from './LeaderboardProfiles.module.css';
+import styles from '../styles/leaderboardProfiles.module.css';
 
 interface user {
     rank: number;
