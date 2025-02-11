@@ -24,20 +24,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid request data' }, { status: 400 });
     }
 
-    const pickRecords = picks.map((pick: { gameId: string; teamIndex: number }) => ({
-      userId,
-      gameId: pick.gameId,
-      teamIndex: pick.teamIndex,
+    // First, create games if they don't exist
+    await Promise.all(picks.map(async (pick: any) => {
+      await prisma.game.upsert({
+        where: { id: pick.gameId },
+        update: {}, // No updates if exists
+        create: {
+          id: pick.gameId,
+          team1Name: "Team 1",
+          team2Name: "Team 2",
+          team1Logo: null,
+          team2Logo: null
+        }
+      });
     }));
 
-    console.log('Attempting to save picks:', pickRecords);
-
-    await prisma.pick.createMany({
-      data: pickRecords,
+    // Then create the picks
+    const savedPicks = await prisma.pick.createMany({
+      data: picks.map((pick: any) => ({
+        userId,
+        gameId: pick.gameId,
+        teamIndex: pick.teamIndex
+      }))
     });
 
     console.log('Picks saved successfully');
-    return NextResponse.json({ message: 'Picks saved successfully' });
+    return NextResponse.json({ message: 'Picks saved', picks: savedPicks });
   } catch (error: any) {
     console.error('Error saving picks:', error.message || error);
     return NextResponse.json({ message: 'Failed to save picks', error: error.message || 'Unknown error' }, { status: 500 });

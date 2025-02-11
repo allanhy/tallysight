@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-// ESPN CDN URLs for NBA team logos
 const NBA_TEAM_LOGOS: { [key: string]: string } = {
   'Atlanta Hawks': 'https://a.espncdn.com/i/teamlogos/nba/500/atl.png',
   'Boston Celtics': 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
@@ -34,21 +33,36 @@ const NBA_TEAM_LOGOS: { [key: string]: string } = {
   'Washington Wizards': 'https://a.espncdn.com/i/teamlogos/nba/500/wsh.png'
 };
 
-export async function GET(request: Request) {
+export async function GET() {
   const apiKey = process.env.ODDS_API_KEY;
   const sport = 'basketball_nba';
   
   try {
-    const response = await fetch(`https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${apiKey}&regions=us&markets=spreads`);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
+    // Get the next 5 days in ISO format
+    const dates = Array.from({length: 5}, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      return date.toISOString().split('T')[0];
+    });
 
-    const data = await response.json();
+    // Fetch games for each date
+    const allGamesPromises = dates.map(async (date) => {
+      const response = await fetch(
+        `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${apiKey}&regions=us&markets=spreads&commenceTimeTo=${date}T23:59:59Z&commenceTimeFrom=${date}T00:00:00Z`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`);
+      }
 
-    // Transform the data into the format your frontend expects
-    const games = data.map((game: any) => ({
+      return response.json();
+    });
+
+    const allGamesResponses = await Promise.all(allGamesPromises);
+    const allGames = allGamesResponses.flat();
+
+    // Transform the data into our expected format
+    const games = allGames.map((game: any) => ({
       id: game.id,
       date: game.commence_time,
       team1: {
@@ -65,6 +79,9 @@ export async function GET(request: Request) {
       isAvailable: true
     }));
 
+    // Sort games by date
+    games.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
     return NextResponse.json({ games });
   } catch (error) {
     console.error('Error in odds API:', error);
@@ -73,4 +90,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+} 
