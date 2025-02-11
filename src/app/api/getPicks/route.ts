@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
-import { auth } from '@clerk/nextjs';
 
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
     try {
-        const { userId } = auth();
+        const { userId } = getAuth(request);
         
         if (!userId) {
             return NextResponse.json(
@@ -15,8 +14,6 @@ export async function GET(request: Request) {
                 { status: 401 }
             );
         }
-
-        console.log('Attempting to fetch picks for user:', userId);
 
         const picks = await prisma.pick.findMany({
             where: {
@@ -30,22 +27,12 @@ export async function GET(request: Request) {
             }
         });
 
-        console.log('Successfully fetched picks:', picks.length);
-
-        if (!picks) {
-            return NextResponse.json({ picks: [] });
-        }
-
         return NextResponse.json({ picks });
 
     } catch (error) {
-        console.error('Detailed API Error:', error);
+        console.error('API Error:', error);
         return NextResponse.json(
-            { 
-                error: 'Failed to fetch picks', 
-                details: error instanceof Error ? error.message : 'Unknown error',
-                stack: error instanceof Error ? error.stack : undefined
-            },
+            { error: error instanceof Error ? error.message : 'Internal Server Error' },
             { status: 500 }
         );
     } finally {

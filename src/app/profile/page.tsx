@@ -101,22 +101,20 @@ const Profile = () => {
             
             try {
                 const response = await fetch('/api/getPicks');
-                const data = await response.json();
-                
                 if (!response.ok) {
-                    throw new Error(data.details || data.error || 'Failed to fetch picks');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
+                const data = await response.json();
                 if (!data.picks) {
-                    setPicks([]);
-                    return;
+                    throw new Error('No picks data received');
                 }
                 
                 setPicks(data.picks);
                 setError(null);
             } catch (err) {
                 console.error('Error fetching picks:', err);
-                setError(err instanceof Error ? err.message : 'Failed to load picks');
+                setError('Failed to load picks. Please try again later.');
                 setPicks([]);
             } finally {
                 setIsLoading(false);
