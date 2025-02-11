@@ -15,7 +15,6 @@ const Profile = () => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showCropper, setShowCropper] = useState(false);
 
-    // Hook to manage form inputs and validation
     const { register, handleSubmit, formState: { errors } } = useForm();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
