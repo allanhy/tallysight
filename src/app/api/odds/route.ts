@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 
 // ESPN CDN URLs for NBA team logos
@@ -66,107 +65,7 @@ export async function GET(request: Request) {
       isAvailable: true
     }));
 
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - daysFromWednesday);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(now);
-    endOfWeek.setDate(now.getDate() + daysUntilTuesday);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    // Calculate week number (NFL week logic could vary)
-    const week = Math.ceil((Number(now) - Number(new Date(startOfWeek.getFullYear(), 8, 1))) / (7 * 24 * 60 * 60 * 1000));
-
-    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const formatSpread = (spread: number | undefined): string => {
-      if (!spread) return '0';
-      return spread > 0 ? `+${spread}` : spread.toString();
-    };
-
-    const formatGameTime = (dateString: string): string => {
-      const date = new Date(dateString);
-      
-      // Format date like "Sun, Nov 19"
-      const dayStr = date.toLocaleDateString('en-US', { 
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      });
-
-      // Format time like "1:00 PM ET"
-      const timeStr = date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/New_York',
-        hour12: true
-      });
-
-      return `${dayStr} · ${timeStr} ET`;
-    };
-
-    const games = rawData
-      .filter((game: any) => {
-        const gameDate = new Date(game.commence_time);
-        return gameDate >= now && gameDate <= oneWeekFromNow;
-      })
-      .map((game: any) => {
-        const homeTeam = game.home_team;
-        const awayTeam = game.away_team;
-        
-        // Find matching ESPN game data
-        const espnGame = espnData.events?.find((event: any) => {
-          const competition = event.competitions[0];
-          return (
-            competition.competitors[0].team.displayName === homeTeam ||
-            competition.competitors[1].team.displayName === homeTeam
-          );
-        });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const espnID = espnGame?.id; // Use ESPN's id for the match
-
-        const competition = espnGame?.competitions[0];
-        const venue = competition?.venue;
-        const broadcast = competition?.broadcasts?.[0];
-
-        // Format venue string
-        const venueString = venue 
-          ? `${venue.fullName}${venue.address ? ` - ${venue.address.city}, ${venue.address.state}` : ''}`
-          : "TBD";
-
-        // Format broadcast string
-        const broadcastString = broadcast?.names?.join(', ') || "TBD";
-
-        const bookmaker = game.bookmakers[0];
-        const spreadsMarket = bookmaker?.markets.find((market: any) => market.key === 'spreads');
-        
-        const homeOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
-        const awayOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
-
-        return {
-          id: game.id,
-          date: formatGameTime(game.commence_time),
-          team1: {
-            name: homeTeam,
-            spread: formatSpread(homeOutcome?.point),
-            logo: NFL_TEAM_LOGOS[homeTeam] || 'https://a.espncdn.com/i/teamlogos/nfl/500/default.png',
-            win: "50.0%"
-          },
-          team2: {
-            name: awayTeam,
-            spread: formatSpread(awayOutcome?.point),
-            logo: NFL_TEAM_LOGOS[awayTeam] || 'https://a.espncdn.com/i/teamlogos/nfl/500/default.png',
-            win: "50.0%"
-          },
-          week: 1,
-          venue: venueString,
-          broadcast: broadcastString,
-          status: "scheduled",
-          isAvailable: new Date(game.commence_time) > now
-        };
-      });
-
-    return NextResponse.json({ games, weekStart: startOfWeek.toISOString(), weekEnd: endOfWeek.toISOString(), week,});
+    return NextResponse.json({ games });
   } catch (error) {
     console.error('Error in odds API:', error);
     return NextResponse.json(

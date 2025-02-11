@@ -49,8 +49,7 @@ export async function POST(req: NextRequest) {
     });
 
     console.log('Picks saved successfully');
-    return NextResponse.json({ message: 'Picks saved successfully' });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return NextResponse.json({ message: 'Picks saved', picks: savedPicks });
   } catch (error: any) {
     console.error('Error saving picks:', error.message || error);
     return NextResponse.json({ message: 'Failed to save picks', error: error.message || 'Unknown error' }, { status: 500 });

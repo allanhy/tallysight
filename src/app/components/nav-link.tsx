@@ -1,4 +1,3 @@
-/* eslint-disable prefer-const */
 'use client';
 
 
