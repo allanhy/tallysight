@@ -1,16 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("POSTGRES_PRISMA_URL")
 }
 
 model Pick {
@@ -19,4 +13,103 @@ model Pick {
   gameId    String
   teamIndex Int
   createdAt DateTime @default(now())
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+}
+
+model Game {
+  id        String   @id
+  team1Name String
+  team2Name String
+  team1Logo String?
+  team2Logo String?
+  picks     Pick[]
+}
+
+model admins {
+  admin_id Int @id @default(autoincrement())
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model contests {
+  id               Int      @id @default(autoincrement())
+  title            String   @unique(map: "contests_contest_name_key") @db.VarChar(100)
+  start_date       DateTime @db.Timestamptz(6)
+  end_date         DateTime @db.Timestamptz(6)
+  prize            Int?     @default(0)
+  status           String
+  description      String
+  category         String
+  participants     Int      @default(0)
+  max_participants Int
+  max_entries      Int
+  current_entries  Int      @default(0)
+  rank             Int?
+  points           Int?
+}
+
+model events {
+  event_id   Int      @id @default(autoincrement())
+  game_name  String   @db.VarChar(100)
+  date       DateTime @db.Date
+  odds       Float
+  sport_type String   @db.VarChar(50)
+}
+
+model influencers {
+  user_id        Int   @id
+  follower_count Int?  @default(0)
+  users          users @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model leaderboard_entries {
+  entry_id       Int          @id(map: "leaderboard_entires_pkey") @default(autoincrement())
+  user_id        Int
+  leaderboard_id Int
+  rank           Int
+  points         Int
+  start_date     DateTime?    @default(now()) @db.Timestamp(6)
+  leaderboards   leaderboards @relation(fields: [leaderboard_id], references: [leaderboard_id], onDelete: Cascade, onUpdate: NoAction, map: "leaderboard_fkey")
+  users          users        @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "user_fkey")
+
+  @@unique([user_id, leaderboard_id], map: "single_user_per_leaderboard")
+  @@index([leaderboard_id], map: "idx_entries_by_leaderboard_id")
+  @@index([rank], map: "idx_entries_by_rank")
+  @@index([user_id], map: "idx_entries_by_user_id")
+}
+
+model leaderboards {
+  leaderboard_id      Int                   @id @default(autoincrement())
+  start_date          DateTime              @default(now()) @db.Timestamp(6)
+  name                String                @db.VarChar(100)
+  sport               String                @db.VarChar(50)
+  week                Int
+  description         String                @default(" ")
+  leaderboard_entries leaderboard_entries[]
+}
+
+model picks {
+  pick_id     Int      @id(map: "bets_pkey") @default(autoincrement())
+  user_id     Int
+  event_id    Int
+  amount      Float
+  payoff      Float?
+  status      String   @db.VarChar(20)
+  date_placed DateTime @db.Date
+  users       users    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "bets_user_id_fkey")
+}
+
+model users {
+  user_id             Int                   @id @default(autoincrement())
+  username            String                @unique @db.VarChar(50)
+  email               String                @unique(map: "email_index") @db.VarChar(100)
+  password            String                @db.VarChar(100)
+  role                Int
+  current_balance     Int?                  @default(0)
+  ranking             Int?                  @unique
+  creation_date       DateTime              @db.Date
+  influencers         influencers?
+  leaderboard_entries leaderboard_entries[]
+  picks               picks[]
 }
