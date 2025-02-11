@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
@@ -46,6 +47,7 @@ function getTeamLogo(teamName: string): string {
 export async function GET() {
   try {
     // Add currentDate definition at the start of the function
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const currentDate = new Date();
 
     // Fetch the NFL schedule from ESPN

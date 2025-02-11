@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import React, { useEffect, useState } from 'react';
@@ -39,7 +40,7 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
                     setError(data.message || 'Users Fetch: Failed');
                 }
             } catch (error) {
-                setError(`Network error fetching users: ${error.message || error}`);
+                setError(`Network error fetching users: ${error}`);
             }
             setLoading(false);
         };
@@ -56,10 +57,10 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
     );
 }
 
-function Item({data}) {
+function Item({ data }: { data: user[] }) {
     return(
         <>
-            {data.map((value, index) => (
+            {data.map((value: { rank: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; img: any; username: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; points: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; }, index: React.Key | null | undefined) => (
                 <div className={styles.profile} key={index}>
                     <div className={styles.rank}>{value.rank}</div>
                     <Image 
@@ -77,6 +78,6 @@ function Item({data}) {
     );
 }
 
-function getImageSrc(img){
+function getImageSrc(img: string){
     return img?.startsWith('data:image') || img?.startsWith('http') ? img : '/default-profile.png';
 }

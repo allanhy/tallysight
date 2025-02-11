@@ -6,8 +6,14 @@ import LeaderboardProfiles from '../components/leaderboardProfiles';
 
 type Sport = 'NFL' | 'MLB' | 'NBA';
 
+type LeaderboardEntry = {
+    user_id: number;
+    username: string;
+    points: number;
+};
+
 const Leaderboard: React.FC = () => {
-    const [leaderboard, setLeaderboard] = useState([]);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);

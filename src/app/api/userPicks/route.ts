@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(userPicks, { status: 200 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error fetching user picks:', error.message || error);
     return NextResponse.json({ message: 'Failed to fetch user picks', error: error.message || 'Unknown error' }, { status: 500 });

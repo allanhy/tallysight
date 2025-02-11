@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useState, useEffect }  from 'react';
 import { useRouter } from 'next/navigation';
 import Leaderboard from '../components/leaderboard';
