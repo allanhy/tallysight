@@ -18,8 +18,8 @@ const Profile = () => {
     // Hook to manage form inputs and validation
     const { register, handleSubmit, formState: { errors } } = useForm();
 
-    // Handles form submission for when user updates profile info.
-    const onSubmit = async (data: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onSubmit = async (data : any) => {
         try {
             await user!.update({
                 username: data.username,

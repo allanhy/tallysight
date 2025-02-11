@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 
 // ESPN CDN URLs for NFL team logos
@@ -116,6 +117,7 @@ export async function GET() {
             competition.competitors[1].team.displayName === homeTeam
           );
         });
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const espnID = espnGame?.id; // Use ESPN's id for the match
 
         const competition = espnGame?.competitions[0];

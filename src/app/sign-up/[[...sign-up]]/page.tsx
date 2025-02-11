@@ -5,6 +5,7 @@ import * as Clerk from '@clerk/elements/common'
 import * as SignUp from '@clerk/elements/sign-up'
 
 export default function SignUpPage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
