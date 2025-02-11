@@ -1,64 +1,57 @@
 "use client";
 
-import React from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React, { useState, useEffect }  from 'react';
 import { useRouter } from 'next/navigation';
+import Leaderboard from '../components/leaderboard';
+import { useUser } from '@clerk/nextjs';
+//import '../styles/leaderboard.css';
 
 export default function Page() {
     const router = useRouter();
+    const { isSignedIn } = useUser();
+
+    // Navigation: Redirects user to sign-in page
+    const handleSignIn = async () => {
+        if (!isSignedIn) {
+            const returnUrl = window.location.pathname;
+            router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`); // Update this path to match your sign-in page route
+            return;
+        }
+    };
+
+    const handleSignUp = async () => {
+        if (!isSignedIn) {
+            const returnUrl = window.location.pathname;
+            router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`); // Update this path to match your sign-in page route
+            return;
+        }
+    };
+
+    
+
     return (
-        <div className="leaderboard-page">
-            <div className="content-wrapper">
-                <div className="main-content">
-                    <h1 className="leaderboard-title">Leaderboard</h1>
-                    <div className="leaderboard-container">
-                        <div className="leaderboard-controls">
-                            <select className="select">
-                                <option>Select Sport</option>
-                                <option>NFL</option>
-                                <option>MLB</option>
-                                <option>NBA</option>
-                            </select>
-                            <select className="select">
-                                <option>Select Week</option>
-                                <option>Week 1</option>
-                                <option>Week 2</option>
-                                <option>Week 3</option>
-                            </select>
-                        </div>
-
-                        <table className="leaderboard-table">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Username</th>
-                                    <th>Performance</th>
-                                    <th>Points</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {[...Array(4)].map((_, i) => (
-                                    <tr key={i}><td>-</td><td>---</td><td>---</td><td>---</td></tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div className="auth-container">
-                    <h2 className="auth-title">New to TallySight?</h2>
+        <div className='leaderboard-page'>
+            <div className={`content-wrapper ${isSignedIn ? 'centered' : ''}`}>
+                <Leaderboard></Leaderboard>
+                {!isSignedIn && (
+                <div className='auth-container'>
+                    <h2 className='auth-title'>New to TallySight?</h2>
                     <button 
-                        onClick={() => router.push('/sign-up')}
-                        className="sign-up-button"
+                        onClick={handleSignUp}
+                        className='sign-up-button'
                     >
                         Sign up
                     </button>
+                    <div className='text-white'>or</div>
                     <button 
-                        onClick={() => router.push('/sign-in')}
-                        className="sign-in-button"
+                        onClick={handleSignIn}
+                        className='sign-in-button'
                     >
                         Log in
                     </button>
                 </div>
+                )}
             </div>
 
             <style jsx>{`
@@ -78,83 +71,19 @@ export default function Page() {
                     align-items: center;
                     width: 100%;
                     max-width: 1200px;
-                    margin-left: 200px;
+                }
+
+                .content-wrapper.centered {
+                    justify-content: center;
                 }
 
                 .main-content {
                     max-width: 1000px;
                     width: 100%;
-                }
-
-                .leaderboard-title {
-                    font-size: 32px;
-                    color: white;
-                    margin-bottom: 20px;
-                    text-align: center;
-                }
-
-                .leaderboard-container {
-                    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
-                    padding: 20px;
-                    border-radius: 8px;
-                    width: 100%;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    color: white;
-                }
-
-                .leaderboard-controls {
+                    flex-grow: 1;
                     display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 20px;
-                }
-
-                .select {
-                    padding: 8px;
-                    border-radius: 5px;
-                    width: 48%;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    color: white;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-
-                .select option {
-                    background-color: #1f2937;
-                    color: white;
-                }
-
-                .leaderboard-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-
-                .leaderboard-table th, .leaderboard-table td {
-                    padding: 12px;
-                    text-align: left;
-                }
-
-                .leaderboard-table th {
-                    background-color: rgba(255, 255, 255, 0.1);
-                    text-transform: uppercase;
-                    font-size: 14px;
-                    color: white;
-                }
-
-                .leaderboard-table td {
-                    background-color: rgba(255, 255, 255, 0.05);
-                    color: white;
-                }
-
-                .leaderboard-table tbody tr:hover {
-                    background-color: rgba(255, 255, 255, 0.1);
-                }
-
-                .leaderboard-table td:first-child, .leaderboard-table th:first-child {
-                    text-align: center;
-                }
-
-                .leaderboard-table td:last-child, .leaderboard-table th:last-child {
-                    text-align: right;
+                    flex-direction: row;
+                    align-items: center;
                 }
 
                 .auth-container {
@@ -179,13 +108,13 @@ export default function Page() {
 
                 .sign-up-button {
                     width: 100%;
-                    padding: 12px;
+                    padding: 10em;
                     background-color: #2563eb;
                     color: white;
                     border: none;
                     border-radius: 4px;
                     font-size: 16px;
-                    margin-bottom: 12px;
+                    margin-bottom: 1em;
                     cursor: pointer;
                     font-weight: bold;
                     transition: background-color 0.2s;
@@ -211,6 +140,64 @@ export default function Page() {
                 .sign-in-button:hover {
                     background-color: rgba(255, 255, 255, 0.1);
                 }
+            }
+                
+            @media (max-width: 768px) {
+                .content-wrapper {
+                    flex-direction: row;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 10px;
+                }
+
+                .leaderboard-container {
+                    padding: 16px;
+                    width: 90%;
+                }
+
+                .leaderboard-title {
+                    font-size: 24px;
+                }
+
+                .leaderboard-controls {
+                    flex-direction: column;
+                    gap: 10px;
+                    align-items: center;
+                }
+
+                .leaderboard-header{
+                    font-size: 1px;
+                    gap: 10px;
+                }
+
+                .select {
+                    width: 100%;
+                }
+
+                .auth-container {
+                    width: 90%;
+                    max-width: 350px;
+                    padding: 16px;
+                }
+                    
+                .sign-up-button,
+                .sign-in-button {
+                    font-size: 14px;
+                    padding: 10px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .auth-container {
+                    padding: 12px;
+                    width: 95%;
+                }
+                .sign-up-button,
+                .sign-in-button {
+                    font-size: 14px;
+                    padding: 8px;
+                }
+                
             `}</style>
         </div>
     );

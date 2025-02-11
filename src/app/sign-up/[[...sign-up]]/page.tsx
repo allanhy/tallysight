@@ -3,9 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import * as Clerk from '@clerk/elements/common'
 import * as SignUp from '@clerk/elements/sign-up'
+import ReCAPTCHA from 'react-google-recaptcha';
+import axios from 'axios';
 
 export default function SignUpPage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -15,6 +19,27 @@ export default function SignUpPage() {
       html.classList.remove('dark');
     }
   }, [theme]);
+
+  const handleRecaptcha = (token: string | null) => {
+    setRecaptchaToken(token);
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!recaptchaToken) {
+      alert('Please complete the reCAPTCHA');
+      return;
+    }
+
+    // Send the recaptchaToken to your server
+    try {
+      const response = await axios.post('http://localhost:3000/api/sign-up', { recaptchaToken });
+      alert(response.data.message); 
+    } catch (error: any) {
+      console.error(error); 
+      alert(error.response?.data?.message || 'An error occurred'); 
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
@@ -122,6 +147,10 @@ export default function SignUpPage() {
                 <Clerk.FieldError className="mt-2 block text-xs text-rose-400" />
               </Clerk.Field>
             </div>
+            <ReCAPTCHA
+              sitekey="6LfmD9AqAAAAAEOUXYEpH539_o9DGUS4b4YjkQYj"
+              onChange={handleRecaptcha}
+            />
             <SignUp.Action
               submit
               className="relative isolate w-full rounded-lg bg-blue-600 px-3.5 py-2.5 text-center text-sm font-medium text-white shadow-[0_1px_0_0_theme(colors.white/30%)_inset,0_-1px_1px_0_theme(colors.black/5%)_inset] outline-none before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-blue-100 before:opacity-0 hover:before:opacity-100 transition-opacity duration-200 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-gray-800 active:bg-blue-700 active:text-gray-200"
