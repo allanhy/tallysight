@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 //yo does this work?
@@ -116,7 +115,7 @@ export default function Home() {
               <div className="bg-gray-600 h-[200px] w-full bg-opacity-25 translate-y-[250px]" />
               
               {/* Leaderboard */}
-              <div className="justify-center">
+              <div className="relative transform translate-y-56 mb-32 w-full">
                 <Leaderboard />
               </div>
             </div>

@@ -2,8 +2,6 @@ import express from 'express';
 import {Pool} from 'pg';
 import dotenv from 'dotenv';
 import next from 'next';
-import axios from 'axios';
-import bodyParser from 'body-parser';
 
 dotenv.config();
 
@@ -20,20 +18,6 @@ const pool = new Pool ({
 
 app.prepare().then(() => {
   const server = express();
-  server.use(bodyParser.json());
-
-
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY; 
-
-  const verifyRecaptcha = async (token) => {
-    const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify`, null, {
-      params: {
-        secret: secretKey,
-        response: token,
-      },
-    });
-    return response.data.success; 
-  };
 
   // Route to get data from the "Users" table
   server.get('/users', async (req, res) => {
@@ -57,18 +41,6 @@ app.prepare().then(() => {
       console.error(err);
       res.status(500).json({ error: 'Database error' });
     }
-  });
-
-  server.post('/api/sign-up', async (req, res) => {
-    const { recaptchaToken } = req.body; 
-
-    const isVerified = await verifyRecaptcha(recaptchaToken);
-    
-    if (!isVerified) {
-      return res.status(400).json({ message: 'reCAPTCHA verification failed' });
-    }
-
-    res.status(200).json({ message: 'Sign-up successful!' });
   });
 
   // Handle other routes

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from 'next/server';
 
 const ESPN_API_BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
@@ -10,7 +9,6 @@ export async function GET() {
     const scheduleData = await scheduleResponse.json();
 
     // Transform ESPN data to match your Game interface
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const games = scheduleData.events.map((event: any) => {
       const { id, name, date, status, competitions } = event;
       const game = event.competitions[0];
