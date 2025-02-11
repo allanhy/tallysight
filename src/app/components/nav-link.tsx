@@ -4,6 +4,7 @@
 
 import Link from 'next/link';
 import { useSelectedLayoutSegment } from 'next/navigation';
+import { ReactNode } from 'react';
 
 
 interface NavLinkProps {
