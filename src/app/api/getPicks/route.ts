@@ -22,20 +22,8 @@ export async function GET(request: NextRequest) {
             where: {
                 userId: userId
             },
-            select: {
-                id: true,
-                gameId: true,
-                teamIndex: true,
-                createdAt: true,
-                game: {
-                    select: {
-                        id: true,
-                        team1Name: true,
-                        team2Name: true,
-                        team1Logo: true,
-                        team2Logo: true
-                    }
-                }
+            include: {
+                game: true
             },
             orderBy: {
                 createdAt: 'desc'
