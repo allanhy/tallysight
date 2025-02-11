@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
@@ -29,7 +29,7 @@ interface Pick {
     contestDate: string;
 }
 
-function DailyPicks() {
+export default function DailyPicksPage() {
     const [games, setGames] = useState<Game[]>([]);
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
     const [starredPicks, setStarredPicks] = useState<Set<string>>(new Set());
@@ -334,13 +334,5 @@ function DailyPicks() {
                 </div>
             </div>
         </div>
-    );
-}
-
-export default function DailyPicksPage() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <DailyPicks />
-        </Suspense>
     );
 }
