@@ -10,43 +10,46 @@
     margin-bottom: 1em;
     padding: 10px;
     
-    border: 1px solid #ddd;
+    border: 1px solid #2a2c33;
     border-radius: 4px;
-    background-color: #fff;
+    background-color: #42464f;
     
-    font-size: 10px;
+    font-size: 1em;
     font-weight: bold;
     max-width: 800px;
 }
 
 .rank {
-    font-size: 1.4em;
+
     font-weight: bold;
-    color: #333;
+    color: #fff;
     width: 25px;
     text-align: left;
+    padding-right: 3em;
+    padding-left: 1em;
 }
 
 .image {
-    width: 40px;
-    height: 40px;
+    height: 40%;
+    width: 40%;
+    max-height: 60px;
+    max-width: 60px;
     border-radius: 50%;
-    object-fit: cover;
     margin-right: 10px;
 }
 
 .username {
-    font-size: 1.2em;
+
     font-weight: bold;
-    color: #333;
+    color: #fff;
     flex-grow: 1;
     text-align: left;
 }
 
 .points {
-    font-size: 1.2em;
+
     font-weight: bold;
-    color: #333;
+    color: #fff;
     width: 50px;
     text-align: center;
     margin-left: 5px;
@@ -54,13 +57,13 @@
 
 @media (max-width: 600px) {
     .profile {
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         text-align: center;
     }
 
     .rank, .points {
-        width: 100%;
+        width: 40%;
         text-align: center;
         margin-bottom: 5px;
     }

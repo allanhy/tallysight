@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     `);
 
     let query = `SELECT * FROM users`;
-    let values = [];
+    let values;
 
     if(userIds){
       const idArray = userIds.split(',').map(id => parseInt(id.trimEnd(), 10));

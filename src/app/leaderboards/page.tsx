@@ -107,13 +107,13 @@ export default function Page() {
 
                 .sign-up-button {
                     width: 100%;
-                    padding: 12px;
+                    padding: 10em;
                     background-color: #2563eb;
                     color: white;
                     border: none;
                     border-radius: 4px;
                     font-size: 16px;
-                    margin-bottom: 12px;
+                    margin-bottom: 1em;
                     cursor: pointer;
                     font-weight: bold;
                     transition: background-color 0.2s;
