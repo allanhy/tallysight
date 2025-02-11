@@ -1,15 +1,17 @@
-import { auth } from '@clerk/nextjs/server';
-import { clerkClient } from '@clerk/nextjs';
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs';
+import { PrismaClient } from '@prisma/client';
 
-export async function POST(req: Request) {
+const prisma = new PrismaClient();
+
+export async function POST(request: Request) {
     try {
         const { userId } = auth();
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { picks } = await req.json();
+        const { picks } = await request.json();
 
         // Save picks to Clerk user metadata
         const user = await clerkClient.users.getUser(userId);
