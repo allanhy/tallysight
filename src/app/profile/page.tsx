@@ -19,7 +19,7 @@ const Profile = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const onSubmit = (data : any) => {
+    const onSubmit = async (data : any) => {
         try {
             await user!.update({
                 username: data.username,
