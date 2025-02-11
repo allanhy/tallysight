@@ -7,7 +7,7 @@ export default function ContestsPage() {
     const router = useRouter();
     const { isSignedIn } = useUser();
 
-    const nextFiveDays = Array.from({length: 5}, (_, i) => {
+    const nextTwoDays = Array.from({length: 2}, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() + i);
         return {
@@ -33,7 +33,7 @@ export default function ContestsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Daily NBA Pick Cards */}
-                {nextFiveDays.map((day) => (
+                {nextTwoDays.map((day) => (
                     <div key={day.date.toISOString()} className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg shadow-lg border border-gray-700 overflow-hidden">
                         <div className="p-6 bg-blue-600">
                             <h3 className="text-xl font-bold text-white">{day.label} NBA Picks</h3>

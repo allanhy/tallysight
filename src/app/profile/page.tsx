@@ -2,10 +2,81 @@
 
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import ImageCropper from "../components/imageCropper";
+
+interface Team {
+    name: string;
+    logo: string;
+}
+
+interface Game {
+    team1: Team;
+    team2: Team;
+}
+
+interface Pick {
+    id: string;
+    gameId: string;
+    teamIndex: number;
+    createdAt: string;
+    game: {
+        id: string;
+        team1Name: string;
+        team2Name: string;
+        team1Logo: string;
+        team2Logo: string;
+    };
+}
+
+interface GroupedPicks {
+    [date: string]: Pick[];
+}
+
+const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString();
+};
+
+const PickCard = ({ pick }: { pick: Pick }) => {
+    // Get the selected and opponent team names based on teamIndex
+    const selectedTeam = pick.teamIndex === 0 ? pick.game.team1Name : pick.game.team2Name;
+    const opponentTeam = pick.teamIndex === 0 ? pick.game.team2Name : pick.game.team1Name;
+
+    return (
+        <div className="p-4 bg-gray-800 rounded-lg shadow-lg">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-4">
+                    {/* Selected Team */}
+                    <div className="bg-blue-500/20 px-4 py-2 rounded-lg">
+                        <span className="text-blue-400 font-bold">
+                            {selectedTeam} ✓
+                        </span>
+                    </div>
+
+                    <span className="text-gray-400">vs</span>
+
+                    {/* Opponent Team */}
+                    <div className="px-4 py-2">
+                        <span className="text-gray-400">
+                            {opponentTeam}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-400">
+                        {new Date(pick.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm">
+                        Pending
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const Profile = () => {
     const router = useRouter();
@@ -14,9 +85,44 @@ const Profile = () => {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showCropper, setShowCropper] = useState(false);
+    const [picks, setPicks] = useState<Pick[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Hook to manage form inputs and validation
     const { register, handleSubmit, formState: { errors } } = useForm();
+
+    useEffect(() => {
+        async function fetchPicks() {
+            if (!isSignedIn) {
+                setIsLoading(false);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/getPicks');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.picks) {
+                    throw new Error('No picks data received');
+                }
+                
+                setPicks(data.picks);
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching picks:', err);
+                setError('Failed to load picks. Please try again later.');
+                setPicks([]);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        fetchPicks();
+    }, [isSignedIn]);
 
     // Handles form submission for when user updates profile info.
     const onSubmit = async (data: any) => {
@@ -57,6 +163,18 @@ const Profile = () => {
         } catch (error) {
             console.error("Error uploading cropped image:", error);
         }
+    };
+
+    // Group picks by date
+    const groupPicksByDate = (picks: Pick[]) => {
+        return picks.reduce((groups: GroupedPicks, pick) => {
+            const date = new Date(pick.createdAt).toLocaleDateString();
+            if (!groups[date]) {
+                groups[date] = [];
+            }
+            groups[date].push(pick);
+            return groups;
+        }, {});
     };
 
     if (!isLoaded || !isSignedIn) return null;
@@ -101,7 +219,55 @@ const Profile = () => {
                 return (
                     <div>
                         <h2 className="text-2xl font-semibold mb-4 text-gray-700">My Picks</h2>
-                        <p className="text-gray-700">Here it will show users past picks and if they hit or not.</p>
+                        <div className="space-y-6">
+                            {Object.entries(groupPicksByDate(picks)).map(([date, datePicks]) => (
+                                <div key={date} className="space-y-2">
+                                    <h3 className="text-lg font-semibold text-gray-400">{date}</h3>
+                                    {datePicks.map((pick) => {
+                                        const selectedTeam = pick.teamIndex === 0 ? pick.game.team1Name : pick.game.team2Name;
+                                        const opposingTeam = pick.teamIndex === 0 ? pick.game.team2Name : pick.game.team1Name;
+
+                                        return (
+                                            <div 
+                                                key={pick.id} 
+                                                className="bg-gray-700 rounded-lg p-4 flex justify-between items-center"
+                                            >
+                                                <div className="flex items-center space-x-4">
+                                                    {selectedTeam && (
+                                                        <div className="flex items-center">
+                                                            <Image
+                                                                src={selectedTeam}
+                                                                alt={selectedTeam}
+                                                                width={40}
+                                                                height={40}
+                                                                className="rounded-full"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="text-gray-400 mb-1">Game {pick.gameId}</p>
+                                                        <p className="text-lg text-blue-400">
+                                                            {selectedTeam}
+                                                        </p>
+                                                        {opposingTeam && (
+                                                            <p className="text-sm text-gray-400">
+                                                                vs {opposingTeam}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="text-gray-400">
+                                                    Pending
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                            {picks.length === 0 && (
+                                <p className="text-gray-400 text-center py-4">No picks made yet</p>
+                            )}
+                        </div>
                     </div>
                 )
             case 'Activity':

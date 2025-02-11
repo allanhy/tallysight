@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 
+
 interface Team {
     name: string;
     spread: string;
@@ -20,6 +21,12 @@ interface Game {
     broadcast?: string;
     status: string;
     isAvailable?: boolean;
+}
+
+interface Pick {
+    gameId: string;
+    selectedTeam: string;
+    contestDate: string;
 }
 
 export default function DailyPicksPage() {
@@ -88,6 +95,48 @@ export default function DailyPicksPage() {
             newPicks.delete(opposingPickId);
         }
         setSelectedPicks(newPicks);
+    };
+
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        
+        if (!isSignedIn) {
+            alert('Please sign in to save picks');
+            return;
+        }
+
+        try {
+            const picksToSave = Array.from(selectedPicks).map(pickId => {
+                const [gameId, teamIndex] = pickId.split('-');
+                const game = games.find(g => g.id === gameId);
+                
+                return {
+                    gameId,
+                    teamIndex: parseInt(teamIndex)
+                };
+            });
+
+            const response = await fetch('/api/savePicks', {  // Updated endpoint path
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    picks: picksToSave
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save picks');
+            }
+
+            alert('Picks saved successfully!');
+            setSelectedPicks(new Set());
+            
+        } catch (error) {
+            console.error('Error saving picks:', error);
+            alert('Failed to save picks');
+        }
     };
 
     if (isLoading) {
@@ -269,17 +318,19 @@ export default function DailyPicksPage() {
             {/* Submit Button */}
             <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-gray-800 to-gray-900 shadow-lg border-t border-gray-700 p-4">
                 <div className="max-w-7xl mx-auto px-4">
-                    <button 
-                        onClick={() => {/* Handle submission */}}
-                        disabled={selectedPicks.size === 0}
-                        className={`w-full py-3 rounded-lg font-bold transition-colors ${
-                            selectedPicks.size === 0
-                                ? 'bg-gray-600 cursor-not-allowed'
-                                : 'bg-blue-500 hover:bg-blue-600'
-                        }`}
-                    >
-                        Submit Picks ({selectedPicks.size})
-                    </button>
+                    <form onSubmit={handleSubmit}>
+                        <button 
+                            type="submit"
+                            disabled={selectedPicks.size === 0}
+                            className={`w-full py-3 rounded-lg font-bold transition-colors ${
+                                selectedPicks.size === 0
+                                    ? 'bg-gray-600 cursor-not-allowed'
+                                    : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                        >
+                            Submit Picks ({selectedPicks.size})
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
