@@ -78,12 +78,6 @@ const PickCard = ({ pick }: { pick: Pick }) => {
     );
 };
 
-/**
- * Profile component that displays user's picks
- * Fetches picks from the API and displays them in a card format
- * Shows loading state while fetching and error state if fetch fails
- * Only visible to authenticated users
- */
 const Profile = () => {
     const router = useRouter();
     const { isLoaded, isSignedIn, user } = useUser();
@@ -95,6 +89,7 @@ const Profile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Hook to manage form inputs and validation
     const { register, handleSubmit, formState: { errors } } = useForm();
 
     useEffect(() => {
