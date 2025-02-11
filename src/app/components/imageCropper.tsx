@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Cropper from "react-easy-crop";
 
@@ -32,7 +31,6 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ imageFile, onCropComplete, 
     const onZoomChange = useCallback((zoom: number) => setZoom(zoom), []);
 
     const onCropCompleteHandler = useCallback(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_: any, croppedAreaPixels: { width: number; height: number; x: number; y: number }) => {
             setCroppedAreaPixels(croppedAreaPixels);
         },

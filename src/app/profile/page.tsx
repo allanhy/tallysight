@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import ImageCropper from "../components/imageCropper";
@@ -101,7 +101,55 @@ const Profile = () => {
                 return (
                     <div>
                         <h2 className="text-2xl font-semibold mb-4 text-gray-700">My Picks</h2>
-                        <p className="text-gray-700">Here it will show users past picks and if they hit or not.</p>
+                        <div className="space-y-6">
+                            {Object.entries(groupPicksByDate(picks)).map(([date, datePicks]) => (
+                                <div key={date} className="space-y-2">
+                                    <h3 className="text-lg font-semibold text-gray-400">{date}</h3>
+                                    {datePicks.map((pick) => {
+                                        const selectedTeam = pick.teamIndex === 0 ? pick.game.team1Name : pick.game.team2Name;
+                                        const opposingTeam = pick.teamIndex === 0 ? pick.game.team2Name : pick.game.team1Name;
+
+                                        return (
+                                            <div 
+                                                key={pick.id} 
+                                                className="bg-gray-700 rounded-lg p-4 flex justify-between items-center"
+                                            >
+                                                <div className="flex items-center space-x-4">
+                                                    {selectedTeam && (
+                                                        <div className="flex items-center">
+                                                            <Image
+                                                                src={selectedTeam}
+                                                                alt={selectedTeam}
+                                                                width={40}
+                                                                height={40}
+                                                                className="rounded-full"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="text-gray-400 mb-1">Game {pick.gameId}</p>
+                                                        <p className="text-lg text-blue-400">
+                                                            {selectedTeam}
+                                                        </p>
+                                                        {opposingTeam && (
+                                                            <p className="text-sm text-gray-400">
+                                                                vs {opposingTeam}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="text-gray-400">
+                                                    Pending
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                            {picks.length === 0 && (
+                                <p className="text-gray-400 text-center py-4">No picks made yet</p>
+                            )}
+                        </div>
                     </div>
                 )
             case 'Activity':
