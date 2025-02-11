@@ -33,6 +33,29 @@ const responsive = {
   }
 };
 
+// Add custom arrow components
+const CustomRightArrow = ({ onClick }: { onClick?: () => void }) => (
+  <button
+    onClick={onClick}
+    className="absolute right-0 md:right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/55 p-2 rounded-full shadow-md z-10"
+  >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M9 6l6 6-6 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </button>
+);
+
+const CustomLeftArrow = ({ onClick }: { onClick?: () => void }) => (
+  <button
+    onClick={onClick}
+    className="absolute left-0 md:left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/55 p-2 rounded-full shadow-md z-10"
+  >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <path d="M15 18l-6-6 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </button>
+);
+
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
   const carouselRef = useRef<any>(null);
@@ -59,14 +82,13 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Carousel Section */}
         <div className="relative mb-20">
-          <div className="px-8">
+          <div className="px-2 md:px-8">
             <Carousel
               ref={carouselRef}
               responsive={responsive}
               infinite={true}
               centerMode={false}
               partialVisible={false}
-              arrows={true}
               swipeable={true}
               draggable={true}
               showDots={false}
@@ -78,11 +100,9 @@ export default function Home() {
               dotListClass="custom-dot-list-style"
               minimumTouchDrag={80}
               ssr={true}
-              renderButtonGroupOutside={false}
-              renderDotsOutside={false}
-              removeArrowOnDeviceType={["tablet", "mobile"]}
-              rewind={false}
-              rewindWithAnimation={false}
+              customRightArrow={<CustomRightArrow />}
+              customLeftArrow={<CustomLeftArrow />}
+              removeArrowOnDeviceType={[]}
             >
               {games.map((game, index) => (
                 <div key={`${game.id}-${index}`} className="h-full">

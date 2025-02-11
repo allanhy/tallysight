@@ -168,13 +168,13 @@ const Profile = () => {
         };
 
         return (
-            <div className="h-[80vh] p-8 flex items-center justify-center">
-                <div className="flex w-full h-full max-w-[80vw] bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="h-auto p-4 md:p-8 flex items-center justify-center">
+                <div className="flex flex-col md:flex-row w-full h-full max-w-[80vw] bg-white rounded-lg shadow-lg overflow-hidden">
                 
                     {/* Left Section of profile screen */}
-                    <div className="w-1/6 bg-gray-50 p-6 flex flex-col items-center">
+                    <div className="w-full md:w-1/6 bg-gray-50 p-4 md:p-6 flex flex-col items-center">
                         {/* Pfp that can be changed via clicking and selecting file */}
-                        <div className="relative w-24 h-24 cursor-pointer group" onClick={handleImageClick}>
+                        <div className="relative w-20 h-20 md:w-24 md:h-24 cursor-pointer group" onClick={handleImageClick}>
                             <div className="absolute inset-0 bg-gray-800/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <Image
                                 src={user.imageUrl}
@@ -233,8 +233,8 @@ const Profile = () => {
                         </ul>
                     </div>
         
-                    {/* Left Section of profile screen (Changed by setSelectedSection) */}
-                    <div className="w-5/6 p-8 overflow-y-auto">
+                    {/* Right Section of profile screen (Changed by setSelectedSection) */}
+                    <div className="w-full md:w-5/6 p-4 md:p-8 overflow-y-auto">
                         {renderContent()}
                     </div>
                 </div>
