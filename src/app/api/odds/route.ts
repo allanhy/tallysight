@@ -1,76 +1,71 @@
 import { NextResponse } from 'next/server';
 
-// ESPN CDN URLs for NBA team logos
-const NBA_TEAM_LOGOS: { [key: string]: string } = {
-  'Atlanta Hawks': 'https://a.espncdn.com/i/teamlogos/nba/500/atl.png',
-  'Boston Celtics': 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
-  'Brooklyn Nets': 'https://a.espncdn.com/i/teamlogos/nba/500/bkn.png',
-  'Charlotte Hornets': 'https://a.espncdn.com/i/teamlogos/nba/500/cha.png',
-  'Chicago Bulls': 'https://a.espncdn.com/i/teamlogos/nba/500/chi.png',
-  'Cleveland Cavaliers': 'https://a.espncdn.com/i/teamlogos/nba/500/cle.png',
-  'Dallas Mavericks': 'https://a.espncdn.com/i/teamlogos/nba/500/dal.png',
-  'Denver Nuggets': 'https://a.espncdn.com/i/teamlogos/nba/500/den.png',
-  'Detroit Pistons': 'https://a.espncdn.com/i/teamlogos/nba/500/det.png',
-  'Golden State Warriors': 'https://a.espncdn.com/i/teamlogos/nba/500/gs.png',
-  'Houston Rockets': 'https://a.espncdn.com/i/teamlogos/nba/500/hou.png',
-  'Indiana Pacers': 'https://a.espncdn.com/i/teamlogos/nba/500/ind.png',
-  'LA Clippers': 'https://a.espncdn.com/i/teamlogos/nba/500/lac.png',
-  'Los Angeles Lakers': 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
-  'Memphis Grizzlies': 'https://a.espncdn.com/i/teamlogos/nba/500/mem.png',
-  'Miami Heat': 'https://a.espncdn.com/i/teamlogos/nba/500/mia.png',
-  'Milwaukee Bucks': 'https://a.espncdn.com/i/teamlogos/nba/500/mil.png',
-  'Minnesota Timberwolves': 'https://a.espncdn.com/i/teamlogos/nba/500/min.png',
-  'New Orleans Pelicans': 'https://a.espncdn.com/i/teamlogos/nba/500/no.png',
-  'New York Knicks': 'https://a.espncdn.com/i/teamlogos/nba/500/ny.png',
-  'Oklahoma City Thunder': 'https://a.espncdn.com/i/teamlogos/nba/500/okc.png',
-  'Orlando Magic': 'https://a.espncdn.com/i/teamlogos/nba/500/orl.png',
-  'Philadelphia 76ers': 'https://a.espncdn.com/i/teamlogos/nba/500/phi.png',
-  'Phoenix Suns': 'https://a.espncdn.com/i/teamlogos/nba/500/phx.png',
-  'Portland Trail Blazers': 'https://a.espncdn.com/i/teamlogos/nba/500/por.png',
-  'Sacramento Kings': 'https://a.espncdn.com/i/teamlogos/nba/500/sac.png',
-  'San Antonio Spurs': 'https://a.espncdn.com/i/teamlogos/nba/500/sa.png',
-  'Toronto Raptors': 'https://a.espncdn.com/i/teamlogos/nba/500/tor.png',
-  'Utah Jazz': 'https://a.espncdn.com/i/teamlogos/nba/500/utah.png',
-  'Washington Wizards': 'https://a.espncdn.com/i/teamlogos/nba/500/wsh.png'
+// ESPN CDN URLs for NFL team logos
+const NFL_TEAM_LOGOS: { [key: string]: string } = {
+  'Philadelphia Eagles': 'https://a.espncdn.com/i/teamlogos/nfl/500/phi.png',
+  'Washington Commanders': 'https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png',
+  'Pittsburgh Steelers': 'https://a.espncdn.com/i/teamlogos/nfl/500/pit.png',
+  'Baltimore Ravens': 'https://a.espncdn.com/i/teamlogos/nfl/500/bal.png',
+  'Chicago Bears': 'https://a.espncdn.com/i/teamlogos/nfl/500/chi.png',
+  'Green Bay Packers': 'https://a.espncdn.com/i/teamlogos/nfl/500/gb.png',
+  'New Orleans Saints': 'https://a.espncdn.com/i/teamlogos/nfl/500/no.png',
+  'Cleveland Browns': 'https://a.espncdn.com/i/teamlogos/nfl/500/cle.png',
+  'Detroit Lions': 'https://a.espncdn.com/i/teamlogos/nfl/500/det.png',
+  'Jacksonville Jaguars': 'https://a.espncdn.com/i/teamlogos/nfl/500/jax.png',
+  'New York Jets': 'https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png',
+  'Indianapolis Colts': 'https://a.espncdn.com/i/teamlogos/nfl/500/ind.png',
+  'Miami Dolphins': 'https://a.espncdn.com/i/teamlogos/nfl/500/mia.png',
+  'Las Vegas Raiders': 'https://a.espncdn.com/i/teamlogos/nfl/500/lv.png',
+  'New England Patriots': 'https://a.espncdn.com/i/teamlogos/nfl/500/ne.png',
+  'Los Angeles Rams': 'https://a.espncdn.com/i/teamlogos/nfl/500/lar.png',
+  'Tennessee Titans': 'https://a.espncdn.com/i/teamlogos/nfl/500/ten.png',
+  'Minnesota Vikings': 'https://a.espncdn.com/i/teamlogos/nfl/500/min.png',
+  'Denver Broncos': 'https://a.espncdn.com/i/teamlogos/nfl/500/den.png',
+  'Atlanta Falcons': 'https://a.espncdn.com/i/teamlogos/nfl/500/atl.png',
+  'San Francisco 49ers': 'https://a.espncdn.com/i/teamlogos/nfl/500/sf.png',
+  'Seattle Seahawks': 'https://a.espncdn.com/i/teamlogos/nfl/500/sea.png',
+  'Buffalo Bills': 'https://a.espncdn.com/i/teamlogos/nfl/500/buf.png',
+  'Kansas City Chiefs': 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png',
+  'Arizona Cardinals': 'https://a.espncdn.com/i/teamlogos/nfl/500/ari.png',
+  'Carolina Panthers': 'https://a.espncdn.com/i/teamlogos/nfl/500/car.png',
+  'Cincinnati Bengals': 'https://a.espncdn.com/i/teamlogos/nfl/500/cin.png',
+  'Dallas Cowboys': 'https://a.espncdn.com/i/teamlogos/nfl/500/dal.png',
+  'Houston Texans': 'https://a.espncdn.com/i/teamlogos/nfl/500/hou.png',
+  'Los Angeles Chargers': 'https://a.espncdn.com/i/teamlogos/nfl/500/lac.png',
+  'New York Giants': 'https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png',
+  'Tampa Bay Buccaneers': 'https://a.espncdn.com/i/teamlogos/nfl/500/tb.png'
 };
 
-export async function GET(request: Request) {
-  const apiKey = process.env.ODDS_API_KEY;
-  const sport = 'basketball_nba';
-  
+export async function GET() {
   try {
-    const response = await fetch(`https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${apiKey}&regions=us&markets=spreads`);
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
+    const API_KEY = process.env.ODDS_API_KEY;
+    const [oddsResponse, espnResponse] = await Promise.all([
+      fetch(
+        `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=${API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`,
+        { cache: 'no-store' }
+      ),
+      fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')
+    ]);
+
+    if (!oddsResponse.ok) {
+      throw new Error(`Odds API responded with status: ${oddsResponse.status}`);
     }
 
-    const data = await response.json();
+    const rawData = await oddsResponse.json();
+    const espnData = await espnResponse.json();
 
-    // Transform the data into the format your frontend expects
-    const games = data.map((game: any) => ({
-      id: game.id,
-      date: game.commence_time,
-      team1: {
-        name: game.home_team,
-        spread: game.bookmakers?.[0]?.markets?.[0]?.outcomes?.[0]?.point || 'N/A',
-        logo: NBA_TEAM_LOGOS[game.home_team] || 'https://a.espncdn.com/i/teamlogos/default-team-logo-500.png'
-      },
-      team2: {
-        name: game.away_team,
-        spread: game.bookmakers?.[0]?.markets?.[0]?.outcomes?.[1]?.point || 'N/A',
-        logo: NBA_TEAM_LOGOS[game.away_team] || 'https://a.espncdn.com/i/teamlogos/default-team-logo-500.png'
-      },
-      status: 'scheduled',
-      isAvailable: true
-    }));
+    // Get current date and filter for upcoming week's games
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
+    const daysFromWednesday = (dayOfWeek + 4) % 8; // Days since last Wednesday 
+    const daysUntilTuesday = (8 - dayOfWeek) % 7; // Days until next Tuesday
 
     return NextResponse.json({ games });
   } catch (error) {
     console.error('Error in odds API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch odds', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to fetch odds data' },
       { status: 500 }
     );
   }
-}
+} 

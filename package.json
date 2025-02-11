@@ -15,7 +15,6 @@
     "@clerk/clerk-sdk-node": "^5.0.59",
     "@clerk/elements": "^0.18.0",
     "@clerk/nextjs": "^6.2.0",
-    "@heroicons/react": "^2.2.0",
     "@prisma/client": "^5.22.0",
     "@types/react-easy-crop": "^1.16.0",
     "@vercel/postgres": "^0.10.0",
@@ -31,7 +30,7 @@
     "prisma": "^5.22.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-easy-crop": "^5.2.0",
+    "react-google-recaptcha": "^3.1.0",
     "react-hook-form": "^7.53.2",
     "react-multi-carousel": "^2.8.5",
     "svix": "^1.39.0"
