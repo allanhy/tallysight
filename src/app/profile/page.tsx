@@ -89,7 +89,6 @@ const Profile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Hook to manage form inputs and validation
     const { register, handleSubmit, formState: { errors } } = useForm();
 
     useEffect(() => {

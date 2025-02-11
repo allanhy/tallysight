@@ -34,7 +34,8 @@
     "react-easy-crop": "^5.2.0",
     "react-hook-form": "^7.53.2",
     "react-multi-carousel": "^2.8.5",
-    "svix": "^1.39.0"
+    "svix": "^1.39.0",
+    "tallysight": "file:"
   },
   "devDependencies": {
     "@types/node": "^20",
