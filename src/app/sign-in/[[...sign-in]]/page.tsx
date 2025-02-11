@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import React, { useState, useEffect } from 'react';
@@ -29,7 +28,7 @@ export default function SignInPage() {
           Log in
         </div>
         <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
-          Welcome back, let&apos;s play!
+          Welcome back, let's play!
         </h1>
       </header>
 
@@ -106,7 +105,7 @@ export default function SignInPage() {
             </SignIn.Action>
 
             <div className="text-center text-sm text-gray-600 w-full mt-6">
-              <span className="font-bold">Don&apos;t have an account?</span>{' '}
+              <span className="font-bold">Don't have an account?</span>{' '}
               <a
                 href="/sign-up"
                 className="text-blue-600 underline decoration-blue-600/30 underline-offset-4 outline-none hover:underline focus-visible:underline font-medium"
@@ -157,7 +156,7 @@ export default function SignInPage() {
               </SignIn.Action>
             </SignIn.Strategy>
             <p className="text-center text-sm text-gray-600">
-              <span className="font-bold">Don&apos;t have an account?</span>{' '}
+              <span className="font-bold">Don't have an account?</span>{' '}
               <a
                 href="#"
                 className="text-blue-600 decoration-blue-600/30 underline-offset-4 outline-none hover:underline focus-visible:underline"
