@@ -1,35 +1,22 @@
-import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
     try {
-        // Log auth status
-        const auth = getAuth(request);
-        console.log('Auth status:', auth);
+        const { userId } = getAuth(request);
         
-        const { userId } = auth;
-        console.log('UserId:', userId);
-
         if (!userId) {
-            console.log('No userId found - returning unauthorized');
-            return NextResponse.json({ 
-                picks: [], 
-                error: 'Unauthorized' 
-            }, { 
-                status: 401 
-            });
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
         }
 
-        // Log database connection attempt
-        console.log('Attempting to connect to database...');
-        
-        // Test database connection
-        await prisma.$connect();
-        console.log('Database connected successfully');
-
-        // Log query attempt
-        console.log('Attempting to fetch picks for userId:', userId);
+        // Add debug logs
+        console.log('Fetching picks for user:', userId);
 
         const picks = await prisma.pick.findMany({
             where: {
@@ -37,27 +24,42 @@ export async function GET(request: NextRequest) {
             },
             include: {
                 game: true
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
         });
 
-        console.log('Successfully fetched picks:', picks);
+        console.log('Found picks:', picks.length);
 
-        return NextResponse.json({ picks });
+        if (!picks) {
+            return NextResponse.json({ picks: [] });
+        }
+
+        // Group picks by game and date
+        const uniquePicks = picks.reduce((acc, pick) => {
+            const date = new Date(pick.createdAt).toDateString();
+            const key = `${pick.gameId}-${date}`;
+            
+            if (!acc[key] || new Date(pick.createdAt) > new Date(acc[key].createdAt)) {
+                acc[key] = pick;
+            }
+            
+            return acc;
+        }, {} as Record<string, typeof picks[0]>);
+
+        const filteredPicks = Object.values(uniquePicks).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        return NextResponse.json({ picks: filteredPicks });
 
     } catch (error) {
-        // Enhanced error logging
-        console.error('GetPicks API Error:', {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-            type: error instanceof Error ? error.constructor.name : typeof error
-        });
-        
-        return NextResponse.json({
-            picks: [],
-            error: error instanceof Error ? error.message : 'Failed to fetch picks'
-        }, { 
-            status: 500 
-        });
+        console.error('GetPicks API Error:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch picks', details: error instanceof Error ? error.message : 'Unknown error' },
+            { status: 500 }
+        );
     } finally {
         await prisma.$disconnect();
     }
