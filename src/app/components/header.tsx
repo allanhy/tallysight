@@ -1,79 +1,68 @@
-"use client";
-
+'use client';
 
 import './header.css'
 import Image from 'next/image';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import Link from 'next/link'
 import NavLink from './nav-link'
-import { useState } from 'react';
-
+import { useTheme } from '@/context/ThemeContext';
 
 const Header = () => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
-
+    const { theme } = useTheme();
 
     return (
-        <nav className="sticky top-0">
-        <div className='flex items-center justify-between w-full'>
-            <div className='flex items-center space-x-8 pl-10 pt-1'>
-                <Link href='/home'>
-                    <Image src="/TallySight.png"
-                           alt="TallySight Logo"
-                           width={150}
-                           height={100}
-                           quality={100}
-                           className='m1-16'/>
-                </Link>
-                {/* Desktop Navigation */}
-                <ul className='hidden md:flex'>
-                    <li><NavLink href='/leaderboards'>Leaderboards</NavLink></li>
-                    <li><NavLink href='/contests'>Contests</NavLink></li>
-                    <li><NavLink href='/quickPicks'>Quick Picks</NavLink></li>
-                </ul>
-            </div>
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+            <div className="max-w-7xl mx-auto px-4">
+                <div className="flex justify-between h-16">
+                    {/* Left side: Logo */}
+                    <div className="flex items-center">
+                        <Link href="/" className="flex-shrink-0">
+                            <Image
+                                src={theme === 'dark' ? "/Tallysight.png" : "/TallysightDark.png"}
+                                alt="Tallysight"
+                                width={120}
+                                height={32}
+                                priority
+                            />
+                        </Link>
 
-
-            {/* Auth Buttons */}
-            <div className='hidden md:block'>
-                <div className='mr-4 pt-2'>
-                    <SignedOut>
-                        <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                            <SignInButton />
+                        {/* Navigation Links */}
+                        <div className="hidden md:flex ml-10 space-x-8">
+                            <Link 
+                                href="/leaderboards"
+                                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2"
+                            >
+                                Leaderboards
+                            </Link>
+                            <Link 
+                                href="/contests"
+                                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2"
+                            >
+                                Contests
+                            </Link>
+                            <Link 
+                                href="/quick-picks"
+                                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2"
+                            >
+                                Quick Picks
+                            </Link>
                         </div>
-                    </SignedOut>
-                    <SignedIn>
-                        <div className='flex justify-end p-3'>
-                            <UserButton userProfileUrl='/profile'/>
-                        </div>
-                    </SignedIn>
                     </div>
 
-
+                    {/* Right side: Profile */}
+                    <div className="flex items-center">
+                        <SignedOut>
+                            <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
+                                <SignInButton />
+                            </div>
+                        </SignedOut>
+                        <SignedIn>
+                            <div className='flex justify-end p-3'>
+                                <UserButton userProfileUrl='/profile'/>
+                            </div>
+                        </SignedIn>
+                    </div>
                 </div>
-
-
-                {/* Hamburger Menu Button */}
-                <button
-                    className='md:hidden mr-4 text-white'
-                    onClick={toggleMenu}
-                    aria-label="Toggle menu"
-                >
-                    {!isMenuOpen ? (
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    ) : (
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    )}
-                </button>
             </div>
            
             {/* Mobile Navigation */}

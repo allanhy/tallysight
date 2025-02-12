@@ -1,41 +1,34 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Metadata } from "next";
-import localFont from "next/font/local";
-import Header from "./components/header";
-import { ClerkProvider }from '@clerk/nextjs'
-import NProgressHandler from "./components/NProgressHandler"; 
-import "./globals.css";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import { Metadata } from 'next';
+import { ClerkProvider } from '@clerk/nextjs';
+import { ThemeProvider } from '@/context/ThemeContext';
+import Navigation from '@/app/components/header';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "TallySight",
-  description: "Your go-to e-gaming gambling site",
+  title: 'Tallysight',
+  description: 'Your go-to e-gaming gambling site',
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body suppressHydrationWarning>
-          <NProgressHandler /> {/* Add NProgress handler here */}
-          <Header />
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body suppressHydrationWarning={true} className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+        <ClerkProvider>
+          <ThemeProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navigation />
+              <main className="flex-1 pt-16">
+                {children}
+              </main>
+            </div>
+          </ThemeProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

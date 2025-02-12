@@ -4,7 +4,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: black;
+    background: var(--background-color);
     position: relative;
 }
 
@@ -32,7 +32,7 @@
 
 .leaderboard-title {
     font-size: 32px;
-    color: white;
+    color: var(--text-color);
     margin-bottom: 20px;
     text-align: center;
 }
@@ -230,4 +230,14 @@
         font-size: 14px;
         padding: 8px;
     }
+}
+
+:root[data-theme="light"] {
+    --background-color: white;
+    --text-color: black;
+}
+
+:root[data-theme="dark"] {
+    --background-color: black;
+    --text-color: white;
 }
