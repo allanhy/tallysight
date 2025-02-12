@@ -6,6 +6,7 @@ import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import ImageCropper from "../components/imageCropper";
+import PreferencesSettings from '../components/PreferencesSettings';
 
 const Profile = () => {
     const router = useRouter();
@@ -163,6 +164,15 @@ const Profile = () => {
                         </form>
                     </div>
                 );
+            case 'Preferences':
+                return (
+                    <div>
+                        <h2 className="text-2xl font-semibold mb-4 text-gray-700">Preferences</h2>
+                        {/* Render your preferences settings here */}
+                        <PreferencesSettings />
+                    </div>
+                );
+
             default:
                 return null;
             }
@@ -231,9 +241,18 @@ const Profile = () => {
                                     Activity
                                 </button>
                             </li>
-                        </ul>
-                    </div>
-        
+                        <li>
+                            <button
+                                onClick={() => setSelectedSection('Preferences')}
+                                className={`w-full text-left px-4 py-2 rounded-lg ${
+                                    selectedSection === 'Preferences' ? 'bg-[#008AFF] text-white font-semibold shadow-sm' : 'text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                Preferences
+                            </button>
+                        </li>
+                </ul>
+            </div>
                     {/* Left Section of profile screen (Changed by setSelectedSection) */}
                     <div className="w-5/6 p-8 overflow-y-auto">
                         {renderContent()}
