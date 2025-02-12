@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
+import { Suspense } from 'react';
 
 
 interface Team {
@@ -29,7 +30,7 @@ interface Pick {
     contestDate: string;
 }
 
-export default function DailyPicksPage() {
+function DailyPicks() {
     const [games, setGames] = useState<Game[]>([]);
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
     const [starredPicks, setStarredPicks] = useState<Set<string>>(new Set());
@@ -334,5 +335,16 @@ export default function DailyPicksPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function DailyPicksPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center p-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span className="ml-2">Loading games...</span>
+        </div>}>
+            <DailyPicks />
+        </Suspense>
     );
 }

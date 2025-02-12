@@ -1,33 +1,45 @@
-import { auth } from '@clerk/nextjs/server';
-import { clerkClient } from '@clerk/nextjs';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuth } from '@clerk/nextjs/server';
+import { PrismaClient } from '@prisma/client';
 
-export async function POST(req: Request) {
+const prisma = new PrismaClient();
+
+export async function POST(request: NextRequest) {
     try {
-        const { userId } = auth();
+        const { userId } = getAuth(request);
+        
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { picks } = await req.json();
+        const body = await request.json();
+        const { picks } = body;
 
-        // Save picks to Clerk user metadata
-        const user = await clerkClient.users.getUser(userId);
-        const existingPicks = user.privateMetadata.picks || [];
-        
-        await clerkClient.users.updateUser(userId, {
-            privateMetadata: {
-                picks: [...existingPicks, ...picks]
-            }
+        if (!picks || !Array.isArray(picks)) {
+            return NextResponse.json({ error: 'Invalid picks data' }, { status: 400 });
+        }
+
+        // Save picks to database using Prisma
+        const savedPicks = await prisma.pick.createMany({
+            data: picks.map(pick => ({
+                userId,
+                gameId: pick.gameId,
+                teamIndex: pick.teamIndex
+            }))
         });
 
-        return NextResponse.json({ success: true, picks });
+        return NextResponse.json({ 
+            success: true, 
+            picks: savedPicks 
+        });
 
     } catch (error) {
         console.error('Error saving picks:', error);
-        return NextResponse.json(
-            { error: 'Failed to save picks' },
-            { status: 500 }
-        );
+        return NextResponse.json({ 
+            error: 'Failed to save picks',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 });
+    } finally {
+        await prisma.$disconnect();
     }
 } 
