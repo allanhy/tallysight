@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { ClerkProvider } from "@clerk/nextjs";
 import Header from "./components/header";
-import { ClerkProvider }from '@clerk/nextjs'
 import NProgressHandler from "./components/NProgressHandler"; 
 import "./globals.css";
 
@@ -21,18 +21,14 @@ export const metadata: Metadata = {
   description: "Your go-to e-gaming gambling site",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body suppressHydrationWarning>
-          <NProgressHandler /> {/* Add NProgress handler here */}
+        <body className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+          <NProgressHandler />
           <Header />
-          {children}
+          <main>{children}</main>
         </body>
       </html>
     </ClerkProvider>

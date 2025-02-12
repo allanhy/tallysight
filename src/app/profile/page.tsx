@@ -2,10 +2,11 @@
 
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from "react";
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import ImageCropper from "../components/imageCropper";
+import FavoriteTeam, { Team } from "../components/FavoriteTeam";
 
 const Profile = () => {
     const router = useRouter();
@@ -14,6 +15,13 @@ const Profile = () => {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showCropper, setShowCropper] = useState(false);
+//favorite team
+    const [showFavoriteTeamModal, setShowFavoriteTeamModal] = useState(false);
+
+    const [favoriteTeam, setFavoriteTeam] = useState<Team | null>(null);
+    useEffect(() => {
+        console.log("Favorite team state:", favoriteTeam);
+      }, [favoriteTeam]);
 
     // Hook to manage form inputs and validation
     const { register, handleSubmit, formState: { errors } } = useForm();
@@ -58,6 +66,55 @@ const Profile = () => {
             console.error("Error uploading cropped image:", error);
         }
     };
+    
+    //fetching favorite teams
+   useEffect(() => {
+  const fetchFavoriteTeam = async () => {
+    try {
+      const response = await fetch("/api/FavoriteTeams");
+      if (!response.ok) throw new Error("Failed to fetch favorite team");
+
+      const data = await response.json();
+      console.log("Fetched favorite team data:", data);
+
+      if (Array.isArray(data.team) && data.team.length > 0) {
+        setFavoriteTeam(data.team[0]);
+      } else if (data.team && data.team.logoUrl) {
+        // In case your API sometimes returns an object instead of an array
+        setFavoriteTeam(data.team);
+      } else {
+        console.warn("⚠️ No logo URL found in fetched data:", data);
+      }
+    } catch (error) {
+      console.error("Error fetching favorite team:", error);
+    }
+  };
+
+  fetchFavoriteTeam();
+}, []);
+    //handling favorite team
+    const handleFavoriteTeamSave = async (selectedTeam: Team) => {
+        try {
+            console.log("🛠️ Saving favorite team:", selectedTeam); // Log the selected team
+    
+            const response = await fetch("/api/FavoriteTeams", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ team: selectedTeam }),
+            });
+    
+            if (!response.ok) throw new Error("Failed to save favorite team");
+    
+            console.log("✅ Successfully saved favorite team:", selectedTeam);
+            setFavoriteTeam(selectedTeam); // Update UI immediately
+            setShowFavoriteTeamModal(false);
+        } catch (error) {
+            console.error("🚨 Error saving favorite team:", error);
+        }
+    };
+
 
     if (!isLoaded || !isSignedIn) return null;
 
@@ -231,8 +288,19 @@ const Profile = () => {
                                     Activity
                                 </button>
                             </li>
-                        </ul>
-                    </div>
+                             {/* New Navigation Button for Favorite Team */}
+                             <li>
+                             <button
+    onClick={() => setShowFavoriteTeamModal(true)}
+    className={`w-full text-left px-4 py-2 rounded-lg ${
+        selectedSection === 'Favorite Team' ? 'bg-[#008AFF] text-white font-semibold shadow-sm' : 'text-gray-700 hover:bg-gray-200'
+    }`}
+>
+    Favorite Team
+</button>
+                        </li>
+                    </ul>
+                </div>
         
                     {/* Left Section of profile screen (Changed by setSelectedSection) */}
                     <div className="w-5/6 p-8 overflow-y-auto">
@@ -242,6 +310,25 @@ const Profile = () => {
         
                 {showCropper && selectedFile && (
                     <ImageCropper imageFile={selectedFile} onCropComplete={handleCropComplete} onCancel={() => setShowCropper(false)} />
+                )}
+{favoriteTeam && favoriteTeam.logoUrl && (
+  <div style={{ position: "fixed", top: "20px", left: "20px" }}>
+    <div className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 shadow-lg flex items-center justify-center">
+      <img
+        src={favoriteTeam.logoUrl}
+        width="40"
+        height="40"
+        alt={favoriteTeam.name || "Favorite Team Logo"}
+        className="rounded-full"
+      />
+    </div>
+  </div>
+)}
+                {showFavoriteTeamModal && (
+                    <FavoriteTeam
+                        onClose={() => setShowFavoriteTeamModal(false)}
+                        onSave={handleFavoriteTeamSave}
+                    />
                 )}
             </div>
         );
