@@ -1,45 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+import { auth } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs';
+import { NextResponse } from 'next/server';
 
-const prisma = new PrismaClient();
-
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
     try {
-        const { userId } = getAuth(request);
-        
+        const { userId } = auth();
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await request.json();
-        const { picks } = body;
+        const { picks } = await req.json();
 
-        if (!picks || !Array.isArray(picks)) {
-            return NextResponse.json({ error: 'Invalid picks data' }, { status: 400 });
-        }
-
-        // Save picks directly to database instead of Clerk metadata
-        const savedPicks = await prisma.pick.createMany({
-            data: picks.map(pick => ({
-                userId,
-                gameId: pick.gameId,
-                teamIndex: pick.teamIndex
-            }))
+        // Save picks to Clerk user metadata
+        const user = await clerkClient.users.getUser(userId);
+        const existingPicks = user.privateMetadata.picks || [];
+        
+        await clerkClient.users.updateUser(userId, {
+            privateMetadata: {
+                picks: [...existingPicks, ...picks]
+            }
         });
 
-        return NextResponse.json({ 
-            message: 'Picks saved successfully',
-            picks: savedPicks
-        });
+        return NextResponse.json({ success: true, picks });
 
     } catch (error) {
         console.error('Error saving picks:', error);
-        return NextResponse.json({ 
-            error: 'Failed to save picks',
-            details: error instanceof Error ? error.message : 'Unknown error'
-        }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
+        return NextResponse.json(
+            { error: 'Failed to save picks' },
+            { status: 500 }
+        );
     }
 } 

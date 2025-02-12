@@ -9,10 +9,10 @@ export async function GET(request: NextRequest) {
         const { userId } = getAuth(request);
         
         if (!userId) {
-            return NextResponse.json({ 
-                picks: [],
-                error: 'Unauthorized' 
-            });
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
         }
 
         // Add debug logs
@@ -52,19 +52,52 @@ export async function GET(request: NextRequest) {
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
-        return NextResponse.json({
-            picks: filteredPicks || [],
-            success: true
-        });
+        return NextResponse.json({ picks: filteredPicks });
 
     } catch (error) {
         console.error('GetPicks API Error:', error);
-        return NextResponse.json({
-            picks: [],
-            error: 'Failed to fetch picks',
-            details: error instanceof Error ? error.message : 'Unknown error'
-        });
+        return NextResponse.json(
+            { error: 'Failed to fetch picks', details: error instanceof Error ? error.message : 'Unknown error' },
+            { status: 500 }
+        );
     } finally {
         await prisma.$disconnect();
+    }
+}
+
+export async function GETAuth(request: NextRequest) {
+    try {
+        const { userId } = getAuth(request);
+        
+        if (!userId) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
+        // TODO: Replace with your actual database query
+        // This is just example data
+        const picks = [
+            {
+                id: "1",
+                gameId: "game1",
+                teamIndex: 0,
+                createdAt: new Date().toISOString(),
+                game: {
+                    team1: { name: "Team A", logo: "/team-a-logo.png" },
+                    team2: { name: "Team B", logo: "/team-b-logo.png" }
+                }
+            }
+        ];
+
+        return NextResponse.json({ picks });
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        );
     }
 } 
