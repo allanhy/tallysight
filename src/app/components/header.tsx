@@ -6,8 +6,13 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import Link from 'next/link'
 import NavLink from './nav-link'
 import { useTheme } from '@/context/ThemeContext';
+import { useState } from 'react';
 
 const Header = () => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
     const { theme } = useTheme();
 
     return (

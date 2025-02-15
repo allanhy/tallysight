@@ -1,4 +1,3 @@
-// components/FavoriteTeam.tsx
 import { useState, useEffect } from 'react';
 
 export type Team = {
@@ -9,7 +8,7 @@ export type Team = {
 
 type FavoriteTeamsModalProps = {
   onClose: () => void;
-  onSave: (teams: Team[]) => void;
+  onSave: (team: Team) => void;  // Change to accept a single team object
 };
 
 const FavoriteTeamsModal = ({ onClose, onSave }: FavoriteTeamsModalProps) => {
@@ -48,18 +47,20 @@ const FavoriteTeamsModal = ({ onClose, onSave }: FavoriteTeamsModalProps) => {
   };
 
   const handleSave = () => {
-    // Get the full team objects for the selected IDs
-    const favoriteTeams = teams.filter((team) =>
-      selectedTeams.includes(team.id)
-    );
-    onSave(favoriteTeams);
+    if (selectedTeams.length === 1) {
+      // Get the full team object for the selected ID
+      const selectedTeam = teams.find((team) => team.id === selectedTeams[0]);
+      if (selectedTeam) {
+        onSave(selectedTeam); // Pass a single team to onSave
+      }
+    }
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-lg p-6 w-3/4 max-w-lg">
         <h2 className="text-2xl font-bold mb-4 text-[#008AFF]">
-          Select Your Favorite Teams
+          Select Your Favorite Team
         </h2>
         <div className="max-h-60 overflow-y-auto mb-4">
           {isLoading ? (
@@ -103,7 +104,7 @@ const FavoriteTeamsModal = ({ onClose, onSave }: FavoriteTeamsModalProps) => {
           <button
             onClick={handleSave}
             className="px-4 py-2 rounded bg-[#008AFF] hover:bg-blue-600 text-white"
-            disabled={isLoading}
+            disabled={isLoading || selectedTeams.length !== 1} // Disable Save unless one team is selected
           >
             Save
           </button>
