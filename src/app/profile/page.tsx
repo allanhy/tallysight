@@ -1,7 +1,8 @@
 "use client"
 
 import { useUser } from '@clerk/nextjs';
-import Image from 'next/image';
+import Image, { ImageLoaderProps }from 'next/image';
+import { ImageLoader } from "next/image"
 import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
@@ -47,13 +48,19 @@ const Profile = () => {
     }
   }
 
+  // Loader implementation for profile picture
+  const contentfulImageLoader: ImageLoader = ({ src, width }: ImageLoaderProps) => {
+    return `${src}?w=${width}`
+  }
+
   // Opens file input when profile image is clicked
   const handleImageClick = () => fileInputRef.current?.click();
 
   // Validates and sets selected file for cropping
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Handling profile picture change.");
     const file = event.target.files?.[0];
-    if (file && ["image/jpeg", "image/png"].includes(file.type)) {
+    if (file && ["image/jpg", "image/jpeg", "image/png"].includes(file.type)) {
       setSelectedFile(file);
       setShowCropper(true);
     } else {
@@ -69,6 +76,7 @@ const Profile = () => {
       const blob = await response.blob();
       const croppedFile = new File([blob], "cropped-image.png", { type: "image/png" });
       await user?.setProfileImage({ file: croppedFile });
+      console.log("Successfully changed user profile picture.");
     } catch (error) {
       console.error("Error uploading cropped image:", error);
     }
@@ -100,51 +108,50 @@ const Profile = () => {
     </ul>
   );
 
-    // Fetching favorite team data
-    useEffect(() => {
-      const fetchFavoriteTeam = async () => {
-        try {
-          const response = await fetch("/api/FavoriteTeams");
-          if (!response.ok) throw new Error("Failed to fetch favorite team");
-  
-          const data = await response.json();
-          console.log("Fetched favorite team data:", data);
-  
-          if (Array.isArray(data.team) && data.team.length > 0) {
-            setFavoriteTeam(data.team[0]);
-          } else if (data.team && data.team.logoUrl) {
-            // In case the API returns an object instead of an array
-            setFavoriteTeam(data.team);
-          } else {
-            console.warn("No logo URL found in fetched data:", data);
-          }
-        } catch (error) {
-          console.error("Error fetching favorite team:", error);
-        }
-      };
-  
-      fetchFavoriteTeam();
-    }, []);
-  
-    // Handles saving the favorite team
-    const handleFavoriteTeamSave = async (selectedTeam: Team) => {
+  // Fetching favorite team data
+  useEffect(() => {
+    const fetchFavoriteTeam = async () => {
       try {
-        console.log("Saving favorite team:", selectedTeam);
-        const response = await fetch("/api/FavoriteTeams", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ team: selectedTeam }), // Send the single team
-        });
-        if (!response.ok) throw new Error("Failed to save favorite team");
-        console.log("Successfully saved favorite team:", selectedTeam);
-        setFavoriteTeam(selectedTeam); // Set the single team
-        setShowFavoriteTeamModal(false);
+        const response = await fetch("/api/FavoriteTeams");
+        if (!response.ok) throw new Error("Failed to fetch favorite team");
+
+        const data = await response.json();
+        console.log("Fetched favorite team data:", data);
+
+        if (Array.isArray(data.team) && data.team.length > 0) {
+          setFavoriteTeam(data.team[0]);
+        } else if (data.team && data.team.logoUrl) {
+          // In case the API returns an object instead of an array
+          setFavoriteTeam(data.team);
+        } else {
+          console.warn("No logo URL found in fetched data:", data);
+        }
       } catch (error) {
-        console.error("Error saving favorite team:", error);
+        console.error("Error fetching favorite team:", error);
       }
-    };    
+    };
+    fetchFavoriteTeam();
+  }, []);
+  
+  // Handles saving the favorite team
+  const handleFavoriteTeamSave = async (selectedTeam: Team) => {
+    try {
+      console.log("Saving favorite team:", selectedTeam);
+      const response = await fetch("/api/FavoriteTeams", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ team: selectedTeam }), // Send the single team
+      });
+      if (!response.ok) throw new Error("Failed to save favorite team");
+      console.log("Successfully saved favorite team:", selectedTeam);
+      setFavoriteTeam(selectedTeam); // Set the single team
+      setShowFavoriteTeamModal(false);
+    } catch (error) {
+      console.error("Error saving favorite team:", error);
+    }
+  };    
 
   const renderContent = () => {
     switch (selectedSection) {
@@ -266,6 +273,7 @@ const Profile = () => {
             <div className="absolute inset-0 bg-gray-800/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             {user?.imageUrl && (
               <Image
+              loader={contentfulImageLoader}
               src={user.imageUrl}
               width={100}
               height={100}
@@ -279,7 +287,7 @@ const Profile = () => {
             </div>
           </div>
           {/* File Input for pfp*/}
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: "none" }} />
+          <input type="file" ref={fileInputRef} onClick={event => event.currentTarget.value = ""} onChange={handleFileChange} style={{ display: "none" }} />
           {renderNavigationButtons()}
         {/* Right Section of profile screen (Changed by setSelectedSection) */}
         </div>
