@@ -10,48 +10,49 @@ export enum ContestStatus {
     Completed = 'completed'
 }
 
-// Mock data for contests
-export const mockContests: Contest[] = [
-    {
-        id: "1",
-        title: "NFL Weekly Challenge", 
-        description: "Test your NFL knowledge! Make your picks for this week's games.",
-        category: "NFL",
-        startDate: offsetDays(0),
-        endDate: offsetDays(1),
-        participants: 45,
-        maxParticipants: 100,
-        status: ContestStatus.Open,
-        prize: -1,
-        maxEntries: 1,
-        currentEntries: 0,
-        userResult: {
-            rank: null,
-            points: null,
-        }
-    },
-    {
-        id: "2",
-        title: "NBA Daily Picks",
-        description: "Make your predictions for today's NBA matchups!",
-        category: "NBA",
-        startDate: offsetDays(0),
-        endDate: offsetDays(.5),
-        participants: 23,
-        maxParticipants: 50,
-        status: ContestStatus.Open,
-        prize: -1,
-        maxEntries: 1,
-        currentEntries: 0,
-        userResult: {
-            rank: null,
-            points: null
-        }
+export async function getNBAContests(): Promise<Contest[]> {
+    try {
+        const response = await fetch('/api/games');
+        const data = await response.json();
+
+        // Convert API game data to contest format
+        return data.games.map((game: any) => ({
+            id: game.id,
+            title: `${game.team1Name} vs ${game.team2Name}`,
+            description: "Make your pick for today's NBA matchup!",
+            category: "NBA",
+            startDate: new Date().toString(), // Use game.startTime if available
+            endDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toString(), // 24 hours from now
+            participants: 0,
+            maxParticipants: 100,
+            status: ContestStatus.Open,
+            prize: -1,
+            maxEntries: 1,
+            currentEntries: 0,
+            userResult: {
+                rank: null,
+                points: null,
+            },
+            teams: {
+                team1: {
+                    name: game.team1Name,
+                    logo: game.team1Logo
+                },
+                team2: {
+                    name: game.team2Name,
+                    logo: game.team2Logo
+                }
+            }
+        }));
+
+    } catch (error) {
+        console.error('Error fetching NBA contests:', error);
+        return [];
     }
-];
+}
 
 export const weeklyContests = {
-    'current': mockContests,
+    'current': [],
     1: [
         {
             id: "past1-week1",
