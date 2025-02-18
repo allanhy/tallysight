@@ -2,11 +2,13 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Team {
     name: string;
     score: number | null;
     spread: string;
+    logo?: string;
 }
 
 interface Game {
@@ -17,51 +19,93 @@ interface Game {
     status: string;
 }
 
+const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
+    if (spread === 'TBD' || spread === 'N/A') {
+        return (
+            <button 
+                onClick={onClick}
+                className="px-3 py-1 text-sm bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+            >
+                Get Spread
+            </button>
+        );
+    }
+    return <span className="text-gray-700">{spread}</span>;
+};
+
 export default function TomorrowPicks() {
     const router = useRouter();
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
-    const [mounted, setMounted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
 
     useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    useEffect(() => {
-        if (!mounted) return;
-
-        const fetchGames = async () => {
+        const fetchTomorrowGames = async () => {
             try {
-                const response = await fetch('/api/nba-games?day=tomorrow');
+                const response = await fetch('/api/nba-games?day=tomorrow', {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch games');
                 }
+
                 const data = await response.json();
-                setGames(data);
+                console.log('Received games:', data.games); // Debug log
+                
+                // Remove the additional filtering since the API already filters for tomorrow
+                setGames(data.games);
             } catch (error) {
                 console.error('Error fetching games:', error);
+                setError('Failed to load tomorrow\'s games');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchGames();
-    }, [mounted]);
+        fetchTomorrowGames();
+    }, []);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
-        const newPicks = new Set(selectedPicks);
-        const pickId = `${gameId}-${teamType}`;
-        const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
+        setSelectedPicks(prevPicks => {
+            const newPicks = new Set(prevPicks);
+            const pickId = `${gameId}-${teamType}`;
+            const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
 
-        if (newPicks.has(pickId)) {
-            newPicks.delete(pickId);
-        } else {
-            newPicks.add(pickId);
-            newPicks.delete(oppositePick);
-        }
-        setSelectedPicks(newPicks);
+            if (newPicks.has(pickId)) {
+                newPicks.delete(pickId);
+            } else {
+                newPicks.add(pickId);
+                newPicks.delete(oppositePick);
+            }
+            return newPicks;
+        });
     };
+
+    const handleGetSpread = (gameId: string, teamType: 'home' | 'away') => {
+        console.log(`Fetching spread for ${gameId} ${teamType} team`);
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+                <div className="text-white">Loading tomorrow's games...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+                <div className="text-white">{error}</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#1a1a1a]">
@@ -91,48 +135,111 @@ export default function TomorrowPicks() {
             {/* Games Grid */}
             <div className="p-4 max-w-5xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {games.map((game) => (
-                        <div key={game.id} className="bg-white rounded-lg shadow">
-                            <div className="flex justify-between items-center p-3 border-b">
-                                <span className="text-sm text-gray-500">{game.gameTime}</span>
-                                <button className="text-blue-500 text-sm">Preview</button>
-                            </div>
-                            <div className="p-4 space-y-3">
-                                <button 
-                                    onClick={() => handleTeamSelect(game.id, 'away')}
-                                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                                        selectedPicks.has(`${game.id}-away`)
-                                        ? 'bg-blue-50 border-2 border-blue-500'
-                                        : 'hover:bg-gray-50'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                                        <span className="font-medium">{game.awayTeam.name}</span>
+                    {games.length > 0 ? (
+                        games.map((game) => (
+                            <div key={game.id} className="bg-white rounded-lg shadow">
+                                <div className="flex justify-between items-center p-3 border-b">
+                                    <div className="text-sm text-gray-500">
+                                        <span>{game.gameTime} ET</span>
+                                        <span className="mx-2">•</span>
+                                        <span>
+                                            {(() => {
+                                                const [time, period] = game.gameTime.split(' ');
+                                                const [hours, minutes] = time.split(':');
+                                                let etHours = parseInt(hours);
+                                                if (period === 'PM' && etHours !== 12) etHours += 12;
+                                                if (period === 'AM' && etHours === 12) etHours = 0;
+                                                const ptHours = (etHours - 3 + 24) % 24;
+                                                const ptPeriod = ptHours >= 12 ? 'PM' : 'AM';
+                                                const displayHours = ptHours > 12 ? ptHours - 12 : ptHours === 0 ? 12 : ptHours;
+                                                return `${displayHours}:${minutes} ${ptPeriod} PT`;
+                                            })()}
+                                        </span>
                                     </div>
-                                    <span className="text-gray-700">{game.awayTeam.spread}</span>
-                                </button>
-                                <button 
-                                    onClick={() => handleTeamSelect(game.id, 'home')}
-                                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                                        selectedPicks.has(`${game.id}-home`)
-                                        ? 'bg-blue-50 border-2 border-blue-500'
-                                        : 'hover:bg-gray-50'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                                        <span className="font-medium">{game.homeTeam.name}</span>
-                                    </div>
-                                    <span className="text-gray-700">{game.homeTeam.spread}</span>
-                                </button>
+                                    <button 
+                                        onClick={() => handleGetSpread(game.id, 'home')}
+                                        className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
+                                    >
+                                        Preview
+                                    </button>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    <button 
+                                        onClick={() => handleTeamSelect(game.id, 'away')}
+                                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
+                                            selectedPicks.has(`${game.id}-away`)
+                                            ? 'bg-blue-50 border-2 border-blue-500'
+                                            : 'hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                                                {game.awayTeam.logo ? (
+                                                    <Image
+                                                        src={game.awayTeam.logo}
+                                                        alt={`${game.awayTeam.name} logo`}
+                                                        fill
+                                                        className="object-contain"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-200 rounded-full" />
+                                                )}
+                                            </div>
+                                            <span className="font-medium">{game.awayTeam.name}</span>
+                                        </div>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleTeamSelect(game.id, 'home')}
+                                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
+                                            selectedPicks.has(`${game.id}-home`)
+                                            ? 'bg-blue-50 border-2 border-blue-500'
+                                            : 'hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                                                {game.homeTeam.logo ? (
+                                                    <Image
+                                                        src={game.homeTeam.logo}
+                                                        alt={`${game.homeTeam.name} logo`}
+                                                        fill
+                                                        className="object-contain"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-200 rounded-full" />
+                                                )}
+                                            </div>
+                                            <span className="font-medium">{game.homeTeam.name}</span>
+                                        </div>
+                                    </button>
+                                </div>
+                                <div className="px-4 pb-3 flex justify-between items-center">
+                                    <span className="text-sm text-gray-500">Best pick</span>
+                                    <button className="text-gray-400 hover:text-gray-600">★</button>
+                                </div>
                             </div>
-                            <div className="px-4 pb-3 flex justify-between items-center">
-                                <span className="text-sm text-gray-500">Best pick</span>
-                                <button className="text-gray-400 hover:text-gray-600">★</button>
+                        ))
+                    ) : (
+                        <div className="col-span-full flex flex-col items-center justify-center gap-6 py-12 px-4">
+                            <div className="text-white text-xl font-medium text-center">
+                                No games scheduled for tomorrow
+                            </div>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => router.push('/daily-picks')}
+                                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                    View Today's Games
+                                </button>
+                                <button
+                                    onClick={() => router.push('/contests')}
+                                    className="px-6 py-3 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#3a3a3a] transition-colors"
+                                >
+                                    Back to Contests
+                                </button>
                             </div>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
 

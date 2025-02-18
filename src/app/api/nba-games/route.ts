@@ -1,55 +1,150 @@
 import { NextResponse } from 'next/server';
 
-const ODDS_API_KEY = process.env.ODDS_API_KEY;
-const BASE_URL = 'https://api.the-odds-api.com/v4/sports';
+const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
+
+function getTeamLogo(teamName: string | undefined): string {
+  if (!teamName) {
+    return 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/default-team-logo-500.png';
+  }
+  
+  const teamAbbreviations: { [key: string]: string } = {
+    'Hawks': 'atl',
+    'Celtics': 'bos',
+    'Nets': 'bkn',
+    'Hornets': 'cha',
+    'Bulls': 'chi',
+    'Cavaliers': 'cle',
+    'Mavericks': 'dal',
+    'Nuggets': 'den',
+    'Pistons': 'det',
+    'Warriors': 'gs',
+    'Rockets': 'hou',
+    'Pacers': 'ind',
+    'Clippers': 'lac',
+    'Lakers': 'lal',
+    'Grizzlies': 'mem',
+    'Heat': 'mia',
+    'Bucks': 'mil',
+    'Timberwolves': 'min',
+    'Pelicans': 'no',
+    'Knicks': 'ny',
+    'Thunder': 'okc',
+    'Magic': 'orl',
+    '76ers': 'phi',
+    'Suns': 'phx',
+    'Trail Blazers': 'por',
+    'Kings': 'sac',
+    'Spurs': 'sa',
+    'Raptors': 'tor',
+    'Jazz': 'utah',
+    'Wizards': 'wsh'
+  };
+
+  const abbreviation = teamAbbreviations[teamName] || teamName.toLowerCase();
+  return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/${abbreviation}.png`;
+}
 
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const day = searchParams.get('day') || 'today';
-
     try {
-        const response = await fetch(
-            `${BASE_URL}/basketball_nba/odds/?apiKey=${ODDS_API_KEY}&regions=us&markets=spreads&oddsFormat=american`
-        );
+        const { searchParams } = new URL(request.url);
+        const dayParam = searchParams.get('day');
+
+        // Calculate dates
+        const now = new Date();
+        const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const tomorrow = new Date(estNow);
+        tomorrow.setDate(estNow.getDate() + 1);
+
+        // Format dates for API
+        const formatDate = (date: Date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        };
+
+        const dateStr = dayParam === 'tomorrow' ? formatDate(tomorrow) : formatDate(estNow);
+        
+        // Use the calendar endpoint
+        const url = `${BASE_URL}/scoreboard?dates=${dateStr}`;
+        console.log('Fetching URL:', url);
+
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            next: { revalidate: 0 }
+        });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch odds data');
+            console.error(`API Error: ${response.status} for URL: ${url}`);
+            return NextResponse.json({
+                games: [],
+                message: `No games found for ${dayParam || 'today'}`
+            });
         }
 
         const data = await response.json();
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        console.log('Raw API response:', data); // Debug log
 
-        // Filter games based on the requested day
-        const filteredGames = data.filter((game: any) => {
-            const gameDate = new Date(game.commence_time);
-            return day === 'today' 
-                ? gameDate.getDate() === now.getDate()
-                : gameDate.getDate() === tomorrow.getDate();
+        if (!data.events || data.events.length === 0) {
+            return NextResponse.json({
+                games: [],
+                message: `No games scheduled for ${dayParam || 'today'}`
+            });
+        }
+
+        const games = data.events
+            .map((game: any) => {
+                try {
+                    const competition = game.competitions[0];
+                    const homeTeam = competition.competitors.find((t: any) => t.homeAway === 'home')?.team;
+                    const awayTeam = competition.competitors.find((t: any) => t.homeAway === 'away')?.team;
+
+                    return {
+                        id: game.id,
+                        homeTeam: {
+                            name: homeTeam?.name || 'TBD',
+                            score: '0',
+                            spread: 'TBD',
+                            logo: getTeamLogo(homeTeam?.name)
+                        },
+                        awayTeam: {
+                            name: awayTeam?.name || 'TBD',
+                            score: '0',
+                            spread: 'TBD',
+                            logo: getTeamLogo(awayTeam?.name)
+                        },
+                        gameTime: new Date(game.date).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                            timeZone: 'America/New_York'
+                        }),
+                        status: 'scheduled'
+                    };
+                } catch (e) {
+                    console.error('Error processing game:', e);
+                    return null;
+                }
+            })
+            .filter(Boolean);
+
+        console.log(`Found ${games.length} games for date: ${dateStr}`);
+
+        return NextResponse.json({
+            games,
+            message: games.length > 0 
+                ? `Games retrieved successfully for ${dayParam || 'today'}`
+                : `No games scheduled for ${dayParam || 'today'}`
         });
 
-        const games = filteredGames.map((game: any) => ({
-            id: game.id,
-            homeTeam: {
-                name: game.home_team,
-                score: null,
-                spread: game.bookmakers[0]?.markets.find((m: any) => m.key === 'spreads')
-                    ?.outcomes.find((o: any) => o.name === game.home_team)?.point || 'N/A',
-            },
-            awayTeam: {
-                name: game.away_team,
-                score: null,
-                spread: game.bookmakers[0]?.markets.find((m: any) => m.key === 'spreads')
-                    ?.outcomes.find((o: any) => o.name === game.away_team)?.point || 'N/A',
-            },
-            gameTime: new Date(game.commence_time).toLocaleTimeString(),
-            status: 'scheduled',
-        }));
-
-        return NextResponse.json(games);
     } catch (error) {
-        console.error('Error fetching NBA games:', error);
-        return NextResponse.json({ error: 'Failed to fetch NBA games' }, { status: 500 });
+        console.error('Error fetching games:', error);
+        return NextResponse.json({
+            games: [],
+            message: 'Error fetching games'
+        });
     }
 }
