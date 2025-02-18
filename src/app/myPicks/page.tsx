@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import '../styles/myPicks.css';
 
+// Define TypeScript interfaces for data structures
 interface Pick {
     gameId: string;
     teamIndex: number;
@@ -25,23 +26,38 @@ interface TeamDetails {
 
 type Sport = 'NFL' | 'MLB' | 'NBA';
 
+// Interface for week options
+interface WeekOption {
+    weekNumber: number;
+    startDate: Date;
+    endDate: Date;
+    label: string;
+}
+
 export default function MyPicksPage() {
+    // State management for UI controls
     const [isHistoryActive, setIsHistoryActive] = useState(false);
+    const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
+    const [selectedWeek, setSelectedWeek] = useState<number>(0);
+    
+    // State management for data
     const [userPicks, setUserPicks] = useState<Pick[]>([]);
-    const { isSignedIn } = useUser();
-    const router = useRouter();
     const [gamesData, setGamesData] = useState<Game[]>([]);
     const [weekStart, setWeekStart] = useState<string | null>(null);
     const [weekEnd, setWeekEnd] = useState<string | null>(null);
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
-    const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
-    const [selectedWeek, setSelectedWeek] = useState<number>(0);
+    const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
+    
+    // Hooks for authentication and navigation
+    const { isSignedIn } = useUser();
+    const router = useRouter();
 
-    // Toggle History
+    // Toggle history view
     const handleHistoryClick = () => {
         setIsHistoryActive((prev) => !prev);
     };
 
+    // Fetch user's picks when signed in
     useEffect(() => {
         if (isSignedIn) {
             const fetchUserPicks = async () => {
@@ -56,8 +72,8 @@ export default function MyPicksPage() {
         }
     }, [isSignedIn]);
 
+    // Fetch games data on component mount
     useEffect(() => {
-        // Fetch game data
         const fetchGamesData = async () => {
             try {
                 const response = await axios.get('/api/games');
@@ -71,13 +87,14 @@ export default function MyPicksPage() {
         fetchGamesData();
     }, []);
 
+    // Set current week on component mount
     useEffect(() => {
-        // Set the current week
         const week = getCurrentWeek();
         setCurrentWeek(week);
         setSelectedWeek(week);
     }, []);
 
+    // Helper function to get team details from game data
     const getTeamDetails = (gameId: string, teamIndex: number): TeamDetails | null => {
         const game = gamesData.find((g) => g.id === gameId);
         if (!game) return null;
@@ -87,45 +104,90 @@ export default function MyPicksPage() {
             : { name: game.awayTeam, logo: game.awayTeamLogo };
     };
 
-    // Navigation: Redirects user to sign-in page
-    const handleSignIn = async () => {
+    // Authentication handlers
+    const handleSignIn = () => {
         if (!isSignedIn) {
             const returnUrl = window.location.pathname;
-            router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`); // Update this path to match your sign-in page route
-            return;
+            router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`);
         }
     };
 
-    const handleSignUp = async () => {
+    const handleSignUp = () => {
         if (!isSignedIn) {
             const returnUrl = window.location.pathname;
-            router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`); // Update this path to match your sign-in page route
-            return;
+            router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`);
         }
     };
 
+    // Helper function to calculate current week number
     const getCurrentWeek = () => {
         const date = new Date();
+        date.setHours(0, 0, 0, 0);
         const startDate = new Date(date.getFullYear(), 0, 1);
+        startDate.setHours(0, 0, 0, 0);
         const days = Math.floor((date.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
         return Math.ceil((days + 1) / 7);
     };
 
-    const generateWeeks = () => {
-        if (currentWeek === null) {
-            return []; // Or return a default value
-        }
-        const weeks = [];
+    // Generate array of week options with dates
+    const generateWeeks = (): WeekOption[] => {
+        if (currentWeek === null) return [];
+        
+        const weeks: WeekOption[] = [];
         const weeksToDisplay = 52;
-
-        for (let i = currentWeek; i > currentWeek - weeksToDisplay; i--) {
-            if (i > 0) {
-                const weekLabel = (i === currentWeek) ? `Week ${i} (Current)` : `Week ${i}`;
-                weeks.push(weekLabel);
+        
+        // Use a fixed date for initial render to avoid hydration mismatch
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Get the start of the current week (Sunday)
+        const currentWeekStart = new Date(today);
+        const day = currentWeekStart.getDay();
+        currentWeekStart.setDate(currentWeekStart.getDate() - day);
+        currentWeekStart.setHours(0, 0, 0, 0);
+        
+        for (let i = 0; i < weeksToDisplay; i++) {
+            const weekStart = new Date(currentWeekStart);
+            weekStart.setDate(currentWeekStart.getDate() - (i * 7));
+            weekStart.setHours(0, 0, 0, 0);
+            
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            weekEnd.setHours(0, 0, 0, 0);
+            
+            const weekNumber = currentWeek - i;
+            if (weekNumber > 0) {
+                // Use consistent date formatting
+                const formattedStart = new Intl.DateTimeFormat('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    timeZone: 'UTC'
+                }).format(weekStart);
+                
+                const formattedEnd = new Intl.DateTimeFormat('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    timeZone: 'UTC'
+                }).format(weekEnd);
+                
+                weeks.push({
+                    weekNumber,
+                    startDate: weekStart,
+                    endDate: weekEnd,
+                    label: `Week ${weekNumber} (${formattedStart} - ${formattedEnd})`
+                });
             }
         }
         return weeks;
     };
+
+    // Move week options generation to a useEffect to ensure client-side only
+    useEffect(() => {
+        if (currentWeek !== null) {
+            const options = generateWeeks();
+            setWeekOptions(options);
+        }
+    }, [currentWeek]);
 
     return (
         <div className="picks-page">
@@ -173,9 +235,16 @@ export default function MyPicksPage() {
                                     <option value="MLB">MLB</option>
                                     <option value="NBA">NBA</option>
                                 </select>
-                                <select className="select" onChange={(e) => setSelectedWeek(parseInt(e.target.value))} value={selectedWeek}>
-                                    {generateWeeks().map((week) => (
-                                        <option key={week} value={week}>{week}</option>
+                                <select 
+                                    className="select" 
+                                    onChange={(e) => setSelectedWeek(parseInt(e.target.value))} 
+                                    value={selectedWeek}
+                                >
+                                    <option value="" disabled>Select Week</option>
+                                    {weekOptions.map((week) => (
+                                        <option key={week.weekNumber} value={week.weekNumber}>
+                                            {week.label}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
