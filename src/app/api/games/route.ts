@@ -1,126 +1,141 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 
-const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
+const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
-function getTeamLogo(teamName: string): string {
-  // Convert team names to their ESPN abbreviations
+function getTeamLogo(teamName: string | undefined): string {
+  if (!teamName) {
+    return 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/default-team-logo-500.png';
+  }
+  
   const teamAbbreviations: { [key: string]: string } = {
-    'Bills': 'buf',
-    'Dolphins': 'mia',
-    'Patriots': 'ne',
-    'Jets': 'nyj',
-    'Ravens': 'bal',
-    'Bengals': 'cin',
-    'Browns': 'cle',
-    'Steelers': 'pit',
-    'Texans': 'hou',
-    'Colts': 'ind',
-    'Jaguars': 'jax',
-    'Titans': 'ten',
-    'Broncos': 'den',
-    'Chiefs': 'kc',
-    'Raiders': 'lv',
-    'Chargers': 'lac',
-    'Cowboys': 'dal',
-    'Giants': 'nyg',
-    'Eagles': 'phi',
-    'Commanders': 'wsh',
-    'Bears': 'chi',
-    'Lions': 'det',
-    'Packers': 'gb',
-    'Vikings': 'min',
-    'Falcons': 'atl',
-    'Panthers': 'car',
-    'Saints': 'no',
-    'Buccaneers': 'tb',
-    'Cardinals': 'ari',
-    '49ers': 'sf',
-    'Seahawks': 'sea',
-    'Rams': 'lar'
+    'Hawks': 'atl',
+    'Celtics': 'bos',
+    'Nets': 'bkn',
+    'Hornets': 'cha',
+    'Bulls': 'chi',
+    'Cavaliers': 'cle',
+    'Mavericks': 'dal',
+    'Nuggets': 'den',
+    'Pistons': 'det',
+    'Warriors': 'gs',
+    'Rockets': 'hou',
+    'Pacers': 'ind',
+    'Clippers': 'lac',
+    'Lakers': 'lal',
+    'Grizzlies': 'mem',
+    'Heat': 'mia',
+    'Bucks': 'mil',
+    'Timberwolves': 'min',
+    'Pelicans': 'no',
+    'Knicks': 'ny',
+    'Thunder': 'okc',
+    'Magic': 'orl',
+    '76ers': 'phi',
+    'Suns': 'phx',
+    'Trail Blazers': 'por',
+    'Kings': 'sac',
+    'Spurs': 'sa',
+    'Raptors': 'tor',
+    'Jazz': 'utah',
+    'Wizards': 'wsh'
   };
 
   const abbreviation = teamAbbreviations[teamName] || teamName.toLowerCase();
-  return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500/${abbreviation}.png`;
+  return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/${abbreviation}.png`;
 }
 
 export async function GET() {
   try {
-    // Add currentDate definition at the start of the function
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const currentDate = new Date();
-
-    // Fetch the NFL schedule from ESPN
     const url = `${BASE_URL}/scoreboard`;
     console.log('Fetching URL:', url);
     
     const response = await fetch(url);
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Response Error:', {
-        status: response.status,
-        statusText: response.statusText,
-        errorText
-      });
+      console.error('API Response Error:', response.status, response.statusText);
       return NextResponse.json(
-        { error: 'Failed to fetch NFL schedule' }, 
+        { error: 'Failed to fetch NBA schedule' }, 
         { status: response.status }
       );
     }
 
     const data = await response.json();
+    console.log('Raw API Response:', data);
     
-    console.log('ESPN API Response:', data);
-    
-    // Check if events exists instead of weeks
     if (!data.events || !Array.isArray(data.events)) {
-      console.error('Invalid API response structure:', data);
+      console.error('No events found in API response');
       return NextResponse.json(
-        { error: 'Invalid API response structure' },
+        { error: 'No events found' },
         { status: 500 }
       );
     }
 
-    const currentWeek = data.week?.number || '0';
+    // Get current date in EST
+    const now = new Date();
+    const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    console.log('Current EST time:', estNow);
 
-    // Transform the games data directly from events
+    // Transform and filter games
     const games = data.events.map((game: any) => {
+      const gameDate = new Date(game.date);
       const competition = game.competitions[0];
+      const homeTeamData = competition.competitors.find((t: any) => t.homeAway === 'home')?.team;
+      const awayTeamData = competition.competitors.find((t: any) => t.homeAway === 'away')?.team;
+
+      console.log('Processing game:', {
+        homeTeam: homeTeamData?.name,
+        awayTeam: awayTeamData?.name,
+        date: gameDate
+      });
+
       return {
         id: competition.id,
-        homeTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.team.name,
-        awayTeam: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name,
-        date: new Date(game.date).toISOString(),
-        time: new Date(game.date).toLocaleTimeString('en-US', {
+        homeTeam: homeTeamData?.name || 'Unknown Team',
+        awayTeam: awayTeamData?.name || 'Unknown Team',
+        date: gameDate,
+        time: gameDate.toLocaleTimeString('en-US', {
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
           timeZone: 'America/New_York'
         }),
         status: game.status.type.name,
-        homeTeamLogo: getTeamLogo(game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.team.name),
-        awayTeamLogo: getTeamLogo(game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.team.name),
-        venue: game.competitions[0].venue?.fullName,
-        broadcast: game.competitions[0].broadcasts?.[0]?.names?.[0] || 'TBD',
-        week: game.week?.number,
-        homeScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'home')?.score,
-        awayScore: game.competitions[0].competitors.find((t: any) => t.homeAway === 'away')?.score,
+        homeTeamLogo: getTeamLogo(homeTeamData?.name),
+        awayTeamLogo: getTeamLogo(awayTeamData?.name),
+        venue: competition.venue?.fullName || 'TBD',
+        broadcast: competition.broadcasts?.[0]?.names?.[0] || 'TBD',
+        homeScore: competition.competitors.find((t: any) => t.homeAway === 'home')?.score || '0',
+        awayScore: competition.competitors.find((t: any) => t.homeAway === 'away')?.score || '0',
+        period: competition.status?.period || 0,
+        clock: competition.status?.displayClock || ''
       };
+    }).filter((game: { date: string }) => {
+      // Only include games that are in the future
+      return new Date(game.date) >= estNow;
+    }).sort((a: { date: string }, b: { date: string }) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    console.log('Processed games:', games);
+
+    if (games.length === 0) {
+      return NextResponse.json({
+        games: [],
+        message: "No upcoming games scheduled"
+      });
+    }
+
+    return NextResponse.json({
+      games,
+      gameDay: games[0].date,
+      message: `Next available games`
     });
 
-    // Sort games by date
-    games.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    const weekStart = games.length > 0 ? games[0].date : null;
-    const weekEnd = games.length > 0 ? games[games.length - 1].date : null;
-
-    return NextResponse.json({ games, weekStart, weekEnd, week: currentWeek });
-
   } catch (error) {
-    console.error('Error fetching NFL games:', error);
+    console.error('Error in GET function:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch NFL schedule', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Failed to fetch NBA schedule', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
