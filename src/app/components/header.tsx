@@ -46,10 +46,10 @@ const Header = () => {
                                 Contests
                             </Link>
                             <Link 
-                                href="/quick-picks"
+                                href="/myPicks"
                                 className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2"
                             >
-                                Quick Picks
+                                My Picks
                             </Link>
                         </div>
                     </div>
@@ -76,7 +76,7 @@ const Header = () => {
                     <ul className='flex flex-col'>
                         <li><NavLink href='/leaderboards' onClick={() => setIsMenuOpen(false)}>Leaderboards</NavLink></li>
                         <li><NavLink href='/contests' onClick={() => setIsMenuOpen(false)}>Contests</NavLink></li>
-                        <li><NavLink href='/quickPicks' onClick={() => setIsMenuOpen(false)}>Quick Picks</NavLink></li>
+                        <li><NavLink href='/my-picks' onClick={() => setIsMenuOpen(false)}>My Picks</NavLink></li>
                         <li className='mobile-auth'>
                             <SignedOut>
                                 <div className='p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
@@ -95,7 +95,6 @@ const Header = () => {
         </nav>
     );
 };
-
 
 export default Header;
 
