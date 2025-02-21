@@ -5,11 +5,28 @@ import * as Clerk from '@clerk/elements/common'
 import * as SignUp from '@clerk/elements/sign-up'
 import ReCAPTCHA from 'react-google-recaptcha';
 import axios from 'axios';
+import { AuthenticateWithRedirectCallback } from '@clerk/nextjs';
+import { useParams } from 'next/navigation';
+
 
 export default function SignUpPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaVerified, setRecaptchaVerified] = useState<boolean>(false);
+  const params = useParams() ?? {};
+  const segments = Array.isArray(params['sign-up']) ? params['sign-up'] : [];
+  const isSSOCallback = segments[0] === 'sso-callback';
+
+  if (isSSOCallback) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <p className='text-black'>Please Wait...</p>
+        {/* The Clerk component that finishes the OAuth flow */}
+        <AuthenticateWithRedirectCallback continueSignUpUrl="/sign-up/continue" />
+      </div>
+    );
+  }
 
   useEffect(() => {
     const html = document.documentElement;
@@ -19,10 +36,6 @@ export default function SignUpPage() {
       html.classList.remove('dark');
     }
   }, [theme]);
-
-  const handleRecaptcha = (token: string | null) => {
-    setRecaptchaToken(token);
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -34,15 +47,15 @@ export default function SignUpPage() {
     // Send the recaptchaToken to your server
     try {
       const response = await axios.post('http://localhost:3000/api/sign-up', { recaptchaToken });
-      alert(response.data.message); 
+      alert(response.data.message);
     } catch (error: any) {
-      console.error(error); 
-      alert(error.response?.data?.message || 'An error occurred'); 
+      console.error(error);
+      alert(error.response?.data?.message || 'An error occurred');
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 pt-6 pb-6 bg-white dark:bg-black">
       <div className="w-full flex justify-center flex-col items-center">
         <header className="text-center w-full mb-4">
           <div className='text-3xl font-extrabold text-black dark:text-white'>
@@ -64,6 +77,7 @@ export default function SignUpPage() {
               <Clerk.Connection
                 name="google"
                 className="flex w-full items-center justify-center gap-x-3 rounded-md bg-black px-3.5 py-1.5 text-sm font-medium text-white shadow-[0_1px_0_0_theme(colors.white/5%)_inset,0_0_0_1px_theme(colors.white/2%)_inset] outline-none hover:bg-gray-800 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-white active:bg-gray-900 active:text-white/70"
+
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -149,11 +163,23 @@ export default function SignUpPage() {
             </div>
             <ReCAPTCHA
               sitekey="6LfmD9AqAAAAAEOUXYEpH539_o9DGUS4b4YjkQYj"
-              onChange={handleRecaptcha}
+              onChange={(token: string | null) => {
+                if (!token) {
+                  // Treat this as "expired"
+                  setRecaptchaToken(null);
+                  setRecaptchaVerified(false);
+                  return;
+                }
+                // Otherwise, the token is valid
+                setRecaptchaToken(token);
+                setRecaptchaVerified(true);
+              }}
             />
             <SignUp.Action
               submit
-              className="relative isolate w-full rounded-lg bg-blue-600 px-3.5 py-2.5 text-center text-sm font-medium text-white shadow-[0_1px_0_0_theme(colors.white/30%)_inset,0_-1px_1px_0_theme(colors.black/5%)_inset] outline-none before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-blue-100 before:opacity-0 hover:before:opacity-100 transition-opacity duration-200 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-gray-800 active:bg-blue-700 active:text-gray-200"
+              disabled={!recaptchaVerified}
+              className={`relative isolate w-full rounded-lg bg-blue-600 px-3.5 py-2.5 text-center text-sm font-medium text-white ${!recaptchaVerified ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               Play Now
             </SignUp.Action>
@@ -169,16 +195,32 @@ export default function SignUpPage() {
             </div>
           </SignUp.Step>
 
+          <SignUp.Step name="continue">
+            <Clerk.Field name="username" className="group/field relative">
+              <Clerk.Label className="absolute left-2 top-0 -translate-y-1/2 bg-white px-2 font-mono text-xs/4 text-gray-600">
+                Username
+              </Clerk.Label>
+              <Clerk.Input
+                type="text"
+                required
+                className="w-full rounded-lg bg-transparent px-4 py-2.5 text-sm text-gray-800 outline-none ring-1 ring-inset ring-gray-300 hover:ring-blue-400 focus:ring-[1.5px] focus:ring-blue-600"
+              />
+              <Clerk.FieldError className="mt-2 block text-xs text-rose-400" />
+            </Clerk.Field>
+
+            <SignUp.Action submit>Continue</SignUp.Action>
+          </SignUp.Step>
+
           <SignUp.Step
             name="verifications"
             className="relative isolate w-full space-y-6 rounded-2xl bg-white px-8 py-8 shadow-md border-[1px] border-gray-400 before:absolute before:inset-0 before:-z-10 before:rounded-2xl before:bg-gray-50 sm:w-[550px] sm:px-10"
           >
             <header className="text-center">
-              <div className='text-3xl font-extrabold text-black'>
-                Sign up
-              </div>
-              <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-800">
+              <div className='text-2xl font-bold text-black'>
                 Verify email code
+              </div>
+              <h1 className="mt-4 text-l font-medium tracking-tight text-gray-800">
+                Enter the code that was sent to you email address.
               </h1>
             </header>
             <Clerk.GlobalError className="block text-sm text-rose-400" />

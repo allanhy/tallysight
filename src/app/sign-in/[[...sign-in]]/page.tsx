@@ -1,37 +1,59 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import * as Clerk from '@clerk/elements/common'
-import * as SignIn from '@clerk/elements/sign-in'
+import React from 'react';
+import * as Clerk from '@clerk/elements/common';
+import * as SignIn from '@clerk/elements/sign-in';
+import { AuthenticateWithRedirectCallback, useSignIn } from '@clerk/nextjs';
+import { OAuthStrategy } from '@clerk/types'
+import { usePathname } from 'next/navigation';
 
 export default function SignInPage() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const { signIn } = useSignIn()
+  const pathname = usePathname();
+  const isSSOCallback = pathname.includes('sso-callback');
 
-  useEffect(() => {
-    const html = document.documentElement;
-    if (theme === 'dark') {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
-  }, [theme]);
+  if (isSSOCallback) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <p className='text-black'>Please Wait...</p>
+        {/* The Clerk component that finishes the OAuth flow */}
+        <AuthenticateWithRedirectCallback continueSignUpUrl="/sign-up/continue" />
+      </div>
+    );
+  }
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
+  if (!signIn) return null
+
+  const signInWith = (strategy: OAuthStrategy) => {
+    return signIn
+      .authenticateWithRedirect({
+        strategy,
+        redirectUrl: '/sign-in/sso-callback',
+        redirectUrlComplete: '/',
+      })
+      .then((res) => {
+        console.log(res)
+      })
+      .catch((err: any) => {
+        // See https://clerk.com/docs/custom-flows/error-handling
+        // for more info on error handling
+        console.log(err.errors)
+        console.error(err, null, 2)
+      })
+  }
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
-    <div className="w-full flex justify-center flex-col items-center">
-      <header className="text-center w-full mb-4">
-        <div className="text-3xl font-extrabold text-black dark:text-white">
-          Log in
-        </div>
-        <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
-          Welcome back, let&apos;s play!
-        </h1>
-      </header>
+      <div className="w-full flex justify-center flex-col items-center">
+        <header className="text-center w-full mb-4">
+          <div className="text-3xl font-extrabold text-black dark:text-white">
+            Log in
+          </div>
+          <h1 className="mt-4 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
+            Welcome back, let&apos;s play!
+          </h1>
+        </header>
 
         <SignIn.Root>
           <SignIn.Step
@@ -41,9 +63,15 @@ export default function SignInPage() {
             <Clerk.GlobalError className="block text-sm text-rose-400" />
 
             <div className="space-y-2">
-              <Clerk.Connection
-                name="google"
-                className="flex w-full items-center justify-center gap-x-3 rounded-md bg-black px-3.5 py-1.5 text-sm font-medium text-white shadow-[0_1px_0_0_theme(colors.white/5%)_inset,0_0_0_1px_theme(colors.white/2%)_inset] outline-none hover:bg-gray-800 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-white active:bg-gray-900 active:text-white/70"
+              <button
+                type="button"
+                onClick={() => signInWith("oauth_google")}
+                className="flex w-full items-center justify-center gap-x-3 
+                  rounded-md bg-black px-3.5 py-1.5 text-sm font-medium text-white 
+                  shadow-[0_1px_0_0_theme(colors.white/5%)_inset,0_0_0_1px_theme(colors.white/2%)_inset] 
+                  outline-none hover:bg-gray-800 focus-visible:outline-[1.5px] 
+                  focus-visible:outline-offset-2 focus-visible:outline-white 
+                  active:bg-gray-900 active:text-white/70"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -58,13 +86,14 @@ export default function SignInPage() {
                   />
                 </svg>
                 Continue with Google
-              </Clerk.Connection>
+              </button>
             </div>
 
+
             <div className="flex items-center space-x-2">
-                <hr className="flex-grow border-t border-gray-300" />
-                <p className="text-sm font-medium text-gray-400">OR</p>
-                <hr className="flex-grow border-t border-gray-300" />
+              <hr className="flex-grow border-t border-gray-300" />
+              <p className="text-sm font-medium text-gray-400">OR</p>
+              <hr className="flex-grow border-t border-gray-300" />
             </div>
 
             <Clerk.Field name="identifier" className="group/field relative">
