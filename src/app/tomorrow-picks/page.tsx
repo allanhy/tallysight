@@ -105,13 +105,15 @@ export default function TomorrowPicks() {
                 const game = games.find(g => g.id === gameId);
                 return {
                     gameId,
-                    teamType,
-                    teamName: teamType === 'home' ? game?.homeTeam.name : game?.awayTeam.name,
-                    spread: teamType === 'home' ? game?.homeTeam.spread : game?.awayTeam.spread
+                    teamIndex: teamType === 'home' ? 1 : 0,
+                    team1Name: game?.homeTeam.name,
+                    team2Name: game?.awayTeam.name,
+                    team1Logo: game?.homeTeam.logo,
+                    team2Logo: game?.awayTeam.logo,
                 };
             });
 
-            const response = await fetch('/api/submit-picks', {
+            const response = await fetch('/api/savePicks', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
