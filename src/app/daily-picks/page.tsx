@@ -19,12 +19,28 @@ interface Game {
     status: string;
 }
 
+const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
+    if (spread === 'TBD' || spread === 'N/A') {
+        return (
+            <button 
+                onClick={onClick}
+                className="px-3 py-1 text-sm bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+            >
+                Get Spread
+            </button>
+        );
+    }
+    return <span className="text-gray-700">{spread}</span>;
+};
+
 export default function DailyPicks() {
     const router = useRouter();
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchTodayGames = async () => {
@@ -42,35 +58,8 @@ export default function DailyPicks() {
                 }
 
                 const data = await response.json();
-                
-                // Safely filter today's games
-                const todayGames = data.games?.filter((game: Game) => {
-                    try {
-                        if (!game.gameTime) return false;
-                        
-                        // Get today's date in EST
-                        const now = new Date();
-                        const estNow = new Date(now.toLocaleString('en-US', {
-                            timeZone: 'America/New_York'
-                        }));
-                        const todayDate = estNow.toLocaleDateString();
-
-                        // Get game date in EST
-                        const gameDate = new Date(game.gameTime);
-                        const estGameDate = new Date(gameDate.toLocaleString('en-US', {
-                            timeZone: 'America/New_York'
-                        }));
-                        const gameDateStr = estGameDate.toLocaleDateString();
-
-                        // Compare dates
-                        return todayDate === gameDateStr;
-                    } catch (e) {
-                        console.error('Error processing game date:', e);
-                        return false;
-                    }
-                }) || [];
-
-                setGames(todayGames);
+                console.log('Received games:', data.games); // Debug log
+                setGames(data.games);
             } catch (error) {
                 console.error('Error fetching games:', error);
                 setError('Failed to load today\'s games');
@@ -98,6 +87,53 @@ export default function DailyPicks() {
         });
     };
 
+    const handleGetSpread = (gameId: string, teamType: 'home' | 'away') => {
+        console.log(`Fetching spread for ${gameId} ${teamType} team`);
+    };
+
+    const handleSubmitPicks = async () => {
+        if (selectedPicks.size !== games.length) return;
+
+        setSubmitting(true);
+        setSubmitError(null);
+
+        try {
+            const picksArray = Array.from(selectedPicks).map(pick => {
+                const [gameId, teamType] = pick.split('-');
+                const game = games.find(g => g.id === gameId);
+                return {
+                    gameId,
+                    teamIndex: teamType === 'home' ? 1 : 0,
+                    team1Name: game?.homeTeam.name,
+                    team2Name: game?.awayTeam.name,
+                    team1Logo: game?.homeTeam.logo,
+                    team2Logo: game?.awayTeam.logo,
+                };
+            });
+
+            const response = await fetch('/api/savePicks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ picks: picksArray }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to submit picks');
+            }
+
+            router.push('/contests');
+        } catch (error) {
+            console.error('Error submitting picks:', error);
+            setSubmitError(error instanceof Error ? error.message : 'Failed to submit picks');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
@@ -106,9 +142,16 @@ export default function DailyPicks() {
         );
     }
 
+    if (error) {
+        return (
+            <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
+                <div className="text-white">{error}</div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#1a1a1a]">
-            {/* Header */}
             <div className="bg-[#2a2a2a] p-4 sticky top-0 z-10">
                 <div className="flex items-center gap-4">
                     <button 
@@ -134,24 +177,36 @@ export default function DailyPicks() {
 
             {/* Games Grid */}
             <div className="p-4 max-w-5xl mx-auto">
-                {games.length === 0 ? (
-                    <div className="text-center py-12">
-                        <div className="text-white text-xl font-medium mb-2">No Games Today</div>
-                        <p className="text-gray-400">Check back tomorrow for new games!</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {games.map((game) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {games.length > 0 ? (
+                        games.map((game) => (
                             <div key={game.id} className="bg-white rounded-lg shadow">
-                                {/* Game Time */}
                                 <div className="flex justify-between items-center p-3 border-b">
-                                    <span className="text-sm text-gray-500">{game.gameTime}</span>
-                                    <button className="text-blue-500 text-sm">Preview</button>
+                                    <div className="text-sm text-gray-500">
+                                        <span>{game.gameTime} ET</span>
+                                        <span className="mx-2">•</span>
+                                        <span>
+                                            {(() => {
+                                                const [time, period] = game.gameTime.split(' ');
+                                                const [hours, minutes] = time.split(':');
+                                                let etHours = parseInt(hours);
+                                                if (period === 'PM' && etHours !== 12) etHours += 12;
+                                                if (period === 'AM' && etHours === 12) etHours = 0;
+                                                const ptHours = (etHours - 3 + 24) % 24;
+                                                const ptPeriod = ptHours >= 12 ? 'PM' : 'AM';
+                                                const displayHours = ptHours > 12 ? ptHours - 12 : ptHours === 0 ? 12 : ptHours;
+                                                return `${displayHours}:${minutes} ${ptPeriod} PT`;
+                                            })()}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleGetSpread(game.id, 'home')}
+                                        className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
+                                    >
+                                        Preview
+                                    </button>
                                 </div>
-
-                                {/* Teams */}
                                 <div className="p-4 space-y-3">
-                                    {/* Away Team */}
                                     <button 
                                         onClick={() => handleTeamSelect(game.id, 'away')}
                                         className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
@@ -161,13 +216,21 @@ export default function DailyPicks() {
                                         }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                                            <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                                                {game.awayTeam.logo ? (
+                                                    <Image
+                                                        src={game.awayTeam.logo}
+                                                        alt={`${game.awayTeam.name} logo`}
+                                                        fill
+                                                        className="object-contain"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-200 rounded-full" />
+                                                )}
+                                            </div>
                                             <span className="font-medium">{game.awayTeam.name}</span>
                                         </div>
-                                        <span className="text-gray-700">{game.awayTeam.spread}</span>
                                     </button>
-
-                                    {/* Home Team */}
                                     <button 
                                         onClick={() => handleTeamSelect(game.id, 'home')}
                                         className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
@@ -177,36 +240,66 @@ export default function DailyPicks() {
                                         }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                                            <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                                                {game.homeTeam.logo ? (
+                                                    <Image
+                                                        src={game.homeTeam.logo}
+                                                        alt={`${game.homeTeam.name} logo`}
+                                                        fill
+                                                        className="object-contain"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-200 rounded-full" />
+                                                )}
+                                            </div>
                                             <span className="font-medium">{game.homeTeam.name}</span>
                                         </div>
-                                        <span className="text-gray-700">{game.homeTeam.spread}</span>
                                     </button>
                                 </div>
-
-                                {/* Best Pick */}
                                 <div className="px-4 pb-3 flex justify-between items-center">
                                     <span className="text-sm text-gray-500">Best pick</span>
-                                    <button className="text-gray-400 hover:text-gray-600">
-                                        ★
-                                    </button>
+                                    <button className="text-gray-400 hover:text-gray-600">★</button>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
+                        ))
+                    ) : (
+                        <div className="col-span-full flex flex-col items-center justify-center gap-6 py-12 px-4">
+                            <div className="text-white text-xl font-medium text-center">
+                                No games scheduled for today
+                            </div>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => router.push('/tomorrow-picks')}
+                                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                    View Tomorrow's Games
+                                </button>
+                                <button
+                                    onClick={() => router.push('/contests')}
+                                    className="px-6 py-3 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#3a3a3a] transition-colors"
+                                >
+                                    Back to Contests
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Progress Footer */}
             {selectedPicks.size > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 bg-[#2a2a2a] p-4">
                     <div className="max-w-5xl mx-auto">
                         <div className="flex flex-col items-center gap-2">
+                            {submitError && (
+                                <div className="text-red-500 text-sm mb-2">
+                                    {submitError}
+                                </div>
+                            )}
                             <div className="flex items-center gap-2 text-white">
-                                <span>{selectedPicks.size}/5 picks made</span>
+                                <span>{selectedPicks.size}/{games.length} picks made</span>
                             </div>
                             <div className="w-full flex gap-2">
-                                {[...Array(5)].map((_, i) => (
+                                {[...Array(games.length)].map((_, i) => (
                                     <div
                                         key={i}
                                         className={`flex-1 h-1 rounded-full ${
@@ -215,6 +308,19 @@ export default function DailyPicks() {
                                     />
                                 ))}
                             </div>
+                            {selectedPicks.size === games.length && (
+                                <button
+                                    className={`w-full mt-3 py-3 rounded-lg font-medium transition-all ${
+                                        submitting
+                                            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                    }`}
+                                    disabled={submitting}
+                                    onClick={handleSubmitPicks}
+                                >
+                                    {submitting ? 'Submitting...' : 'Submit Picks'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

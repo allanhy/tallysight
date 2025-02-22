@@ -39,6 +39,8 @@ export default function TomorrowPicks() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchTomorrowGames = async () => {
@@ -89,6 +91,49 @@ export default function TomorrowPicks() {
 
     const handleGetSpread = (gameId: string, teamType: 'home' | 'away') => {
         console.log(`Fetching spread for ${gameId} ${teamType} team`);
+    };
+
+    const handleSubmitPicks = async () => {
+        if (selectedPicks.size !== games.length) return;
+
+        setSubmitting(true);
+        setSubmitError(null);
+
+        try {
+            const picksArray = Array.from(selectedPicks).map(pick => {
+                const [gameId, teamType] = pick.split('-');
+                const game = games.find(g => g.id === gameId);
+                return {
+                    gameId,
+                    teamIndex: teamType === 'home' ? 1 : 0,
+                    team1Name: game?.homeTeam.name,
+                    team2Name: game?.awayTeam.name,
+                    team1Logo: game?.homeTeam.logo,
+                    team2Logo: game?.awayTeam.logo,
+                };
+            });
+
+            const response = await fetch('/api/savePicks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ picks: picksArray }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to submit picks');
+            }
+
+            router.push('/contests');
+        } catch (error) {
+            console.error('Error submitting picks:', error);
+            setSubmitError(error instanceof Error ? error.message : 'Failed to submit picks');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (loading) {
@@ -246,12 +291,17 @@ export default function TomorrowPicks() {
             {selectedPicks.size > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 bg-[#2a2a2a] p-4">
                     <div className="max-w-5xl mx-auto">
+                        {submitError && (
+                            <div className="text-red-500 text-sm mb-2">
+                                {submitError}
+                            </div>
+                        )}
                         <div className="flex flex-col items-center gap-2">
                             <div className="flex items-center gap-2 text-white">
-                                <span>{selectedPicks.size}/5 picks made</span>
+                                <span>{selectedPicks.size}/{games.length} picks made</span>
                             </div>
                             <div className="w-full flex gap-2">
-                                {[...Array(5)].map((_, i) => (
+                                {[...Array(games.length)].map((_, i) => (
                                     <div
                                         key={i}
                                         className={`flex-1 h-1 rounded-full ${
@@ -260,6 +310,19 @@ export default function TomorrowPicks() {
                                     />
                                 ))}
                             </div>
+                            {selectedPicks.size === games.length && (
+                                <button
+                                    className={`w-full mt-3 py-3 rounded-lg font-medium transition-all ${
+                                        submitting
+                                            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                    }`}
+                                    disabled={submitting}
+                                    onClick={handleSubmitPicks}
+                                >
+                                    {submitting ? 'Submitting...' : 'Submit Picks'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
