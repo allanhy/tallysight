@@ -18,6 +18,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
 
+    // Check if user has already made picks today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const existingPicks = await prisma.pick.findFirst({
+      where: {
+        userId: userId,
+        createdAt: {
+          gte: today,
+          lt: tomorrow
+        }
+      }
+    });
+
+    if (existingPicks) {
+      console.log('User has already made picks today');
+      return NextResponse.json(
+        { message: 'You have already made picks for today' }, 
+        { status: 400 }
+      );
+    }
+
     // Get user from database using Clerk ID
     client = await db.connect();
     const userResult = await client.query(
