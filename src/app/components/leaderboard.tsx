@@ -120,6 +120,7 @@ const Leaderboard: React.FC = () => {
                                     <div className='leaderboard-header'>
                                         <div className='rank'>Rank</div>
                                         <div className='username'>User</div>
+                                        <div className='performance'>Performance</div>
                                         <div className='points'>Points</div>
                                     </div>
                                         {leaderboard.length <= 0 ? (
@@ -204,15 +205,37 @@ const Leaderboard: React.FC = () => {
 
                 .leaderboard-header {
                     display: flex;
-                    justify-content: space-between;
                     background-color: rgba(255, 255, 255, 0.1);
+                    justify-content: space-between;
                     text-transform: uppercase;
-                    text-align: center;
                     font-size: 1.5vh;
                     font-weight: bold;
                     color: white;
-                    padding: 20px;
+                    padding: 10px;
                     border-radius: 5px;
+                }
+
+                .rank {
+                    margin-bottom: 5px;
+                    text-align: left;
+                }
+
+                .points {
+                    margin-bottom: 5px;
+                    text-align: right;
+                    margin-left: 5vh;
+                }
+
+                .performance{
+                    margin-bottom: 5px;
+                    text-align: left;
+                    margin-left: 5vh;
+                }
+
+                .username {
+                    text-align: left;
+                    margin-bottom: 5px;
+                    margin-right: 5em;
                 }
             `}</style>
             </div>

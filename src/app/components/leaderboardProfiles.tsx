@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image'
 import styles from '../styles/leaderboardProfiles.module.css';
 
@@ -10,6 +10,8 @@ interface user {
     username: string;
     img: string;
     points: number;
+    max_points: number;
+    performance_percentage?: string;
 }
 
 interface leaderboardProfileProps {
@@ -47,31 +49,38 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
         fetchUsers();
     }, [userIds]);
 
+    // Call function to calculate performance for display
+    const processedUsers = useMemo(() => calculatePerformance(users), [users]);
+
     if (loading) return <div>Loading users...</div>;
     if (error) return <div className='error'>{error}</div>;
 
     return (
         <div id='profile' className='profile'>
-            {users?.length > 0 ? <Item data={users}/> : <div>No data available</div>}
+            {users?.length > 0 ? <Item data={processedUsers}/> : <div>No data available</div>}
         </div>
     );
 }
 
 function Item({ data }: { data: user[] }) {
+    // Double check sorting
+    const sortedData = [...data].sort((a, b) => a.rank - b.rank);
+    
     return(
         <>
-            {data.map((value: { rank: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; img: any; username: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; points: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<React.AwaitedReactNode> | null | undefined; }, index: React.Key | null | undefined) => (
+            {sortedData.map((user, index: React.Key | null | undefined) => (
                 <div className={styles.profile} key={index}>
-                    <div className={styles.rank}>{value.rank}</div>
+                    <div className={styles.rank}>{user.rank}</div>
                     <Image 
-                        src={getImageSrc(value.img)} 
-                        alt={`Profile image of ${value.username}`} 
+                        src={getImageSrc(user.img)} 
+                        alt={`Profile image of ${user.username}`} 
                         loading='lazy'
                         width={60} 
                         height={60}
                         className={styles.image}/>
-                    <div className={styles.username}>{value.username}</div>
-                    <div className={styles.points}>{value.points}</div>
+                    <div className={styles.username}>{user.username}</div>
+                    <div className={styles.performance}>{user.performance_percentage}%</div>
+                    <div className={styles.points}>{user.points}</div>
                 </div>
             ))}
         </>
@@ -80,4 +89,14 @@ function Item({ data }: { data: user[] }) {
 
 function getImageSrc(img: string){
     return img?.startsWith('data:image') || img?.startsWith('http') ? img : '/default-profile.png';
+}
+
+function calculatePerformance(data: user[]) {
+    if(data.length === 0) 
+        return [];
+
+    return data.map( user => {
+        const percentage = user.max_points > 0 ? (user.points/user.max_points) * 100 : 0;
+        return{ ...user, performance_percentage: percentage.toFixed(3) };
+    });
 }
