@@ -118,17 +118,17 @@ export default function Home() {
           <main className="flex flex-col gap-8 items-center w-full max-w-[750px]">
             <div className="flex flex-col gap-4 relative w-full">
               {/* White box with MyPicks button */}
-              <div className="bg-white h-[200px] w-full relative bg-opacity-100 translate-y-[100px]">
-                <div className="absolute top-1/2 right-4 transform -translate-y-1/2">
-                  <Link href="/myPicks">
-                    <button 
-                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                      MyPicks
-                    </button>
-                  </Link>
-                </div>
-              </div>
+              {/* <div className="bg-white h-[200px] w-full relative bg-opacity-100 translate-y-[100px]"> */}
+              {/*   <div className="absolute top-1/2 right-4 transform -translate-y-1/2"> */}
+              {/*     <Link href="/myPicks"> */}
+              {/*       <button  */}
+              {/*         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" */}
+              {/*       > */}
+              {/*         MyPicks */}
+              {/*       </button> */}
+              {/*     </Link> */}
+              {/*   </div> */}
+              {/* </div> */}
               
               {/* Gray boxes */}
               <div className="bg-gray-200 h-[200px] w-full bg-opacity-75 translate-y-[150px]" />
