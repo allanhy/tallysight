@@ -105,14 +105,14 @@ export default function MyPicksPage() {
     };
 
     // Authentication handlers
-    const handleSignIn = () => {
+    const handleSignIn = async () => {
         if (!isSignedIn) {
             const returnUrl = window.location.pathname;
             router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`);
         }
     };
 
-    const handleSignUp = () => {
+    const handleSignUp = async () => {
         if (!isSignedIn) {
             const returnUrl = window.location.pathname;
             router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`);
@@ -279,16 +279,18 @@ export default function MyPicksPage() {
                         </div>
                     )}
                 </div>
+
+                {/* New to TallySight section */}
                 {!isSignedIn && (
                     <div className="auth-container">
                         <h2 className="auth-title">New to TallySight?</h2>
-                        <button
+                        <button 
                             onClick={handleSignUp}
                             className="sign-up-button"
                         >
                             Sign up
                         </button>
-                        <button
+                        <button 
                             onClick={handleSignIn}
                             className="sign-in-button"
                         >
@@ -297,6 +299,71 @@ export default function MyPicksPage() {
                     </div>
                 )}
             </div>
+
+            <style jsx>{`
+                .picks-page {
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: black;
+                    position: relative;
+                }
+
+                .content-wrapper {
+                    display: flex;
+                    flex-direction: row; /* Align elements side by side */
+                    gap: 24px;
+                    justify-content: center;
+                    align-items: flex-start; /* Align items to the top */
+                    width: 100%;
+                    max-width: 1200px;
+                }
+
+                .picks-container {
+                    width: 100%; /* Ensure the picks container takes full width */
+                    max-width: 1000px; /* Limit max width for larger screens */
+                }
+
+                .auth-container {
+                    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
+                    padding: 24px;
+                    border-radius: 8px;
+                    text-align: center;
+                    width: 300px; /* Default width for larger screens */
+                    height: fit-content;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                    margin-top: 0; /* Remove top margin to align with table */
+                    align-self: flex-start; /* Align to the top */
+                    border: 1px solid rgba(78, 29, 29, 0.1);
+                }
+
+                .sign-up-button, .sign-in-button {
+                    margin-top: 10px; /* Add some space between buttons */
+                    padding: 10px 20px; /* Add padding for better button size */
+                    color: white; /* Button text color */
+                    background-color: #0070f3; /* Button background color */
+                    border: none; /* Remove default border */
+                    border-radius: 5px; /* Rounded corners */
+                    cursor: pointer; /* Pointer cursor on hover */
+                }
+
+                .sign-up-button:hover, .sign-in-button:hover {
+                    background-color: #005bb5; /* Darker shade on hover */
+                }
+
+                @media (max-width: 768px) {
+                    .content-wrapper {
+                        flex-direction: column; /* Stack elements vertically on small screens */
+                    }
+
+                    .auth-container {
+                        width: 100%; /* Make auth container full width on small screens */
+                        max-width: 1000px; /* Match the picks container width */
+                        margin-top: 20px; /* Add margin for spacing */
+                    }
+                }
+            `}</style>
         </div>
     );
 }
