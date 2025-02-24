@@ -116,7 +116,7 @@ function Item({ data }: { data: user[] }) {
     return(
         <>
             {sortedData.map((user) => (
-                <div className={styles.profile} key={user.rank}>
+                <div className={styles.profile} key={`${user.username}-${user.rank}`}>
                     <div className={styles.rank}>{user.rank}</div>
                     <Image 
                         src={getImageSrc(user.img)} 
