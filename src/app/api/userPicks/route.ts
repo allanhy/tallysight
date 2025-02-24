@@ -14,36 +14,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
 
+    // Retrieve all picks for the authenticated user
     const userPicks = await prisma.pick.findMany({
-      where: {
-        userId: userId
+      where: { userId },
+      select: {
+        gameId: true,
+        teamIndex: true, // Select any other fields you need
       },
-      include: {
-        Game: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
     });
 
-    const formattedPicks = userPicks.map(pick => ({
-      gameId: pick.gameId,
-      teamIndex: pick.teamIndex,
-      homeTeam: pick.Game.team1Name,
-      awayTeam: pick.Game.team2Name,
-      homeTeamLogo: pick.Game.team1Logo || null,
-      awayTeamLogo: pick.Game.team2Logo || null,
-      createdAt: pick.createdAt
-    }));
-
-    return NextResponse.json(formattedPicks, { status: 200 });
+    return NextResponse.json(userPicks, { status: 200 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error fetching user picks:', error.message || error);
-    return NextResponse.json(
-      { message: 'Failed to fetch user picks', error: error.message || 'Unknown error' }, 
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    return NextResponse.json({ message: 'Failed to fetch user picks', error: error.message || 'Unknown error' }, { status: 500 });
   }
 }

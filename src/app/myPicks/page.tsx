@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -9,11 +9,6 @@ import '../styles/myPicks.css';
 interface Pick {
     gameId: string;
     teamIndex: number;
-    createdAt: string;
-    homeTeam: string;
-    awayTeam: string;
-    homeTeamLogo: string;
-    awayTeamLogo: string;
 }
 
 interface Game {
@@ -39,12 +34,6 @@ interface WeekOption {
     label: string;
 }
 
-// Add interface for date range
-interface WeekRange {
-    start: Date;
-    end: Date;
-}
-
 export default function MyPicksPage() {
     // State management for UI controls
     const [isHistoryActive, setIsHistoryActive] = useState(false);
@@ -58,7 +47,6 @@ export default function MyPicksPage() {
     const [weekEnd, setWeekEnd] = useState<string | null>(null);
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
     const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
-    const [selectedWeekRange, setSelectedWeekRange] = useState<WeekRange | null>(null);
     
     // Hooks for authentication and navigation
     const { isSignedIn } = useUser();
@@ -201,44 +189,6 @@ export default function MyPicksPage() {
         }
     }, [currentWeek]);
 
-    // Update week range when week is selected
-    useEffect(() => {
-        if (selectedWeek) {
-            const weekOption = weekOptions.find(w => w.weekNumber === selectedWeek);
-            if (weekOption) {
-                setSelectedWeekRange({
-                    start: weekOption.startDate,
-                    end: weekOption.endDate
-                });
-            }
-        }
-    }, [selectedWeek, weekOptions]);
-
-    // Filter picks by selected week range
-    const filteredPicks = useMemo(() => {
-        if (!selectedWeekRange || !userPicks.length) return [];
-        
-        return userPicks.filter(pick => {
-            const pickDate = new Date(pick.createdAt);
-            return pickDate >= selectedWeekRange.start && 
-                   pickDate <= selectedWeekRange.end;
-        });
-    }, [userPicks, selectedWeekRange]);
-
-    // Group filtered picks by date
-    const groupedPicks = filteredPicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
-        const date = new Date(pick.createdAt).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
-        if (!groups[date]) {
-            groups[date] = [];
-        }
-        groups[date].push(pick);
-        return groups;
-    }, {});
-
     return (
         <div className="picks-page">
             {/* Single history button */}
@@ -309,35 +259,22 @@ export default function MyPicksPage() {
                                 )}
                             </div>
 
-                            {isSignedIn && filteredPicks.length > 0 ? (
-                                Object.entries(groupedPicks).map(([date, picks]) => (
-                                    <div key={date} className="picks-group">
-                                        <h3 className="date-header">{date}</h3>
-                                        {picks.map((pick, index) => (
-                                            <div key={`${pick.gameId}-${index}`} className="pick-item">
-                                                <div className="pick-details">
-                                                    {pick.teamIndex === 0 ? (
-                                                        <>
-                                                            {pick.homeTeamLogo && <img src={pick.homeTeamLogo} alt={pick.homeTeam} className="team-logo" />}
-                                                            <div className="team-name">{pick.homeTeam}</div>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            {pick.awayTeamLogo && <img src={pick.awayTeamLogo} alt={pick.awayTeam} className="team-logo" />}
-                                                            <div className="team-name">{pick.awayTeam}</div>
-                                                        </>
-                                                    )}
-                                                </div>
+                            {isSignedIn && userPicks.length > 0 ? (
+                                userPicks.map((pick, index) => {
+                                    const teamDetails = getTeamDetails(pick.gameId, pick.teamIndex);
+                                    if (!teamDetails) return null;
+
+                                    return (
+                                        <div key={index} className="pick-item">
+                                            <div className="pick-details">
+                                                <img src={teamDetails.logo} alt={teamDetails.name} className="team-logo" />
+                                                <div className="team-name">{teamDetails.name}</div>
                                             </div>
-                                        ))}
-                                    </div>
-                                ))
+                                        </div>
+                                    );
+                                })
                             ) : (
-                                <div className="message">
-                                    {selectedWeekRange 
-                                        ? "No picks available for this week." 
-                                        : "Please select a week to view picks."}
-                                </div>
+                                <div className="message">No picks available. Please make your picks!</div>
                             )}
                         </div>
                     )}

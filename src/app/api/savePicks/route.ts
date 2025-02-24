@@ -10,33 +10,43 @@ const prisma = new PrismaClient();
 export async function POST(req: NextRequest) {
   let client;
   try {
-    const { userId: adminId } = getAuth(req);
-    console.log("Admin Clerk ID:", adminId);
+    const { userId } = getAuth(req);
+    console.log("Clerk User ID:", userId);
     
-    if (!adminId) {
-      console.log('Not authenticated');
+    if (!userId) {
+      console.log('User not authenticated');
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
 
-    client = await db.connect();
-    const body = await req.json();
-    const { picks, userId: targetUserId } = body;
-    
-    // If not admin, can only submit picks for themselves
-    const effectiveUserId = (targetUserId || adminId);
-    
-    console.log('Received picks:', picks);
-    console.log('Target User ID:', effectiveUserId);
+    // Check if user has already made picks today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    if (!picks || !Array.isArray(picks)) {
-      console.log('Invalid request data');
-      return NextResponse.json({ message: 'Invalid request data' }, { status: 400 });
+    const existingPicks = await prisma.pick.findFirst({
+      where: {
+        userId: userId,
+        createdAt: {
+          gte: today,
+          lt: tomorrow
+        }
+      }
+    });
+
+    if (existingPicks) {
+      console.log('User has already made picks today');
+      return NextResponse.json(
+        { message: 'You have already made picks for today' }, 
+        { status: 400 }
+      );
     }
 
-    // Get or create user in database
+    // Get user from database using Clerk ID
+    client = await db.connect();
     const userResult = await client.query(
       'SELECT * FROM users WHERE clerk_id = $1',
-      [effectiveUserId]
+      [userId]
     );
     console.log("Database user lookup result:", userResult.rows);
 
@@ -44,17 +54,18 @@ export async function POST(req: NextRequest) {
     if (userResult.rows.length === 0) {
       // Create new user if they don't exist
       console.log('Creating new user in database');
+      const clerkId = userId;  // Use the userId from getAuth() above
       
       const createUserResult = await client.query(
         `INSERT INTO users (username, email, password, role, clerk_id) 
          VALUES ($1, $2, $3, $4, $5) 
          RETURNING *`,
         [
-          `user_${Date.now()}_${effectiveUserId.slice(0, 8)}`,
-          `temp_${Date.now()}_${effectiveUserId.slice(0, 8)}@example.com`,
+          `user_${Date.now()}_${userId.slice(0, 8)}`,
+          `temp_${Date.now()}_${userId.slice(0, 8)}@example.com`,
           '',
-          1, // Regular user role
-          effectiveUserId
+          1,
+          userId
         ]
       );
       dbUser = createUserResult.rows[0];
@@ -63,7 +74,16 @@ export async function POST(req: NextRequest) {
       dbUser = userResult.rows[0];
     }
 
-    // First ensure all games exist with proper team names
+    const body = await req.json();
+    const { picks } = body;
+    console.log('Received picks:', picks);
+
+    if (!picks || !Array.isArray(picks)) {
+      console.log('Invalid request data');
+      return NextResponse.json({ message: 'Invalid request data' }, { status: 400 });
+    }
+
+    // First ensure all games exist
     for (const pick of picks) {
       const existingGame = await prisma.game.findUnique({
         where: { id: pick.gameId }
@@ -74,17 +94,17 @@ export async function POST(req: NextRequest) {
         await prisma.game.create({
           data: {
             id: pick.gameId,
-            team1Name: pick.homeTeam,
-            team2Name: pick.awayTeam,
-            team1Logo: pick.homeTeamLogo || "",
-            team2Logo: pick.awayTeamLogo || "",
+            team1Name: "Team 1",
+            team2Name: "Team 2",
+            team1Logo: "",
+            team2Logo: "",
           }
         });
       }
     }
 
     const pickRecords = picks.map((pick: { gameId: string; teamIndex: number }) => ({
-      userId: effectiveUserId,
+      userId: userId,
       gameId: pick.gameId,
       teamIndex: pick.teamIndex,
     }));
