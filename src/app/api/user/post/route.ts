@@ -1,6 +1,5 @@
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
-//import bcrypt from 'bcryptjs';
  
 export async function GET(req: Request) {
   let client;
@@ -13,8 +12,6 @@ export async function GET(req: Request) {
     if ( !username || !role || !email || !password || !start_date ){
       return NextResponse.json({ success: false, message: 'Missing fields required: username, email, password, role, and start_date' }, { status: 404 });
     }
-
-    //const hashedPass = await bcrypt.hash(password, 10);
 
     await client.query(
       `INSERT INTO users (username, email, password, role, points, ranking, start_date)

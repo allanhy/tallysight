@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image'
 import styles from '../styles/leaderboardProfiles.module.css';
 
@@ -11,7 +11,7 @@ interface user {
     img: string;
     points: number;
     max_points: number;
-    performance_percentage?: string;
+    performance: string;
 }
 
 interface leaderboardProfileProps {
@@ -22,6 +22,7 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
     const [users, setUsers] = useState<user[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [lastUpdated, setLastUpdated] = useState<number>(0); // Timestamp for updating leaderboard
 
     useEffect(() =>{
         if (userIds.length === 0){
@@ -46,18 +47,64 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
             }
             setLoading(false);
         };
+
         fetchUsers();
     }, [userIds]);
 
-    // Call function to calculate performance for display
-    const processedUsers = useMemo(() => calculatePerformance(users), [users]);
+    const updateUserPerformance = async(username: string, points: number, max_points: number) => {
+        try {
+            const response = await fetch('/api/user/updatePerformance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, points, max_points }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                setError(data.message || 'Failed to update performance');
+            }
+
+            console.log('Performance updated:', data.message);
+            return {success: true, data: data};
+        } catch (error) {
+            setError(`Failed to update performance: ${error}`);
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error updating performance' };
+        }
+    };
+
+    const updateAllUserPerformance = useCallback(async() => {
+        try{
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const updatedUsers = await Promise.all(users.map(user => updateUserPerformance(user.username, user.points, user.max_points)));
+            setLastUpdated(Date.now());
+            console.log('Daily performance update complete:');
+        } catch (error) {
+            console.error('Error updating performance for users:', error);
+        }
+    }, [users]);
+
+    // Update leaderboard daily
+    useEffect(() => { 
+        const currentTime = Date.now();
+        const sinceUpdate = currentTime - lastUpdated;
+
+        if (sinceUpdate > 86400000) // More than 24hrs
+            updateAllUserPerformance();
+
+        const interval = setInterval(() => {
+            updateAllUserPerformance();
+        }, 86400000)
+
+        return () => clearInterval(interval);
+    }, [lastUpdated, updateAllUserPerformance]);
+
 
     if (loading) return <div>Loading users...</div>;
     if (error) return <div className='error'>{error}</div>;
 
     return (
         <div id='profile' className='profile'>
-            {users?.length > 0 ? <Item data={processedUsers}/> : <div>No data available</div>}
+            {users?.length > 0 ? <Item data={users}/> : <div>No data available</div>}
         </div>
     );
 }
@@ -68,8 +115,8 @@ function Item({ data }: { data: user[] }) {
     
     return(
         <>
-            {sortedData.map((user, index: React.Key | null | undefined) => (
-                <div className={styles.profile} key={index}>
+            {sortedData.map((user) => (
+                <div className={styles.profile} key={user.rank}>
                     <div className={styles.rank}>{user.rank}</div>
                     <Image 
                         src={getImageSrc(user.img)} 
@@ -79,7 +126,7 @@ function Item({ data }: { data: user[] }) {
                         height={60}
                         className={styles.image}/>
                     <div className={styles.username}>{user.username}</div>
-                    <div className={styles.performance}>{user.performance_percentage}%</div>
+                    <div className={styles.performance}>{user.performance}%</div>
                     <div className={styles.points}>{user.points}</div>
                 </div>
             ))}
@@ -89,14 +136,4 @@ function Item({ data }: { data: user[] }) {
 
 function getImageSrc(img: string){
     return img?.startsWith('data:image') || img?.startsWith('http') ? img : '/default-profile.png';
-}
-
-function calculatePerformance(data: user[]) {
-    if(data.length === 0) 
-        return [];
-
-    return data.map( user => {
-        const percentage = user.max_points > 0 ? (user.points/user.max_points) * 100 : 0;
-        return{ ...user, performance_percentage: percentage.toFixed(3) };
-    });
 }
