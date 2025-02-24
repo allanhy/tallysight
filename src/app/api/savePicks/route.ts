@@ -10,11 +10,16 @@ const prisma = new PrismaClient();
 interface Pick {
   gameId: string;
   teamIndex: number;
-  team1Name: string;
-  team2Name: string;
-  team1Logo: string;
-  team2Logo: string;
-  gameDate: Date;
+  homeTeam: {
+    name: string;
+    logo: string;
+  };
+  awayTeam: {
+    name: string;
+    logo: string;
+  };
+  gameTime: string;
+  status: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -79,13 +84,24 @@ export async function POST(req: NextRequest) {
         console.log('Existing game check:', pick.gameId, existingGame ? 'found' : 'not found');
 
         if (!existingGame) {
+          // Convert gameTime to a Date object
+          const [time, period] = pick.gameTime.split(' ');
+          const [hours, minutes] = time.split(':');
+          const now = new Date();
+          const gameDate = new Date(now.setHours(
+            period === 'PM' ? parseInt(hours) + 12 : parseInt(hours),
+            parseInt(minutes),
+            0,
+            0
+          ));
+
           const gameData: Prisma.GameCreateInput = {
             id: pick.gameId,
-            team1Name: pick.team1Name,
-            team2Name: pick.team2Name,
-            team1Logo: pick.team1Logo || "",
-            team2Logo: pick.team2Logo || "",
-           
+            team1Name: pick.homeTeam.name,
+            team2Name: pick.awayTeam.name,
+            team1Logo: pick.homeTeam.logo || "",
+            team2Logo: pick.awayTeam.logo || "",
+         
           };
 
           console.log('Attempting to create game with data:', JSON.stringify(gameData, null, 2));
