@@ -103,13 +103,20 @@ export default function TomorrowPicks() {
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
+                
+                // Get tomorrow's date in ET timezone
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+                
                 return {
                     gameId,
-                    teamIndex: teamType === 'home' ? 1 : 0,
+                    teamIndex: teamType === 'home' ? 0 : 1,
                     team1Name: game?.homeTeam.name,
                     team2Name: game?.awayTeam.name,
                     team1Logo: game?.homeTeam.logo,
                     team2Logo: game?.awayTeam.logo,
+                    gameDate: tomorrow, // Add the game date
                 };
             });
 
@@ -121,10 +128,8 @@ export default function TomorrowPicks() {
                 body: JSON.stringify({ picks: picksArray }),
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to submit picks');
+                throw new Error('Failed to submit picks');
             }
 
             router.push('/contests');

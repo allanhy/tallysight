@@ -9,6 +9,18 @@ import '../styles/myPicks.css';
 interface Pick {
     gameId: string;
     teamIndex: number;
+    createdAt: string;
+    Game: {
+        team1Name: string;
+        team2Name: string;
+        team1Logo: string;
+        team2Logo: string;
+        winner: number | null;
+        final_score: string | null;
+        status?: string;
+        gameDate: string;
+        gameDay: string;
+    };
 }
 
 interface Game {
@@ -32,6 +44,11 @@ interface WeekOption {
     startDate: Date;
     endDate: Date;
     label: string;
+}
+
+// Add this interface for grouped picks
+interface GroupedPicks {
+    [date: string]: Pick[];
 }
 
 export default function MyPicksPage() {
@@ -59,18 +76,19 @@ export default function MyPicksPage() {
 
     // Fetch user's picks when signed in
     useEffect(() => {
-        if (isSignedIn) {
-            const fetchUserPicks = async () => {
-                try {
-                    const response = await axios.get('/api/userPicks');
-                    setUserPicks(response.data);
-                } catch (error) {
-                    console.error('Error fetching user picks:', error);
-                }
-            };
-            fetchUserPicks();
-        }
-    }, [isSignedIn]);
+        const fetchUserPicks = async () => {
+            try {
+                console.log('Fetching picks...'); // Debug log
+                const response = await axios.get('/api/userPicks');
+                console.log('Response:', response.data); // Debug log
+                setUserPicks(response.data);
+            } catch (error) {
+                console.error('Client Error:', error);
+            }
+        };
+
+        fetchUserPicks();
+    }, []);
 
     // Fetch games data on component mount
     useEffect(() => {
@@ -189,6 +207,45 @@ export default function MyPicksPage() {
         }
     }, [currentWeek]);
 
+    // Add this helper function to format dates consistently
+    const formatDate = (date: Date) => {
+        return new Date(date).toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric',
+            timeZone: 'America/New_York'  // Use ET timezone
+        });
+    };
+
+    // Group picks by game date
+    const groupPicksByGameDate = (picks: Pick[]) => {
+        // First remove duplicates based on gameId
+        const uniquePicks = picks.reduce((acc: Pick[], current) => {
+            const exists = acc.find(pick => pick.gameId === current.gameId);
+            if (!exists) {
+                acc.push(current);
+            }
+            return acc;
+        }, []);
+
+        // Then group by date
+        return uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
+            const date = pick.Game?.gameDate 
+                ? new Date(pick.Game.gameDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'short',
+                    day: 'numeric'
+                  })
+                : 'Upcoming Games';
+
+            if (!groups[date]) {
+                groups[date] = [];
+            }
+            groups[date].push(pick);
+            return groups;
+        }, {});
+    };
+
     return (
         <div className="picks-page">
             {/* Single history button */}
@@ -260,19 +317,65 @@ export default function MyPicksPage() {
                             </div>
 
                             {isSignedIn && userPicks.length > 0 ? (
-                                userPicks.map((pick, index) => {
-                                    const teamDetails = getTeamDetails(pick.gameId, pick.teamIndex);
-                                    if (!teamDetails) return null;
+                                Object.entries(groupPicksByGameDate(userPicks)).map(([date, datePicks]) => (
+                                    <div key={date} className="date-group">
+                                        <h3 className="text-lg font-semibold">
+                                            {date === 'Upcoming Games' 
+                                                ? 'Upcoming Games'
+                                                : `Games for ${date}`}
+                                        </h3>
+                                     
+                                        {datePicks.map((pick, index) => {
+                                            return (
+                                                <div key={`${date}-${index}`} className="pick-item">
+                                                    <div className="pick-details">
+                                                        {/* Teams display */}
+                                                        <div className={`team ${pick.teamIndex === 0 ? 'selected-team' : ''}`}>
+                                                            {pick.Game.team1Logo && (
+                                                                <img 
+                                                                    src={pick.Game.team1Logo || '/default-team-logo.png'} 
+                                                                    alt={pick.Game.team1Name} 
+                                                                    className="team-logo" 
+                                                                />
+                                                            )}
+                                                            <div className="team-name">{pick.Game.team1Name}</div>
+                                                        </div>
 
-                                    return (
-                                        <div key={index} className="pick-item">
-                                            <div className="pick-details">
-                                                <img src={teamDetails.logo} alt={teamDetails.name} className="team-logo" />
-                                                <div className="team-name">{teamDetails.name}</div>
-                                            </div>
-                                        </div>
-                                    );
-                                })
+                                                        <div className="vs">VS</div>
+
+                                                        <div className={`team ${pick.teamIndex === 1 ? 'selected-team' : ''}`}>
+                                                            {pick.Game.team2Logo && (
+                                                                <img 
+                                                                    src={pick.Game.team2Logo || '/default-team-logo.png'} 
+                                                                    alt={pick.Game.team2Name} 
+                                                                    className="team-logo" 
+                                                                />
+                                                            )}
+                                                            <div className="team-name">{pick.Game.team2Name}</div>
+                                                        </div>
+
+                                                        {/* Game status */}
+                                                        <div className="game-status">
+                                                            {!pick.Game ? (
+                                                                <div className="pick-result in-progress">
+                                                                    Upcoming
+                                                                </div>
+                                                            ) : pick.Game.status === 'STATUS_SCHEDULED' ? (
+                                                                <div className="pick-result in-progress">
+                                                                    Upcoming
+                                                                </div>
+                                                            ) : (
+                                                                <div className="pick-result in-progress">
+                                                                    Upcoming
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ))
                             ) : (
                                 <div className="message">No picks available. Please make your picks!</div>
                             )}
