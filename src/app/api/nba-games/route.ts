@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
 function getTeamLogo(teamName: string | undefined): string {
@@ -95,56 +97,81 @@ export async function GET(request: Request) {
             });
         }
 
-        const games = data.events
-            .map((game: any) => {
+        const updatedGames = [];
+
+        for (const game of data.events) {
+            const competition = game.competitions[0];
+            const homeTeam = competition.competitors.find((t: any) => t.homeAway === 'home');
+            const awayTeam = competition.competitors.find((t: any) => t.homeAway === 'away');
+
+            // Only process completed games
+            if (competition.status.type.completed) {
+                const homeScore = parseInt(homeTeam.score);
+                const awayScore = parseInt(awayTeam.score);
+                const Winner = homeScore > awayScore ? 0 : 1;
+                const final_score = `${homeScore}-${awayScore}`;
+
                 try {
-                    const competition = game.competitions[0];
-                    const homeTeam = competition.competitors.find((t: any) => t.homeAway === 'home')?.team;
-                    const awayTeam = competition.competitors.find((t: any) => t.homeAway === 'away')?.team;
+                    const updatedGame = await prisma.game.upsert({
+                        where: { id: game.id },
+                        update: {
+                         
+                        },
+                        create: {
+                            id: game.id,
+                            team1Name: homeTeam.team.name,
+                            team2Name: awayTeam.team.name,
+                            team1Logo: homeTeam.team.logo || '',
+                            team2Logo: awayTeam.team.logo || '',
+                        }
+                    });
+                    console.log('Updated game:', updatedGame);
 
-                    return {
-                        id: game.id,
-                        homeTeam: {
-                            name: homeTeam?.name || 'TBD',
-                            score: '0',
-                            spread: 'TBD',
-                            logo: getTeamLogo(homeTeam?.name)
+                    // Update user points for correct picks
+                    const correctPicks = await prisma.pick.findMany({
+                        where: {
+                            gameId: game.id,
+                            teamIndex: Winner
                         },
-                        awayTeam: {
-                            name: awayTeam?.name || 'TBD',
-                            score: '0',
-                            spread: 'TBD',
-                            logo: getTeamLogo(awayTeam?.name)
-                        },
-                        gameTime: new Date(game.date).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true,
-                            timeZone: 'America/New_York'
-                        }),
-                        status: 'scheduled'
-                    };
-                } catch (e) {
-                    console.error('Error processing game:', e);
-                    return null;
+                        include: {
+                            user: true
+                        }
+                    });
+
+                    // Award points to users who picked correctly
+                    for (const pick of correctPicks) {
+                        await prisma.users.update({
+                            where: { clerk_id: pick.userId },
+                            data: {
+                                points: {
+                                    increment: 1
+                                }
+                            }
+                        });
+                    }
+
+                    updatedGames.push({
+                        gameId: game.id,
+                        winner: Winner,
+                        finalScore: final_score,
+                        correctPicks: correctPicks.length
+                    });
+                } catch (error) {
+                    console.error(`Error updating game ${game.id}:`, error);
                 }
-            })
-            .filter(Boolean);
-
-        console.log(`Found ${games.length} games for date: ${dateStr}`);
+            }
+        }
 
         return NextResponse.json({
-            games,
-            message: games.length > 0 
-                ? `Games retrieved successfully for ${dayParam || 'today'}`
-                : `No games scheduled for ${dayParam || 'today'}`
+            message: 'Games updated successfully',
+            updatedGames: updatedGames
         });
 
     } catch (error) {
-        console.error('Error fetching games:', error);
-        return NextResponse.json({
-            games: [],
-            message: 'Error fetching games'
-        });
+        console.error('Error updating game results:', error);
+        return NextResponse.json(
+            { error: 'Failed to update game results' },
+            { status: 500 }
+        );
     }
 }

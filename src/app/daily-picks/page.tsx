@@ -101,15 +101,26 @@ export default function DailyPicks() {
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
+                
+                console.log('Game data for pick:', {
+                    gameId,
+                    game,
+                    teamType,
+                    homeTeam: game?.homeTeam.name,
+                    awayTeam: game?.awayTeam.name
+                });
+
                 return {
                     gameId,
-                    teamIndex: teamType === 'home' ? 1 : 0,
-                    team1Name: game?.homeTeam.name,
-                    team2Name: game?.awayTeam.name,
-                    team1Logo: game?.homeTeam.logo,
-                    team2Logo: game?.awayTeam.logo,
+                    teamIndex: teamType === 'home' ? 0 : 1,
+                    homeTeam: game?.homeTeam.name,
+                    awayTeam: game?.awayTeam.name,
+                    homeTeamLogo: game?.homeTeam.logo || '',
+                    awayTeamLogo: game?.awayTeam.logo || ''
                 };
             });
+
+            console.log('Sending picks data:', picksArray);
 
             const response = await fetch('/api/savePicks', {
                 method: 'POST',
