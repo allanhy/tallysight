@@ -2,20 +2,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { db } from '@vercel/postgres';
 
 const prisma = new PrismaClient();
-
-interface Pick {
-  gameId: string;
-  teamIndex: number;
-  team1Name: string;
-  team2Name: string;
-  team1Logo: string;
-  team2Logo: string;
-  gameDate: Date;
-}
 
 export async function POST(req: NextRequest) {
   let client;
@@ -28,6 +18,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
 
+    // Check if user has already made picks today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const existingPicks = await prisma.pick.findFirst({
+      where: {
+        userId: userId,
+        createdAt: {
+          gte: today,
+          lt: tomorrow
+        }
+      }
+    });
+
+    if (existingPicks) {
+      console.log('User has already made picks today');
+      return NextResponse.json(
+        { message: 'You have already made picks for today' }, 
+        { status: 400 }
+      );
+    }
+
     // Get user from database using Clerk ID
     client = await db.connect();
     const userResult = await client.query(
@@ -36,20 +50,16 @@ export async function POST(req: NextRequest) {
     );
     console.log("Database user lookup result:", userResult.rows);
 
+    let dbUser;
     if (userResult.rows.length === 0) {
       // Create new user if they don't exist
       console.log('Creating new user in database');
       const clerkId = userId;  // Use the userId from getAuth() above
       
       const createUserResult = await client.query(
-        `INSERT INTO users (
-          username, 
-          email, 
-          password,
-          role,
-          clerk_id
-        ) VALUES ($1, $2, $3, $4, $5)
-        RETURNING *`,
+        `INSERT INTO users (username, email, password, role, clerk_id) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING *`,
         [
           `user_${Date.now()}_${userId.slice(0, 8)}`,
           `temp_${Date.now()}_${userId.slice(0, 8)}@example.com`,
@@ -58,7 +68,10 @@ export async function POST(req: NextRequest) {
           userId
         ]
       );
-      console.log("New user created:", createUserResult.rows[0]);
+      dbUser = createUserResult.rows[0];
+      console.log('Created new user:', dbUser);
+    } else {
+      dbUser = userResult.rows[0];
     }
 
     const body = await req.json();
@@ -70,60 +83,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid request data' }, { status: 400 });
     }
 
-    // First ensure all games exist with proper team names, logos, and dates
+    // First ensure all games exist
     for (const pick of picks) {
       const existingGame = await prisma.game.findUnique({
         where: { id: pick.gameId }
       });
 
       if (!existingGame) {
-        // Get current date in ET timezone
-        const now = new Date();
-        const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        
-        const gameData: Prisma.GameCreateInput = {
-          id: pick.gameId,
-          team1Name: pick.team1Name || "Team 1",
-          team2Name: pick.team2Name || "Team 2",
-          team1Logo: pick.team1Logo || "",
-          team2Logo: pick.team2Logo || "",
-        
-        };
-
-        console.log('Creating game with data:', gameData);
-
+        console.log(`Creating game record for ID: ${pick.gameId}`);
         await prisma.game.create({
-          data: gameData
+          data: {
+            id: pick.gameId,
+            team1Name: "Team 1",
+            team2Name: "Team 2",
+            team1Logo: "",
+            team2Logo: "",
+          }
         });
       }
     }
 
-    // Create picks with proper team information
-    const pickRecords = await Promise.all(picks.map(async pick => {
-      const gameDate = await prisma.game.findUnique({
-        where: { id: pick.gameId },
-      });
-
-      return {
-        userId: userId,
-        gameId: pick.gameId,
-        teamIndex: pick.teamIndex,
-      };
+    const pickRecords = picks.map((pick: { gameId: string; teamIndex: number }) => ({
+      userId: userId,
+      gameId: pick.gameId,
+      teamIndex: pick.teamIndex,
     }));
 
+    console.log('Attempting to save picks:', pickRecords);
+
     await prisma.pick.createMany({
-      data: pickRecords
+      data: pickRecords,
     });
 
+    console.log('Picks saved successfully');
     return NextResponse.json({ message: 'Picks saved successfully' });
-
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error saving picks:', error.message);
-    } else {
-      console.error('Unexpected error saving picks:', error);
-    }
-    return NextResponse.json({ message: 'Failed to save picks' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Error saving picks:', error.message || error);
+    return NextResponse.json(
+      { message: 'Failed to save picks', error: error.message || 'Unknown error' }, 
+      { status: 500 }
+    );
   } finally {
     if (client) client.release();
   }
