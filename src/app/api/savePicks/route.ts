@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { picks } = body;
-    console.log('Received picks:', picks);
+    console.log('Received picks data structure:', JSON.stringify(picks, null, 2));
 
     if (!picks || !Array.isArray(picks)) {
       console.log('Invalid request data');
@@ -72,58 +72,65 @@ export async function POST(req: NextRequest) {
 
     // First ensure all games exist with proper team names, logos, and dates
     for (const pick of picks) {
-      const existingGame = await prisma.game.findUnique({
-        where: { id: pick.gameId }
-      });
-
-      if (!existingGame) {
-        // Get current date in ET timezone
-        const now = new Date();
-        const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        
-        const gameData: Prisma.GameCreateInput = {
-          id: pick.gameId,
-          team1Name: pick.team1Name,
-          team2Name: pick.team2Name,
-          team1Logo: pick.team1Logo || "",
-          team2Logo: pick.team2Logo || "",
-        };
-
-        console.log('Creating game with data:', gameData);
-
-        await prisma.game.create({
-          data: gameData
+      try {
+        const existingGame = await prisma.game.findUnique({
+          where: { id: pick.gameId }
         });
+        console.log('Existing game check:', pick.gameId, existingGame ? 'found' : 'not found');
+
+        if (!existingGame) {
+          const gameData: Prisma.GameCreateInput = {
+            id: pick.gameId,
+            team1Name: pick.team1Name,
+            team2Name: pick.team2Name,
+            team1Logo: pick.team1Logo || "",
+            team2Logo: pick.team2Logo || "",
+           
+          };
+
+          console.log('Attempting to create game with data:', JSON.stringify(gameData, null, 2));
+          await prisma.game.create({
+            data: gameData
+          });
+        }
+      } catch (gameError) {
+        console.error('Error processing game:', pick.gameId, gameError);
+        throw gameError;
       }
     }
 
     // Create picks with proper team information
-    const pickRecords = await Promise.all(picks.map(async pick => {
-      const gameDate = await prisma.game.findUnique({
-        where: { id: pick.gameId },
-      });
-
-      return {
+    try {
+      const pickRecords = picks.map(pick => ({
         userId: userId,
         gameId: pick.gameId,
         teamIndex: pick.teamIndex,
-      };
-    }));
+      }));
 
-    await prisma.pick.createMany({
-      data: pickRecords
-    });
+      console.log('Attempting to create picks:', JSON.stringify(pickRecords, null, 2));
+      await prisma.pick.createMany({
+        data: pickRecords
+      });
+    } catch (picksError) {
+      console.error('Error creating picks:', picksError);
+      throw picksError;
+    }
 
     return NextResponse.json({ message: 'Picks saved successfully' });
 
   } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error saving picks:', error.message);
-    } else {
-      console.error('Unexpected error saving picks:', error);
-    }
-    return NextResponse.json({ message: 'Failed to save picks' }, { status: 500 });
+    console.error('Full error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
+    
+    return NextResponse.json({ 
+      message: 'Failed to save picks',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   } finally {
     if (client) client.release();
+    await prisma.$disconnect();
   }
 }
