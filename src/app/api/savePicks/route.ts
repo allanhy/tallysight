@@ -83,11 +83,10 @@ export async function POST(req: NextRequest) {
         
         const gameData: Prisma.GameCreateInput = {
           id: pick.gameId,
-          team1Name: pick.team1Name || "Team 1",
-          team2Name: pick.team2Name || "Team 2",
+          team1Name: pick.team1Name,
+          team2Name: pick.team2Name,
           team1Logo: pick.team1Logo || "",
           team2Logo: pick.team2Logo || "",
-        
         };
 
         console.log('Creating game with data:', gameData);
