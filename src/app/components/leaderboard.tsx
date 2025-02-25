@@ -18,13 +18,18 @@ const Leaderboard: React.FC = () => {
     const [error, setError] = useState('');
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
     const [selectedSport, setSelectedSport] = useState<Sport | 'SELECT'>('SELECT'); // type selected sport
-    const [selectedWeek, setSelectedWeek] = useState('-1');
+    const [selectedWeek, setSelectedWeek] = useState<number | null>(-1);
 
+    // Updating Weekly Items
     useEffect(() => {
         // Set the current week when the component mounts
         const week = getCurrentWeek();
         setCurrentWeek(week);
+        checkAndCreateLeaderboard();
+    }, []);
 
+    // Getting selected leaderboard for chosen week and sport
+    useEffect(() => {
         const fetchLeaderboard = async () => {
             if(!selectedSport || !selectedWeek)
                 return;
@@ -34,7 +39,7 @@ const Leaderboard: React.FC = () => {
 
             try {
                 // Getting Users with entries in the sport & week
-                const res = await fetch(`/api/leaderboard-entries/get?sport=${selectedSport}&week=${selectedWeek}`);
+                const res = await fetch(`/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`);
                 const data = await res.json();
 
                 if (res.ok) {
@@ -59,11 +64,24 @@ const Leaderboard: React.FC = () => {
         return Math.ceil((days + 1) / 7);
     };
 
+    // Creating a new leaderboard for current week if there isn't one already
+    const checkAndCreateLeaderboard = async () => {
+        try {
+            const res = await fetch('/api/leaderboard/newLeaderboard/', { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) {
+                setError(`Error creating weekly leaderboard: ${data.message}`);
+            }
+        } catch (error) {
+            setError(`Network error creating leaderboard: ${error}`);
+        }
+    };
+
     // Generate weeks dynamically starting from current week
     const generateWeeks = () => {
-        if (currentWeek === null) {
+        if (currentWeek === null)
             return []; // Or return a default value
-        }
+        
         const weeks = [];
         const weeksToDisplay = 52;
         
@@ -81,7 +99,7 @@ const Leaderboard: React.FC = () => {
     }
 
     const handleWeekChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedWeek(e.target.value);
+        setSelectedWeek(parseInt(e.target.value, 10));
     }
 
     return (
@@ -103,7 +121,7 @@ const Leaderboard: React.FC = () => {
 
                             <select 
                                 className='select' 
-                                value={selectedWeek} 
+                                value={selectedWeek ?? -1} 
                                 onChange={handleWeekChange}>
                                 <option value='-1' disabled>Select Week</option>
                                 {generateWeeks().map((week, index) => (
@@ -120,6 +138,7 @@ const Leaderboard: React.FC = () => {
                                     <div className='leaderboard-header'>
                                         <div className='rank'>Rank</div>
                                         <div className='username'>User</div>
+                                        <div className='performance'>Performance</div>
                                         <div className='points'>Points</div>
                                     </div>
                                         {leaderboard.length <= 0 ? (
@@ -204,15 +223,37 @@ const Leaderboard: React.FC = () => {
 
                 .leaderboard-header {
                     display: flex;
-                    justify-content: space-between;
                     background-color: rgba(255, 255, 255, 0.1);
+                    justify-content: space-between;
                     text-transform: uppercase;
-                    text-align: center;
                     font-size: 1.5vh;
                     font-weight: bold;
                     color: white;
-                    padding: 20px;
+                    padding: 10px;
                     border-radius: 5px;
+                }
+
+                .rank {
+                    margin-bottom: 5px;
+                    text-align: left;
+                }
+
+                .points {
+                    margin-bottom: 5px;
+                    text-align: right;
+                    margin-left: 5vh;
+                }
+
+                .performance{
+                    margin-bottom: 5px;
+                    text-align: left;
+                    margin-left: 5vh;
+                }
+
+                .username {
+                    text-align: left;
+                    margin-bottom: 5px;
+                    margin-right: 5em;
                 }
             `}</style>
             </div>

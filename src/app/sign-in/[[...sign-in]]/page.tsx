@@ -35,6 +35,7 @@ export default function SignInPage() {
       .then((res) => {
         console.log(res)
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .catch((err: any) => {
         // See https://clerk.com/docs/custom-flows/error-handling
         // for more info on error handling

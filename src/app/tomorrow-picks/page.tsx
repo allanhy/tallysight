@@ -19,6 +19,7 @@ interface Game {
     status: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {
         return (
@@ -139,7 +140,7 @@ export default function TomorrowPicks() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
-                <div className="text-white">Loading tomorrow's games...</div>
+                <div className="text-white">Loading tomorrow&apos;s games...</div>
             </div>
         );
     }
@@ -166,7 +167,7 @@ export default function TomorrowPicks() {
                 </div>
                 <div className="mt-4 inline-block">
                     <div className="bg-[#333] rounded-full px-4 py-2 text-sm">
-                        <span className="text-white">Tomorrow's Games</span>
+                        <span className="text-white">Tomorrow&apos;s Games</span>
                         <span className="text-gray-400 ml-2">All times ET</span>
                     </div>
                 </div>
@@ -274,7 +275,7 @@ export default function TomorrowPicks() {
                                     onClick={() => router.push('/daily-picks')}
                                     className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                                 >
-                                    View Today's Games
+                                    View Today&apos;s Games
                                 </button>
                                 <button
                                     onClick={() => router.push('/contests')}

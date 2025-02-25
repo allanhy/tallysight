@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const userIds = searchParams.get('user_id');
 
-    // Updating rank beforer getting users
+    // Updating rank before getting users
     await client.query(`
       UPDATE users
       SET rank = subquery.rank
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     }
     return NextResponse.json({ success: true, data: users.rows }, { status:200 });
   } catch (error) {
-    return NextResponse.json({ success: false, message: 'Internal Server Error Fetching Users'+error }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Internal Server Error Fetching Users' + error }, { status: 500 });
   } finally {
     if(client) client.release();
   }
