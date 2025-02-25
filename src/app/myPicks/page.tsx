@@ -5,6 +5,8 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import '../styles/myPicks.css';
 
+
+//TODO: Add a history button to the picks page
 // Define TypeScript interfaces for data structures
 interface Pick {
     gameId: string;
