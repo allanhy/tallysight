@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       if (gameExists.rows.length === 0) {
         // Create game with proper team names
         await client.query(
-          `INSERT INTO "Game" (id, "homeTeam", "awayTeam", "homeTeamLogo", "awayTeamLogo", "gameDate") 
+          `INSERT INTO "Game" (id, "team1Name", "team2Name", "team1Logo", "team2Logo", "gameDate") 
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             pick.gameId,
