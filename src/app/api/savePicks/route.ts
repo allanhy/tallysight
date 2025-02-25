@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid picks format or missing date' }, { status: 400 });
     }
 
+    // Check if the request is for tomorrow's picks by comparing pickDate
+    const isTomorrowPicks = new Date(pickDate).getDate() > new Date().getDate();
+
     // First ensure all games exist
     for (const pick of picks) {
       try {
@@ -49,13 +52,19 @@ export async function POST(req: NextRequest) {
         });
 
         if (!existingGame) {
+          // Create game date based on whether it's for tomorrow or today
+          let gameDate = new Date();
+          if (isTomorrowPicks) {
+            gameDate.setDate(gameDate.getDate() + 1);
+          }
+          
           const gameData = {
             id: pick.gameId,
             team1Name: pick.homeTeam.name,
             team2Name: pick.awayTeam.name,
             team1Logo: pick.homeTeam.logo || '',
             team2Logo: pick.awayTeam.logo || '',
-            gameDate: new Date() // temporary default value
+            gameDate: gameDate
           };
 
           console.log('Creating game:', JSON.stringify(gameData, null, 2));

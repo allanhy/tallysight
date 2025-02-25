@@ -100,23 +100,34 @@ export default function TomorrowPicks() {
         setSubmitError(null);
 
         try {
+            // Get tomorrow's date once
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
+                
+                // Parse the game time
+                const [time, period] = game?.gameTime.split(' ') || ['', ''];
+                const [hours, minutes] = time.split(':').map(Number);
+                
+                // Create a new date object for the game time
+                const gameDate = new Date(tomorrow);
+                let gameHours = hours;
+                if (period === 'PM' && hours !== 12) gameHours += 12;
+                if (period === 'AM' && hours === 12) gameHours = 0;
+                gameDate.setHours(gameHours, minutes, 0, 0);
                 
                 return {
                     gameId,
                     teamIndex: teamType === 'home' ? 0 : 1,
                     homeTeam: game?.homeTeam,
                     awayTeam: game?.awayTeam,
-                    gameTime: game?.gameTime
+                    gameTime: gameDate.toISOString()  // Use the adjusted date
                 };
             });
-
-            // Get tomorrow's date
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
 
             const response = await fetch('/api/savePicks', {
                 method: 'POST',

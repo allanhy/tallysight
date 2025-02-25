@@ -89,23 +89,37 @@ export default function MyPicksPage() {
                 const tomorrow = new Date(today);
                 tomorrow.setDate(tomorrow.getDate() + 1);
 
+                // Format dates to match database format
+                const formattedToday = today.toISOString().split('T')[0];
+                const formattedTomorrow = tomorrow.toISOString().split('T')[0];
+
                 // Add date parameter to the API call
                 const dateParam = selectedDate 
-                    ? `?date=${selectedDate === 'today' 
-                        ? today.toISOString() 
-                        : tomorrow.toISOString()}`
+                    ? `?gameDate=${selectedDate === 'today' 
+                        ? formattedToday
+                        : formattedTomorrow}`
                     : '';
                     
                 const response = await axios.get(`/api/userPicks${dateParam}`);
                 console.log('Response:', response.data); // Debug log
-                setUserPicks(response.data);
+
+                // Sort picks by gameDate
+                const sortedPicks = response.data.sort((a: Pick, b: Pick) => {
+                    const dateA = new Date(a.Game.gameDate);
+                    const dateB = new Date(b.Game.gameDate);
+                    return dateA.getTime() - dateB.getTime();
+                });
+
+                setUserPicks(sortedPicks);
             } catch (error) {
                 console.error('Client Error:', error);
             }
         };
 
-        fetchUserPicks();
-    }, [selectedDate]); // Add selectedDate as dependency
+        if (isSignedIn) {
+            fetchUserPicks();
+        }
+    }, [selectedDate, isSignedIn]); // Add isSignedIn as dependency
 
     // Fetch games data on component mount
     useEffect(() => {
@@ -247,13 +261,16 @@ export default function MyPicksPage() {
 
         // Then group by date
         return uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
-            const date = pick.Game?.gameDate 
-                ? new Date(pick.Game.gameDate).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'short',
-                    day: 'numeric'
-                  })
-                : 'Upcoming Games';
+            const gameDate = pick.Game?.gameDate 
+                ? new Date(pick.Game.gameDate)
+                : new Date();
+
+            const date = gameDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'America/New_York'  // Use ET timezone
+            });
 
             if (!groups[date]) {
                 groups[date] = [];
