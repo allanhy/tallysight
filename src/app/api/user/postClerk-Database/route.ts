@@ -1,4 +1,4 @@
-// /api/user/post.ts
+// /api/user/postClerk-Database.ts
 import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error in POST /api/user/post:", error);
+    console.error("Error in POST /api/user/postClerk-Database:", error);
     return NextResponse.json(
       { 
         success: false, 

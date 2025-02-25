@@ -8,7 +8,7 @@ export default function UserMatch() {
   const { user } = useUser();
   useEffect(() => {
     if (isSignedIn && user) {
-      fetch('/api/user/post', {
+      fetch('/api/user/postClerk-Database', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
