@@ -12,6 +12,9 @@ interface user {
     points: number;
     max_points: number;
     performance: string;
+    bio?: string;
+    fav_team?: string;
+    user_id: number;
 }
 
 interface leaderboardProfileProps {
@@ -23,6 +26,7 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [lastUpdated, setLastUpdated] = useState<number>(0); // Timestamp for updating leaderboard
+    const [selectedUser, setSelectedUser] = useState<user | null>(null);
 
     useEffect(() =>{
         if (userIds.length === 0){
@@ -50,6 +54,21 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
 
         fetchUsers();
     }, [userIds]);
+
+    // Close profile popout when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const popout = document.getElementById('profilePopout');
+            if (popout && !popout.contains(event.target as Node) && selectedUser) {
+                setSelectedUser(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [selectedUser]);
 
     const updateUserPerformance = async(username: string, points: number, max_points: number) => {
         try {
@@ -98,25 +117,80 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
         return () => clearInterval(interval);
     }, [lastUpdated, updateAllUserPerformance]);
 
+    const handleUserClick = (user: user) => {
+        setSelectedUser(user);
+    };
 
     if (loading) return <div>Loading users...</div>;
     if (error) return <div className='error'>{error}</div>;
 
     return (
         <div id='profile' className='profile'>
-            {users?.length > 0 ? <Item data={users}/> : <div>No data available</div>}
+            {users?.length > 0 ? <Item data={users} onUserClick={handleUserClick}/> : <div>No data available</div>}
+            
+            {selectedUser && (
+                <div className={styles.popoutOverlay}>
+                    <div id="profilePopout" className={styles.profilePopout}>
+                        <button 
+                            className={styles.closeButton}
+                            onClick={() => setSelectedUser(null)}
+                        >
+                            ×
+                        </button>
+                        <div className={styles.popoutHeader}>
+                            <Image 
+                                src={getImageSrc(selectedUser.img)} 
+                                alt={`Profile image of ${selectedUser.username}`} 
+                                width={100} 
+                                height={100}
+                                className={styles.popoutImage}
+                            />
+                            <h2>{selectedUser.username}</h2>
+                            <div className={styles.popoutRank}>Rank: {selectedUser.rank}</div>
+                        </div>
+                        <div className={styles.popoutDetails}>
+                            {selectedUser.bio && (
+                                <div className={styles.popoutBio}>
+                                    <h3>Bio</h3>
+                                    <p>{selectedUser.bio}</p>
+                                </div>
+                            )}
+                            {selectedUser.fav_team && (
+                                <div className={styles.popoutFavTeam}>
+                                    <h3>Favorite Team</h3>
+                                    <p>{selectedUser.fav_team}</p>
+                                </div>
+                            )}
+                            <div className={styles.popoutStats}>
+                                <div>
+                                    <h3>Performance</h3>
+                                    <p>{selectedUser.performance}%</p>
+                                </div>
+                                <div>
+                                    <h3>Points</h3>
+                                    <p>{selectedUser.points}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
-function Item({ data }: { data: user[] }) {
+function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) => void }) {
     // Double check sorting
     const sortedData = [...data].sort((a, b) => a.rank - b.rank);
     
     return(
         <>
             {sortedData.map((user) => (
-                <div className={styles.profile} key={`${user.username}-${user.rank}`}>
+                <div 
+                    className={styles.profile} 
+                    key={`${user.username}-${user.rank}`}
+                    onClick={() => onUserClick(user)}
+                >
                     <div className={styles.rank}>{user.rank}</div>
                     <Image 
                         src={getImageSrc(user.img)} 

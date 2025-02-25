@@ -58,12 +58,6 @@ model influencers {
   user_id        Int     @id
   follower_count Int?    @default(0)
   user_handle    String?
-  x_link         String?
-  instagram_link String?
-  discord_link   String?
-  facebook_link  String?
-  snapchat_link  String?
-  new_user_id    String?
   users          users   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -104,6 +98,8 @@ model users {
   performance         Decimal               @default(0) @db.Decimal(5, 3)
   clerk_id            String                @unique @default("-1")
   password            String?               @db.VarChar(160)
+  bio                 String?
+  fav_team            String?
   influencers         influencers?
   leaderboard_entries leaderboard_entries[]
   picks               picks[]
