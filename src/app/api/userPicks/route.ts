@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
-import axios from 'axios';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-const ESPN_API = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+import { sql } from '@vercel/postgres';
 
 export async function GET(req: NextRequest) {
     try {
@@ -17,34 +13,60 @@ export async function GET(req: NextRequest) {
         const url = new URL(req.url);
         const dateParam = url.searchParams.get('date');
 
-        let whereClause: any = { userId };
-
+        let picks;
         if (dateParam) {
             const date = new Date(dateParam);
-            const nextDay = new Date(date);
-            nextDay.setDate(date.getDate() + 1);
-
-            whereClause.pickDate = {
-                gte: date,
-                lt: nextDay
-            };
+            // Query with date filter
+            picks = await sql`
+                SELECT p.*, g.*
+                FROM "Pick" p
+                JOIN "Game" g ON p."gameId" = g.id
+                WHERE p."userId" = ${userId}
+                AND g."gameDate" >= ${date}::date
+                AND g."gameDate" < (${date}::date + interval '1 day')
+                ORDER BY p."createdAt" DESC
+            `;
+        } else {
+            // Query without date filter
+            picks = await sql`
+                SELECT p.*, g.*
+                FROM "Pick" p
+                JOIN "Game" g ON p."gameId" = g.id
+                WHERE p."userId" = ${userId}
+                ORDER BY p."createdAt" DESC
+            `;
         }
 
-        const picks = await prisma.pick.findMany({
-            where: whereClause,
-            include: {
-                Game: true
-            },
-            orderBy: {
-                createdAt: 'desc'
+        // Transform the data to match your expected format
+        const formattedPicks = picks.rows.map(row => ({
+            id: row.id,
+            userId: row.userId,
+            gameId: row.gameId,
+            teamIndex: row.teamIndex,
+            createdAt: row.createdAt,
+            Game: {
+                id: row.id,
+                team1Name: row.team1Name,
+                team2Name: row.team2Name,
+                team1Logo: row.team1Logo,
+                team2Logo: row.team2Logo,
+                won: row.won,
+                final_score: row.final_score,
+                winner: row.winner,
+                gameDate: row.gameDate
             }
-        });
+        }));
 
-        return NextResponse.json(picks);
+        return NextResponse.json(formattedPicks);
+
     } catch (error) {
-        console.error('Server Error:', error);
+        console.error('Error fetching picks:', error);
         return NextResponse.json(
-            { message: 'Failed to fetch picks' },
+            { 
+                success: false,
+                message: 'Failed to fetch picks',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            },
             { status: 500 }
         );
     }
