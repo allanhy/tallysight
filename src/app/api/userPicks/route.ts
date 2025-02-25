@@ -22,10 +22,36 @@ export async function GET(req: NextRequest) {
                 FROM "Pick" p
                 JOIN "Game" g ON p."gameId" = g.id
                 WHERE p."userId" = ${userId}
-                AND g."gameDate" >= ${date}::date
-                AND g."gameDate" < (${date}::date + interval '1 day')
+                AND g."gameDate" >= ${date.toISOString()}::date
+                AND g."gameDate" < (${date.toISOString()}::date + interval '1 day')
                 ORDER BY p."createdAt" DESC
             `;
+
+            console.log('Fetched picks:', picks.rows); // Log the fetched data
+
+            // Transform the data to match your expected format
+            const formattedPicks = picks.rows.map(row => ({
+                id: row.id,
+                userId: row.userId,
+                gameId: row.gameId,
+                teamIndex: row.teamIndex,
+                createdAt: row.createdAt,
+                Game: {
+                    id: row.id,
+                    team1Name: row.team1Name,
+                    team2Name: row.team2Name,
+                    team1Logo: row.team1Logo,
+                    team2Logo: row.team2Logo,
+                    won: row.won,
+                    final_score: row.final_score,
+                    winner: row.winner,
+                    gameDate: row.gameDate
+                }
+            }));
+
+            console.log('Formatted picks:', formattedPicks); // Log the formatted data
+
+            return NextResponse.json(formattedPicks);
         } else {
             // Query without date filter
             picks = await sql`
@@ -35,29 +61,29 @@ export async function GET(req: NextRequest) {
                 WHERE p."userId" = ${userId}
                 ORDER BY p."createdAt" DESC
             `;
-        }
 
-        // Transform the data to match your expected format
-        const formattedPicks = picks.rows.map(row => ({
-            id: row.id,
-            userId: row.userId,
-            gameId: row.gameId,
-            teamIndex: row.teamIndex,
-            createdAt: row.createdAt,
-            Game: {
+            // Transform the data to match your expected format
+            const formattedPicks = picks.rows.map(row => ({
                 id: row.id,
-                team1Name: row.team1Name,
-                team2Name: row.team2Name,
-                team1Logo: row.team1Logo,
-                team2Logo: row.team2Logo,
-                won: row.won,
-                final_score: row.final_score,
-                winner: row.winner,
-                gameDate: row.gameDate
-            }
-        }));
+                userId: row.userId,
+                gameId: row.gameId,
+                teamIndex: row.teamIndex,
+                createdAt: row.createdAt,
+                Game: {
+                    id: row.id,
+                    team1Name: row.team1Name,
+                    team2Name: row.team2Name,
+                    team1Logo: row.team1Logo,
+                    team2Logo: row.team2Logo,
+                    won: row.won,
+                    final_score: row.final_score,
+                    winner: row.winner,
+                    gameDate: row.gameDate
+                }
+            }));
 
-        return NextResponse.json(formattedPicks);
+            return NextResponse.json(formattedPicks);
+        }
 
     } catch (error) {
         console.error('Error fetching picks:', error);
