@@ -117,28 +117,33 @@ export default function DailyPicks() {
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
+                
                 return {
                     gameId,
-                    teamIndex: teamType === 'home' ? 1 : 0,
-                    team1Name: game?.homeTeam.name,
-                    team2Name: game?.awayTeam.name,
-                    team1Logo: game?.homeTeam.logo,
-                    team2Logo: game?.awayTeam.logo,
+                    teamIndex: teamType === 'home' ? 0 : 1,
+                    homeTeam: game?.homeTeam,
+                    awayTeam: game?.awayTeam,
+                    gameTime: game?.gameTime
                 };
             });
+
+            // Get today's date
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
             const response = await fetch('/api/savePicks', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ picks: picksArray }),
+                body: JSON.stringify({ 
+                    picks: picksArray,
+                    pickDate: today.toISOString()
+                }),
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to submit picks');
+                throw new Error('Failed to submit picks');
             }
 
             // Update Max Points for User
