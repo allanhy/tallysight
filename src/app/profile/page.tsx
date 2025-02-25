@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs';
 import Image, { ImageLoaderProps }from 'next/image';
 import { ImageLoader } from "next/image"
 import { useState, useRef, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FieldValues } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import ImageCropper from '../components/imageCropper';
 import PreferencesSettings from '../components/PreferencesSettings';
@@ -14,6 +14,15 @@ interface Team {
   id: number;
   name: string;
   logoUrl?: string;
+}
+
+// Add interface for social links
+interface SocialLinks {
+  x: string;
+  instagram: string;
+  discord: string;
+  facebook: string;
+  snapchat: string;
 }
 
 const Profile = () => {
@@ -33,6 +42,15 @@ const Profile = () => {
 
   // Hook to manage form inputs and validation
   const { register, handleSubmit, formState: { errors } } = useForm();
+
+  // Add this new state for social media links
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({
+    x: (user?.unsafeMetadata?.x as string) || '',
+    instagram: (user?.unsafeMetadata?.instagram as string) || '',
+    discord: (user?.unsafeMetadata?.discord as string) || '',
+    facebook: (user?.unsafeMetadata?.facebook as string) || '',
+    snapchat: (user?.unsafeMetadata?.snapchat as string) || ''
+  });
 
   // Handles form submission for when user updates profile info.
   const onSubmit = async (data: any) => {
@@ -85,7 +103,7 @@ const Profile = () => {
   {/* Navigation Buttons */}
   const renderNavigationButtons = () => (
     <ul className="flex flex-col w-full mt-4 space-y-2">
-      {["Profile", "Activity", "Preferences", "Favorite Teams"].map((section) => (
+      {["Profile", "Activity", "Preferences", "Favorite Teams", "Social Media"].map((section) => (
         <li key={section}>
           <button
             onClick={() => {
@@ -152,6 +170,34 @@ const Profile = () => {
       console.error("Error saving favorite team:", error);
     }
   };    
+
+  // Update the handleSocialMediaSubmit function
+  const handleSocialMediaSubmit = async (data: FieldValues) => {
+    try {
+      const socialData = {
+        x: data.x || '',
+        instagram: data.instagram || '',
+        discord: data.discord || '',
+        facebook: data.facebook || '',
+        snapchat: data.snapchat || ''
+      };
+      
+      // Update Clerk's unsafe metadata
+      await user!.update({
+        unsafeMetadata: {
+          ...user?.unsafeMetadata,
+          ...socialData
+        }
+      });
+
+      // Update local state to reflect changes
+      setSocialLinks(socialData);
+      alert('Social media links updated successfully!');
+    } catch (error) {
+      console.error("Error updating social media links:", error);
+      alert('Failed to update social media links');
+    }
+  };
 
   const renderContent = () => {
     switch (selectedSection) {
@@ -256,6 +302,69 @@ const Profile = () => {
                 }}
               />
             )}
+          </div>
+        );
+      case 'Social Media':
+        return (
+          <div className="max-w-2xl">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-700">Social Media Links</h2>
+            <form onSubmit={handleSubmit(handleSocialMediaSubmit)} className="space-y-4">
+              {[
+                { display: 'X', key: 'x' },
+                { display: 'Instagram', key: 'instagram' },
+                { display: 'Discord', key: 'discord' },
+                { display: 'Facebook', key: 'facebook' },
+                { display: 'Snapchat', key: 'snapchat' }
+              ].map((platform) => (
+                <div key={platform.key} className="flex flex-col">
+                  <label className="px-4 py-2 font-semibold text-gray-700">
+                    {platform.display}:
+                  </label>
+                  <input
+                    defaultValue={socialLinks[platform.key as keyof typeof socialLinks] || ''}
+                    {...register(platform.key)}
+                    placeholder={`Enter your ${platform.display} profile link`}
+                    className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
+                  />
+                </div>
+              ))}
+              
+              <div className="space-x-2 py-2">
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-[#008AFF] text-white font-semibold shadow-sm hover:bg-blue-600"
+                >
+                  Save Social Links
+                </button>
+              </div>
+            </form>
+
+            {/* Displaying the social media links */}
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold">Your Social Media Links:</h3>
+              <ul>
+                {Object.entries(socialLinks).map(([key, value]) => (
+                  value && (
+                    <li key={key}>
+                      <a
+                        href={
+                          key === 'instagram' ? `https://www.instagram.com/${value}` :
+                          key === 'facebook' ? `https://www.facebook.com` :
+                          key === 'snapchat' ? `https://www.snapchat.com/add/${value}` :
+                          key === 'discord' ? `https://discord.com/users/${value}` : 
+                          `https://www.${key}.com/${value}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline"
+                      >
+                        {key.charAt(0).toUpperCase() + key.slice(1)}: @{value}
+                      </a>
+                    </li>
+                  )
+                ))}
+              </ul>
+            </div>
           </div>
         );
       default:
