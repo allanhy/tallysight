@@ -100,32 +100,16 @@ export default function TomorrowPicks() {
         setSubmitError(null);
 
         try {
-            // Get tomorrow's date once
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
-
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
-                
-                // Parse the game time
-                const [time, period] = game?.gameTime.split(' ') || ['', ''];
-                const [hours, minutes] = time.split(':').map(Number);
-                
-                // Create a new date object for the game time
-                const gameDate = new Date(tomorrow);
-                let gameHours = hours;
-                if (period === 'PM' && hours !== 12) gameHours += 12;
-                if (period === 'AM' && hours === 12) gameHours = 0;
-                gameDate.setHours(gameHours, minutes, 0, 0);
-                
                 return {
                     gameId,
-                    teamIndex: teamType === 'home' ? 0 : 1,
-                    homeTeam: game?.homeTeam,
-                    awayTeam: game?.awayTeam,
-                    gameTime: gameDate.toISOString()  // Use the adjusted date
+                    teamIndex: teamType === 'home' ? 1 : 0,
+                    team1Name: game?.homeTeam.name,
+                    team2Name: game?.awayTeam.name,
+                    team1Logo: game?.homeTeam.logo,
+                    team2Logo: game?.awayTeam.logo,
                 };
             });
 
@@ -134,14 +118,13 @@ export default function TomorrowPicks() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    picks: picksArray,
-                    pickDate: tomorrow.toISOString()
-                }),
+                body: JSON.stringify({ picks: picksArray }),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error('Failed to submit picks');
+                throw new Error(data.message || 'Failed to submit picks');
             }
 
             router.push('/contests');
