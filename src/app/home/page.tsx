@@ -9,6 +9,7 @@ import GameCard from '../components/GameCard';
 import { Game } from '../types/game';
 import Leaderboard from '../components/leaderboard';
 import Link from 'next/link';
+import UserMatch from '../components/UserMatch';
 
 const responsive = {
   superLargeDesktop: {
@@ -79,6 +80,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* UserSync triggers the API call if a user is signed in */}
+      {/* <UserMatch /> */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Carousel Section */}
         <div className="relative mb-20">
