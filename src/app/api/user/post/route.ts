@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error in POST /api/user/postClerk-Database:", error);
+    console.error("Error in POST /api/user/post:", error);
     return NextResponse.json(
       { 
         success: false, 

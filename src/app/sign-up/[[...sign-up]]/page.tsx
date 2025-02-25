@@ -247,7 +247,7 @@ export default function SignUpPage() {
           </SignUp.Step>
         </SignUp.Root>
       </div>
-      <UserMatch />
+      {/* <UserMatch /> */}
     </div>
   )
 }
