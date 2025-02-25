@@ -8,25 +8,27 @@ datasource db {
 }
 
 model Pick {
-  id        String   @id @default(uuid())
+  id        String   @id(map: "pick_pkey") @default(uuid())
   userId    String
   gameId    String
   teamIndex Int
-  createdAt DateTime @default(now())
-  Game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  user      users    @relation(fields: [userId], references: [clerk_id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  Game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade, map: "pick_gameid_fkey")
 
-  @@index([gameId])
-  @@index([userId])
+  @@index([gameId], map: "pick_gameid_idx")
 }
 
 model Game {
-  id        String  @id
-  team1Name String
-  team2Name String
-  team1Logo String?
-  team2Logo String?
-  Pick      Pick[]
+  id          String    @id(map: "game_pkey")
+  team1Name   String
+  team2Name   String
+  team1Logo   String?
+  team2Logo   String?
+  won         Int?
+  final_score String?
+  winner      Boolean?
+  gameDate    DateTime? @db.Date
+  Pick        Pick[]
 }
 
 model admins {
@@ -35,7 +37,7 @@ model admins {
 
 model contests {
   id               Int      @id @default(autoincrement())
-  title            String   @unique(map: "contests_contest_name_key") @db.VarChar(100)
+  title            String   @db.VarChar(100)
   start_date       DateTime @db.Timestamptz(6)
   end_date         DateTime @db.Timestamptz(6)
   prize            Int?     @default(0)
@@ -48,52 +50,80 @@ model contests {
   current_entries  Int      @default(0)
   rank             Int?
   points           Int?
+
+  @@index([title], map: "contests_contest_name_key")
 }
 
 model influencers {
-  user_id        Int   @id
-  follower_count Int?  @default(0)
-  users          users @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+  user_id        Int     @id
+  follower_count Int?    @default(0)
+  user_handle    String?
+  x_link         String?
+  instagram_link String?
+  discord_link   String?
+  facebook_link  String?
+  snapchat_link  String?
+  new_user_id    String?
+  users          users   @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model leaderboard_entries {
-  entry_id       Int          @id(map: "leaderboard_entires_pkey") @default(autoincrement())
+  entry_id       Int       @id @default(autoincrement())
   user_id        Int
   leaderboard_id Int
   rank           Int
   points         Int
-  start_date     DateTime?    @default(now()) @db.Timestamp(6)
-  leaderboards   leaderboards @relation(fields: [leaderboard_id], references: [leaderboard_id], onDelete: Cascade, onUpdate: NoAction, map: "leaderboard_fkey")
-  users          users        @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "user_fkey")
+  start_date     DateTime? @default(now()) @db.Timestamp(6)
+  users          users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "user_fkey")
 
   @@unique([user_id, leaderboard_id], map: "single_user_per_leaderboard")
-  @@index([leaderboard_id], map: "idx_entries_by_leaderboard_id")
   @@index([rank], map: "idx_entries_by_rank")
-  @@index([user_id], map: "idx_entries_by_user_id")
 }
 
 model leaderboards {
-  leaderboard_id      Int                   @id @default(autoincrement())
-  start_date          DateTime              @default(now()) @db.Timestamp(6)
-  name                String                @db.VarChar(100)
-  sport               String                @db.VarChar(50)
-  week                Int
-  description         String                @default(" ")
-  leaderboard_entries leaderboard_entries[]
+  leaderboard_id Int      @id @default(autoincrement())
+  start_date     DateTime @default(now()) @db.Timestamp(6)
+  name           String   @db.VarChar(100)
+  sport          String   @db.VarChar(50)
+  week           Int
+  description    String   @default("")
+  year           Int      @default(dbgenerated("(EXTRACT(year FROM start_date))::integer"))
+
+  @@unique([sport, week], map: "1_leaderboard_per_sport&week")
 }
 
 model users {
   user_id             Int                   @id @default(autoincrement())
   username            String                @unique @db.VarChar(50)
   email               String                @unique @db.VarChar(100)
-  password            String                @db.VarChar(100)
-  clerk_id            String?               @unique
   role                Int
   points              Int?                  @default(0)
   rank                Int?
   start_date          DateTime              @default(now()) @db.Date
-  profile_picture     String?               @db.VarChar(255)
-  picks               Pick[]
+  max_points          Int                   @default(0)
+  performance         Decimal               @default(0) @db.Decimal(5, 3)
+  clerk_id            String                @unique @default("-1")
+  password            String?               @db.VarChar(160)
   influencers         influencers?
   leaderboard_entries leaderboard_entries[]
+  picks               picks[]
+}
+
+model events {
+  event_id   Int      @id @default(autoincrement())
+  game_name  String   @db.VarChar(100)
+  date       DateTime @db.Date
+  odds       Float
+  sport_type String   @db.VarChar(50)
+}
+
+model picks {
+  pick_id     Int      @id @default(autoincrement())
+  user_id     Int
+  event_id    Int
+  amount      Float
+  payoff      Float?
+  status      String   @db.VarChar(20)
+  date_placed DateTime @db.Date
+  users       users    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "bets_user_id_fkey")
 }
