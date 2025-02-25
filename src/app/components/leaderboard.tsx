@@ -39,7 +39,7 @@ const Leaderboard: React.FC = () => {
 
             try {
                 // Getting Users with entries in the sport & week
-                const res = await fetch(`/api/leaderboard-entries/get?sport=${selectedSport}&week=${selectedWeek}`);
+                const res = await fetch(`/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`);
                 const data = await res.json();
 
                 if (res.ok) {

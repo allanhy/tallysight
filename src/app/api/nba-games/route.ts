@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';

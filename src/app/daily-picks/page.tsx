@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useAuth } from "@clerk/clerk-react";
 
 interface Team {
     name: string;
@@ -18,7 +19,11 @@ interface Game {
     gameTime: string;
     status: string;
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type  Sport = ['NBA']
+const MAXPOINTSPERGAME = 10;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {
         return (
@@ -33,6 +38,7 @@ const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => voi
     return <span className="text-gray-700">{spread}</span>;
 };
 
+
 export default function DailyPicks() {
     const router = useRouter();
     const [games, setGames] = useState<Game[]>([]);
@@ -41,6 +47,16 @@ export default function DailyPicks() {
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const getCurrentWeek = () => {
+        const date: Date = new Date();
+        const startDate: Date = new Date(date.getFullYear(), 0, 1);
+        const days: number = Math.floor((date.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+        return Math.ceil((days + 1) / 7);
+    };
+
+    const { userId } = useAuth();
 
     useEffect(() => {
         const fetchTodayGames = async () => {
@@ -125,6 +141,41 @@ export default function DailyPicks() {
                 throw new Error(data.message || 'Failed to submit picks');
             }
 
+            // Update Max Points for User
+            const max_points = MAXPOINTSPERGAME*picksArray.length;
+
+            const updatePoints = await fetch('/api/user/updateMaxPoints', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({clerk_id: userId, max_points: max_points})
+            });
+
+            const data2 = await updatePoints.json();
+
+            if (!updatePoints.ok) {
+                throw new Error(data2.message || 'Failed to update max points');
+            }
+
+            // Adding points to specific leaderboard entry
+            const points = 5;
+
+            const updateEntry = await fetch('api/leaderboard-entries/verifyEntry', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({clerk_id: userId, sport: 'NBA', week: getCurrentWeek(), points: points})
+            });
+
+            const data3 = await updateEntry.json();
+
+            if (!updateEntry.ok) {
+                throw new Error(data3.message || 'Failed to update user entry in leaderboard');
+            }
+
+
             router.push('/contests');
         } catch (error) {
             console.error('Error submitting picks:', error);
@@ -137,7 +188,7 @@ export default function DailyPicks() {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center">
-                <div className="text-white">Loading today's games...</div>
+                <div className="text-white">Loading today&apos; games...</div>
             </div>
         );
     }
@@ -164,7 +215,7 @@ export default function DailyPicks() {
                 </div>
                 <div className="mt-4 inline-block">
                     <div className="bg-[#333] rounded-full px-4 py-2 text-sm">
-                        <span className="text-white">Today's Games</span>
+                        <span className="text-white">Today&apos;s Games</span>
                         <span className="text-gray-400 ml-2">All times ET</span>
                     </div>
                 </div>
@@ -272,7 +323,7 @@ export default function DailyPicks() {
                                     onClick={() => router.push('/tomorrow-picks')}
                                     className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                                 >
-                                    View Tomorrow's Games
+                                    View Tomorrow&apos;s Games
                                 </button>
                                 <button
                                     onClick={() => router.push('/contests')}

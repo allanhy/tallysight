@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const userIds = searchParams.get('user_id');
 
-    // Updating rank beforer getting users
+    // Updating rank before getting users
     await client.query(`
       UPDATE users
       SET rank = subquery.rank

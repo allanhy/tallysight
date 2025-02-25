@@ -34,7 +34,7 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
         const fetchUsers = async () => {
             try {
                 const queryStr = `user_id=${userIds.join(',')}`;
-                const res = await fetch(`/api/user/get?${queryStr}`);
+                const res = await fetch(`/api/user/getUsersLeaderboard?${queryStr}`);
                 const data = await res.json();
 
                 if (res.ok) {
