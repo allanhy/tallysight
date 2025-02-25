@@ -104,29 +104,28 @@ export default function TomorrowPicks() {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
                 
+                // Get tomorrow's date in ET timezone
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+                
                 return {
                     gameId,
                     teamIndex: teamType === 'home' ? 0 : 1,
-                    homeTeam: game?.homeTeam,
-                    awayTeam: game?.awayTeam,
-                    gameTime: game?.gameTime
+                    team1Name: game?.homeTeam.name,
+                    team2Name: game?.awayTeam.name,
+                    team1Logo: game?.homeTeam.logo,
+                    team2Logo: game?.awayTeam.logo,
+                    gameDate: tomorrow, // Add the game date
                 };
             });
-
-            // Get tomorrow's date
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
 
             const response = await fetch('/api/savePicks', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    picks: picksArray,
-                    pickDate: tomorrow.toISOString()
-                }),
+                body: JSON.stringify({ picks: picksArray }),
             });
 
             if (!response.ok) {

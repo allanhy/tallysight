@@ -65,9 +65,6 @@ export default function MyPicksPage() {
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
     const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
     
-    // Add this state for date filtering
-    const [selectedDate, setSelectedDate] = useState<'today' | 'tomorrow' | null>(null);
-
     // Hooks for authentication and navigation
     const { isSignedIn } = useUser();
     const router = useRouter();
@@ -82,21 +79,7 @@ export default function MyPicksPage() {
         const fetchUserPicks = async () => {
             try {
                 console.log('Fetching picks...'); // Debug log
-                
-                // Get today and tomorrow's dates in ISO format
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-
-                // Add date parameter to the API call
-                const dateParam = selectedDate 
-                    ? `?date=${selectedDate === 'today' 
-                        ? today.toISOString() 
-                        : tomorrow.toISOString()}`
-                    : '';
-                    
-                const response = await axios.get(`/api/userPicks${dateParam}`);
+                const response = await axios.get('/api/userPicks');
                 console.log('Response:', response.data); // Debug log
                 setUserPicks(response.data);
             } catch (error) {
@@ -105,7 +88,7 @@ export default function MyPicksPage() {
         };
 
         fetchUserPicks();
-    }, [selectedDate]); // Add selectedDate as dependency
+    }, []);
 
     // Fetch games data on component mount
     useEffect(() => {
@@ -265,28 +248,6 @@ export default function MyPicksPage() {
 
     return (
         <div className="picks-page">
-            {/* Add this near the top of your content */}
-            <div className="date-filter-buttons">
-                <button 
-                    className={`filter-button ${selectedDate === 'today' ? 'active' : ''}`}
-                    onClick={() => setSelectedDate('today')}
-                >
-                    Today's Picks
-                </button>
-                <button 
-                    className={`filter-button ${selectedDate === 'tomorrow' ? 'active' : ''}`}
-                    onClick={() => setSelectedDate('tomorrow')}
-                >
-                    Tomorrow's Picks
-                </button>
-                <button 
-                    className={`filter-button ${selectedDate === null ? 'active' : ''}`}
-                    onClick={() => setSelectedDate(null)}
-                >
-                    All Picks
-                </button>
-            </div>
-
             {/* Single history button */}
             <div className="history-button-container">
                 <button className="history-button" onClick={handleHistoryClick}>
