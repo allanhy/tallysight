@@ -10,7 +10,7 @@ import ImageCropper from '../components/imageCropper';
 import PreferencesSettings from '../components/PreferencesSettings';
 import FavoriteTeam from '../components/FavoriteTeam';
 
-interface Team {
+export interface Team {
   id: number;
   name: string;
   logoUrl?: string;
@@ -34,8 +34,8 @@ const Profile = () => {
   const [showCropper, setShowCropper] = useState(false);
 
   // Favorite team states and effects from the second file
-  const [showFavoriteTeamModal, setShowFavoriteTeamModal] = useState(false);
   const [favoriteTeam, setFavoriteTeam] = useState<Team | null>(null);
+  const [showFavoriteTeamModal, setShowFavoriteTeamModal] = useState(false);
   useEffect(() => {
     console.log("Favorite team state:", favoriteTeam);
   }, [favoriteTeam]);
@@ -130,46 +130,42 @@ const Profile = () => {
   useEffect(() => {
     const fetchFavoriteTeam = async () => {
       try {
-        const response = await fetch("/api/FavoriteTeams");
-        if (!response.ok) throw new Error("Failed to fetch favorite team");
-
+        const response = await fetch('/api/FavoriteTeams');
+        if (!response.ok) throw new Error('Failed to fetch favorite team');
         const data = await response.json();
-        console.log("Fetched favorite team data:", data);
-
-        if (Array.isArray(data.team) && data.team.length > 0) {
-          setFavoriteTeam(data.team[0]);
-        } else if (data.team && data.team.logoUrl) {
-          // In case the API returns an object instead of an array
+        // Expect data.team to be either an object or an array; adjust accordingly.
+        if (data.team) {
           setFavoriteTeam(data.team);
-        } else {
-          console.warn("No logo URL found in fetched data:", data);
         }
       } catch (error) {
-        console.error("Error fetching favorite team:", error);
+        console.error('Error fetching favorite team:', error);
       }
     };
+
     fetchFavoriteTeam();
   }, []);
+
   
   // Handles saving the favorite team
   const handleFavoriteTeamSave = async (selectedTeam: Team) => {
     try {
       console.log("Saving favorite team:", selectedTeam);
-      const response = await fetch("/api/FavoriteTeams", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      // Update public metadata with the new favorite team.
+      await user?.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          favoriteTeam: selectedTeam,
         },
-        body: JSON.stringify({ team: selectedTeam }), // Send the single team
       });
-      if (!response.ok) throw new Error("Failed to save favorite team");
-      console.log("Successfully saved favorite team:", selectedTeam);
-      setFavoriteTeam(selectedTeam); // Set the single team
+      setFavoriteTeam(selectedTeam);
       setShowFavoriteTeamModal(false);
+      setSelectedSection("Profile");
+      console.log("Favorite team saved:", selectedTeam);
     } catch (error) {
       console.error("Error saving favorite team:", error);
     }
-  };    
+  };
+  
 
   // Update the handleSocialMediaSubmit function
   const handleSocialMediaSubmit = async (data: FieldValues) => {
@@ -295,11 +291,8 @@ const Profile = () => {
                   setShowFavoriteTeamModal(false);
                   setSelectedSection("Profile");
                 }}
-                onSave={(teams) => {
-                  console.log(teams);
-                  setShowFavoriteTeamModal(false);
-                  setSelectedSection("Profile");
-                }}
+                onSave={handleFavoriteTeamSave}
+                
               />
             )}
           </div>
@@ -406,7 +399,7 @@ const Profile = () => {
         <ImageCropper imageFile={selectedFile} onCropComplete={handleCropComplete} onCancel={() => setShowCropper(false)} />
       )}
         {favoriteTeam && favoriteTeam.logoUrl && (
-        <div style={{ position: "fixed", top: "20px", left: "20px" }}>
+        <div style={{ position: "fixed", top: "725px", left: "160px" }}>
           <div className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 shadow-lg flex items-center justify-center">
             <img
               src={favoriteTeam.logoUrl}

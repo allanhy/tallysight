@@ -8,6 +8,7 @@ import ReCAPTCHA from 'react-google-recaptcha';
 import axios from 'axios';
 import { AuthenticateWithRedirectCallback } from '@clerk/nextjs';
 import { useParams } from 'next/navigation';
+import UserMatch from '../../components/UserMatch';
 
 
 export default function SignUpPage() {
@@ -249,6 +250,7 @@ export default function SignUpPage() {
           </SignUp.Step>
         </SignUp.Root>
       </div>
+      {/* <UserMatch /> */}
     </div>
   )
 }

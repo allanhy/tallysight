@@ -1,28 +1,54 @@
-import { db } from '@vercel/postgres';
+// /api/user/postClerk-Database.ts
+import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
- 
-export async function GET(req: Request) {
-  let client;
 
+
+
+export async function POST(req: Request) {
   try {
-    client = await db.connect();
     const data = await req.json();
-    const { username, email, password, role, points = 0, rank, start_date } = data;
+    const { clerkId, email } = data;
 
-    if ( !username || !role || !email || !password || !start_date ){
-      return NextResponse.json({ success: false, message: 'Missing fields required: username, email, password, role, and start_date' }, { status: 404 });
+    if (!clerkId || !email) {
+      return NextResponse.json(
+        { success: false, message: 'Missing required fields: clerkId and email' },
+        { status: 400 }
+      );
     }
 
-    await client.query(
-      `INSERT INTO users (username, email, password, role, points, ranking, start_date)
-      VALUES (${username}, ${email}, ${password}, ${role}, ${points}, ${rank}, ${start_date})
-      ON CONFLICT (email) DO NOTHING;`);
 
-    return NextResponse.json({ success: true, message: 'User creation: Success' }, { status: 201 });
+
+    // Test the connection
+    try {
+      await sql`SELECT 1`;
+      console.log('Database connection successful');
+    } catch (e) {
+      console.error('Database connection failed:', e);
+      throw e;
+    }
+
+    await sql`
+      INSERT INTO users (clerk_id, email, username, password, role)
+      VALUES (${clerkId}, ${email}, ${email.split('@')[0]}, ${'clerk-auth'}, ${1})
+      ON CONFLICT (email) DO UPDATE 
+      SET clerk_id = EXCLUDED.clerk_id
+      RETURNING *;
+    `;
+
+
+    return NextResponse.json(
+      { success: true, message: 'User created successfully' },
+      { status: 201 }
+    );
   } catch (error) {
-    return NextResponse.json({ error }, { status: 500 });
-  } finally {
-    if(client) client.release();
+    console.error("Error in POST /api/user/post:", error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'Failed to create user',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }, 
+      { status: 500 }
+    );
   }
-
 }
