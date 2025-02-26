@@ -1,15 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;900&display=swap');
+
 
 :root {
   --background: #ffffff;
   --foreground: #000000;
   --card-background: #ffffff;
+  --font-family: 'Montserrat', sans-serif;
   --card-border: #e5e7eb;
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --accent-color: #3B82F6;
+  --background-color: black;
+  --text-color: white;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,13 +26,29 @@
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
     --accent-color: #3B82F6;
+    --background-color: black;
+    --text-color: white;
   }
+}
+
+:root[data-theme="light"] {
+  --background-color: white;
+  --text-color: black;
+}
+
+:root[data-theme="dark"] {
+  --background-color: black;
+  --text-color: white;
+}
+
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif;
 }
 
 body {
   background-color: var(--background);
   color: var(--text-primary);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family);
 }
 
 @layer utilities {
@@ -38,18 +59,13 @@ body {
 
 @layer base {
   h1, h2, h3, h4 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Montserrat', sans-serif;
   }
   p {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Montserrat', sans-serif;
   }
 }
-[data-theme="dark"] {
-  --background: #111827;
-  --foreground: #ffffff;
-  --card-background: #1f2937;
-  --card-border: #374151;
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --accent-color: #3B82F6;
+
+* {
+  font-family: var(--font-family) !important;
 }

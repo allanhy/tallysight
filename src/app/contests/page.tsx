@@ -54,8 +54,9 @@ export default function ContestsPage() {
     if (loading) return <div>Loading contests...</div>;
 
     return (
-        <div className="p-4 sm:p-8 min-h-screen" style={{ backgroundColor: 'black' }}>
-            <h1 className="text-white text-2xl font-bold mb-4 text-center">Contests</h1>
+        <div className="p-4 sm:p-8 min-h-screen" >
+            <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{letterSpacing: '1.5px', fontSize: '65px' }}
+            >Contests</h1>
             <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
                 <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}>
                     <div className="p-4 sm:p-8">

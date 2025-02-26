@@ -21,10 +21,10 @@ const PreferencesSettings = () => {
     <div className="space-y-8">
       {/* Appearance Section */}
       <div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-400 mb-4">
+        <h3 className="text-5xl font-medium text-gray-900 dark:text-black-400 mb-4">
           Appearance
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <p className="text-sm text-gray-500 dark:text-gray-900 mb-4">
           Change how Untitled UI looks and feels in your browser.
         </p>
 
@@ -62,7 +62,7 @@ const PreferencesSettings = () => {
 
         {/* Interface Theme */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-800 dark:text-gray-400 mb-2">
             Interface theme
           </label>
           <div className="grid grid-cols-3 gap-4">

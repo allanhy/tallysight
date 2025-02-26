@@ -139,7 +139,6 @@ const Leaderboard: React.FC = () => {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: black;
                     position: relative;
                 }
 
@@ -158,11 +157,15 @@ const Leaderboard: React.FC = () => {
                 }
 
                 .leaderboard-title {
-                    font-size: 32px;
-                    color: white;
+                    letter-spacing: 1.5px;
+                    font-family: 'Montserrat', sans-serif;
+                    font-weight: 600;
+                    font-size:65px;
+                    color: var(--text-color);
                     margin-bottom: 20px;
                     text-align: center;
                 }
+                 
 
                 .leaderboard-container {
                     background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
@@ -199,6 +202,7 @@ const Leaderboard: React.FC = () => {
                 .leaderboard-table {
                     width: 100%;
                     border-collapse: collapse;
+                    
                 }
 
 
@@ -208,8 +212,8 @@ const Leaderboard: React.FC = () => {
                     background-color: rgba(255, 255, 255, 0.1);
                     text-transform: uppercase;
                     text-align: center;
-                    font-size: 1.5vh;
-                    font-weight: bold;
+                    font-size: 1.3vh;
+                    font-weight: 600;
                     color: white;
                     padding: 20px;
                     border-radius: 5px;

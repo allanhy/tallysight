@@ -78,7 +78,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen ">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Carousel Section */}
         <div className="relative mb-20">
@@ -144,7 +144,7 @@ export default function Home() {
         </div>
 
         {/* Bottom Spacer */}
-        <div className="bg-black w-full h-32" />
+        <div className="w-full h-32" />
       </div>
     </div>
   );

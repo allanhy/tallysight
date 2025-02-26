@@ -306,7 +306,6 @@ export default function MyPicksPage() {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: black;
                     position: relative;
                 }
 

@@ -15,7 +15,7 @@
     background-color: #42464f;
     
     font-size: 1em;
-    font-weight: bold;
+    font-weight: 100;
     max-width: 800px;
 }
 
@@ -40,7 +40,7 @@
 
 .username {
 
-    font-weight: bold;
+    font-weight: 500;
     color: #fff;
     flex-grow: 1;
     text-align: left;

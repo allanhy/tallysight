@@ -3,7 +3,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: black;
     position: relative;
 }
 
@@ -52,8 +51,10 @@
 }
 
 .picks-title {
-    font-size: 32px;
-    color: white;
+    letter-spacing: 1.5px;
+    font-size:60px;
+    font-weight: 600;
+    color: var(--text-color) ;
     margin-bottom: 20px;
     text-align: center;
 }

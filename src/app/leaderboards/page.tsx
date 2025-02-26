@@ -62,7 +62,6 @@ export default function Page() {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: black;
                     position: relative;
                 }
 

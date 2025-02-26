@@ -29,7 +29,7 @@ const Header = () => {
                         </Link>
 
                         {/* Desktop Navigation */}
-                        <div className="hidden md:flex ml-10 space-x-8">
+                        <div className="hidden md:flex ml-10 space-x-8 font-montserrat font-semibold">
                             <Link href="/leaderboards" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2">
                                 Leaderboards
                             </Link>
@@ -88,21 +88,21 @@ const Header = () => {
                     <div className="px-2 pt-2 pb-3 space-y-1">
                         <Link 
                             href="/leaderboards" 
-                            className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                            className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"
                             onClick={() => setIsMenuOpen(false)}
                         >
                             Leaderboards
                         </Link>
                         <Link 
                             href="/contests" 
-                            className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                            className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"
                             onClick={() => setIsMenuOpen(false)}
                         >
                             Contests
                         </Link>
                         <Link 
                             href="/myPicks" 
-                            className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                            className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"
                             onClick={() => setIsMenuOpen(false)}
                         >
                             My Picks

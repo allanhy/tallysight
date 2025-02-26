@@ -31,7 +31,7 @@
 }
 
 .leaderboard-title {
-    font-size: 32px;
+    font-size: 50px;
     color: var(--text-color);
     margin-bottom: 20px;
     text-align: center;
@@ -172,9 +172,6 @@
         width: 90%;
     }
 
-    .leaderboard-title {
-        font-size: 24px;
-    }
 
     .leaderboard-controls {
         flex-direction: column;
@@ -187,8 +184,8 @@
     }
 
     .leaderboard-table th,
-    .leaderboard-table td {
-        padding: 10px;
+    .leaderboard-table td { 
+        padding: 10px;                                                              
         font-size: 14px;
     }
 
@@ -207,7 +204,7 @@
 
 @media (max-width: 480px) {
     .leaderboard-title {
-        font-size: 20px;
+        font-size:35px;
     }
 
     .leaderboard-container {
@@ -241,3 +238,4 @@
     --background-color: black;
     --text-color: white;
 }
+

@@ -4,6 +4,12 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from '@/context/ThemeContext';
 import Navigation from '@/app/components/header';
 import './globals.css';
+import { Montserrat } from 'next/font/google';
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '900'],
+});
 
 export const metadata: Metadata = {
   title: 'Tallysight',
