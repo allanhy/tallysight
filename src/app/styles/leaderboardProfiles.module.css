@@ -15,10 +15,8 @@
     background-color: #42464f;
     
     font-size: 1em;
-    font-weight: bold;
-    max-width: 50em;
-    max-height: 4em;
-    cursor: pointer;
+    font-weight: 100;
+    max-width: 800px;
 }
 
 .rank {
@@ -39,7 +37,8 @@
 }
 
 .username {
-    font-weight: bold;
+
+    font-weight: 500;
     color: #fff;
     flex-grow: .9;
     text-align: left;

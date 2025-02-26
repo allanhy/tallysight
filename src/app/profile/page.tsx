@@ -200,24 +200,24 @@ const Profile = () => {
       case 'Profile':
         return (
         <div>
-            <h2 className="text-2xl font-semibold mb-4 text-gray-700">Profile Information</h2>
+            <h2 className="text-5xl font-medium mb-4 text-gray-900">Profile Information</h2>
             <table className="w-full text-left bg-gray-50 rounded-lg shadow-md table-fixed">
                 <tbody>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700 w-1/6">Current Username</td>
-                        <td className="px-4 py-2 text-gray-600">{user?.username}</td>
+                        <td className="px-4 py-2 font-semibold text-gray-700 w-1/6 text-xl">Current Username</td>
+                        <td className="px-4 py-2 text-gray-600 text-xl">{user?.username}</td>
                     </tr>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700">First Name</td>
-                        <td className="px-4 py-2 text-gray-600">{user?.firstName}</td>
+                        <td className="px-4 py-2 font-semibold text-gray-700 text-xl">First Name</td>
+                        <td className="px-4 py-2 text-gray-600 text-xl">{user?.firstName}</td>
                     </tr>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700">Last Name</td>
-                        <td className="px-4 py-2 text-gray-600">{user?.lastName}</td>
+                        <td className="px-4 py-2 font-semibold text-gray-700 text-xl">Last Name</td>
+                        <td className="px-4 py-2 text-gray-600 text-xl">{user?.lastName}</td>
                     </tr>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700">Email</td>
-                        <td className="px-4 py-2 text-gray-600">{user?.primaryEmailAddress?.toString()}</td>
+                        <td className="px-4 py-2 font-semibold text-gray-700 text-xl">Email</td>
+                        <td className="px-4 py-2 text-gray-600 text-xl">{user?.primaryEmailAddress?.toString()}</td>
                     </tr>
                 </tbody>
             </table>
@@ -276,7 +276,7 @@ const Profile = () => {
       case 'Activity':
         return (
           <div>
-            <h2 className="text-2xl font-semibold mb-4 text-gray-700">Activity</h2>
+            <h2 className="text-5xl font-semibold mb-4 text-gray-700">Activity</h2>
             <p className="text-gray-700">This page will display a user's past activity, including their contest participation, results, and other relevant stats.</p>
           </div>
         );
