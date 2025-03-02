@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import ContestCard from '../components/ContestCard';
 import WeekSelector from '../components/WeekSelector';
 import { Contest } from '../types/contest';
-import { getNBAContests } from './mContests';
+import { getNBAContests } from '../home/mContests';
 
 interface Game {
     id: string;

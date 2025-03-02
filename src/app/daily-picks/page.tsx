@@ -181,7 +181,7 @@ export default function DailyPicks() {
             }
 
 
-            router.push('/contests');
+            router.push('/home');
         } catch (error) {
             console.error('Error submitting picks:', error);
             setSubmitError(error instanceof Error ? error.message : 'Failed to submit picks');
@@ -211,7 +211,7 @@ export default function DailyPicks() {
             <div className="bg-[#2a2a2a] p-4 sticky top-0 z-10">
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={() => router.push('/contests')}
+                        onClick={() => router.push('/home')}
                         className="text-white hover:text-gray-300"
                     >
                         <ArrowLeft size={24} />
@@ -331,7 +331,7 @@ export default function DailyPicks() {
                                     View Tomorrow&apos;s Games
                                 </button>
                                 <button
-                                    onClick={() => router.push('/contests')}
+                                    onClick={() => router.push('/home')}
                                     className="px-6 py-3 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#3a3a3a] transition-colors"
                                 >
                                     Back to Contests

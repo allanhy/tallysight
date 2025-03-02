@@ -1,153 +1,100 @@
 /* eslint-disable @typescript-eslint/no-explicit-any a*/
 'use client';
 
-//yo does this work?
 import React, { useState, useEffect, useRef } from 'react';
-import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
-import GameCard from '../components/GameCard';
-import { Game } from '../types/game';
-import Leaderboard from '../components/leaderboard';
-import Link from 'next/link';
-import UserMatch from '../components/UserMatch';
+import { useRouter } from 'next/navigation';
 
-const responsive = {
-  superLargeDesktop: {
-    breakpoint: { max: 4000, min: 1600 },
-    items: 4,
-    slidesToSlide: 1
-  },
-  desktop: {
-    breakpoint: { max: 1600, min: 1024 },
-    items: 3,
-    slidesToSlide: 1
-  },
-  tablet: {
-    breakpoint: { max: 1024, min: 464 },
-    items: 2,
-    slidesToSlide: 1
-  },
-  mobile: {
-    breakpoint: { max: 464, min: 0 },
-    items: 1,
-    slidesToSlide: 1
-  }
-};
-
-// Add custom arrow components
-const CustomRightArrow = ({ onClick }: { onClick?: () => void }) => (
-  <button
-    onClick={onClick}
-    className="absolute right-0 md:right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/55 p-2 rounded-full shadow-md z-10"
-  >
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M9 6l6 6-6 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  </button>
-);
-
-const CustomLeftArrow = ({ onClick }: { onClick?: () => void }) => (
-  <button
-    onClick={onClick}
-    className="absolute left-0 md:left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/55 p-2 rounded-full shadow-md z-10"
-  >
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M15 18l-6-6 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  </button>
-);
+interface Game {
+    id: string;
+    homeTeam: {
+        name: string;
+        score: number | null;
+        spread: string;
+    };
+    awayTeam: {
+        name: string;
+        score: number | null;
+        spread: string;
+    };
+    gameTime: string;
+    status: string;
+}
 
 export default function Home() {
-  const [games, setGames] = useState<Game[]>([]);
-  const carouselRef = useRef<any>(null);
+    const router = useRouter();
+    const [todayGames, setTodayGames] = useState<Game[]>([]);
+    const [tomorrowGames, setTomorrowGames] = useState<Game[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchGames = async () => {
-      try {
-        const response = await fetch('/api/games');
-        const data = await response.json();
-        if (data.games) {
-          const duplicatedGames = [...data.games, ...data.games, ...data.games];
-          setGames(duplicatedGames);
-        }
-      } catch (error) {
-        console.error('Error fetching games:', error);
-      }
-    };
+    useEffect(() => {
+        const fetchGames = async () => {
+            try {
+                // Fetch today's games
+                const todayResponse = await fetch('/api/nba-games?day=today');
+                const todayData = await todayResponse.json();
+                setTodayGames(todayData);
 
-    fetchGames();
-  }, []);
+                // Fetch tomorrow's games
+                const tomorrowResponse = await fetch('/api/nba-games?day=tomorrow');
+                const tomorrowData = await tomorrowResponse.json();
+                setTomorrowGames(tomorrowData);
+            } catch (error) {
+                console.error('Error fetching games:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchGames();
+    }, []);
+
+    if (loading) return <div>Loading contests...</div>;
 
   return (
-    <div className="min-h-screen ">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Carousel Section */}
-        <div className="relative mb-20">
-          <div className="px-2 md:px-8">
-            <Carousel
-              ref={carouselRef}
-              responsive={responsive}
-              infinite={true}
-              centerMode={false}
-              partialVisible={false}
-              swipeable={true}
-              draggable={true}
-              showDots={false}
-              autoPlay={false}
-              keyBoardControl={true}
-              customTransition="transform 300ms ease-in-out"
-              containerClass="carousel-container"
-              itemClass="px-2"
-              dotListClass="custom-dot-list-style"
-              minimumTouchDrag={80}
-              ssr={true}
-              customRightArrow={<CustomRightArrow />}
-              customLeftArrow={<CustomLeftArrow />}
-              removeArrowOnDeviceType={[]}
-            >
-              {games.map((game, index) => (
-                <div key={`${game.id}-${index}`} className="h-full">
-                  <GameCard game={game} />
+    <div className="p-4 sm:p-8 min-h-screen" >
+        <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
+            <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}>
+                <div className="p-4 sm:p-8">
+                    <div className="uppercase tracking-wide text-sm text-white font-semibold">
+                        Featured Contest
+                    </div>
+                    <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
+                        Today's NBA Games ({todayGames.length} games)
+                    </h1>
+                    <p className="mt-2 text-slate-500">
+                        Make your picks for today's NBA matchups!
+                    </p>
+                    <button
+                        onClick={() => router.push('/daily-picks')}
+                        className="mt-4 w-full bg-[#0070f3] text-white py-2 px-4 rounded-lg hover:bg-[#0070f3] transition duration-200"
+                    >
+                        Play Now
+                    </button>
                 </div>
-              ))}
-            </Carousel>
-          </div>
-        </div>
-
-        {/* Main Content Section */}
-        <div className="flex flex-col items-center justify-center">
-          <main className="flex flex-col gap-8 items-center w-full max-w-[750px]">
-            <div className="flex flex-col gap-4 relative w-full">
-              {/* White box with MyPicks button */}
-              {/* <div className="bg-white h-[200px] w-full relative bg-opacity-100 translate-y-[100px]"> */}
-              {/*   <div className="absolute top-1/2 right-4 transform -translate-y-1/2"> */}
-              {/*     <Link href="/myPicks"> */}
-              {/*       <button  */}
-              {/*         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" */}
-              {/*       > */}
-              {/*         MyPicks */}
-              {/*       </button> */}
-              {/*     </Link> */}
-              {/*   </div> */}
-              {/* </div> */}
-              
-              {/* Gray boxes */}
-              <div className="bg-gray-200 h-[200px] w-full bg-opacity-75 translate-y-[150px]" />
-              <div className="bg-gray-400 h-[200px] w-full bg-opacity-50 translate-y-[200px]" />
-              <div className="bg-gray-600 h-[200px] w-full bg-opacity-25 translate-y-[250px]" />
-              
-              {/* Leaderboard */}
-              <div className="justify-center">
-                <Leaderboard />
-              </div>
             </div>
-          </main>
-        </div>
 
-        {/* Bottom Spacer */}
-        <div className="w-full h-32" />
-      </div>
+            <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}>
+                <div className="p-4 sm:p-8">
+                    <div className="uppercase tracking-wide text-sm text-white font-semibold">
+                        Upcoming Contest
+                    </div>
+                    <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
+                        Tomorrow's NBA Games ({tomorrowGames.length} games)
+                    </h1>
+                    <p className="mt-2 text-slate-500">
+                        Get ready for tomorrow's NBA matchups!
+                    </p>
+                    <button
+                        onClick={() => router.push('/tomorrow-picks')}
+                        className="mt-4 w-full bg-[#0070f3] text-white py-2 px-4 rounded-lg hover:bg-[#0070f3] transition duration-200"
+                    >
+                        Preview Games
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  );
+);
 
 }
