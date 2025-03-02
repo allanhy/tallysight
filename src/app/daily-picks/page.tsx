@@ -216,7 +216,7 @@ export default function DailyPicks() {
                     >
                         <ArrowLeft size={24} />
                     </button>
-                    <h1 className="text-white font-medium">Make picks</h1>
+                    <h1 className="text-white font-medium">Home</h1>
                 </div>
                 <div className="mt-4 inline-block">
                     <div className="bg-[#333] rounded-full px-4 py-2 text-sm">
@@ -284,7 +284,7 @@ export default function DailyPicks() {
                                                     <div className="w-full h-full bg-gray-200 rounded-full" />
                                                 )}
                                             </div>
-                                            <span className="font-medium">{game.awayTeam.name}</span>
+                                            <span className="font-medium text-gray-800">{game.awayTeam.name}</span>
                                         </div>
                                     </button>
                                     <button 
@@ -308,7 +308,7 @@ export default function DailyPicks() {
                                                     <div className="w-full h-full bg-gray-200 rounded-full" />
                                                 )}
                                             </div>
-                                            <span className="font-medium">{game.homeTeam.name}</span>
+                                            <span className="font-medium text-gray-800">{game.homeTeam.name}</span>
                                         </div>
                                     </button>
                                 </div>

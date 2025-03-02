@@ -5,9 +5,8 @@ import './header.css'
 import Image from 'next/image';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import Link from 'next/link'
-import NavLink from './nav-link'
 import { useTheme } from '@/context/ThemeContext';
-import CarouselWithGames from '../components/carouselWithGames';
+import CarouselWithGames from './carouselWithGames';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,9 +34,11 @@ const Header = () => {
                                 <Link href="/leaderboards" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2">
                                     Leaderboards
                                 </Link>
+                                {/*
                                 <Link href="/contests" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2">
                                     Contests
                                 </Link>
+                                */}
                                 <Link href="/myPicks" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2">
                                     My Picks
                                 </Link>
@@ -95,6 +96,7 @@ const Header = () => {
                             >
                                 Leaderboards
                             </Link>
+                            {/*
                             <Link 
                                 href="/contests" 
                                 className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"
@@ -102,6 +104,7 @@ const Header = () => {
                             >
                                 Contests
                             </Link>
+                            */}
                             <Link 
                                 href="/myPicks" 
                                 className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"

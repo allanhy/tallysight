@@ -145,7 +145,7 @@ export default function TomorrowPicks() {
                 throw new Error('Failed to submit picks');
             }
 
-            router.push('/contests');
+            router.push('/home');
         } catch (error) {
             console.error('Error submitting picks:', error);
             setSubmitError(error instanceof Error ? error.message : 'Failed to submit picks');
@@ -175,12 +175,12 @@ export default function TomorrowPicks() {
             <div className="bg-[#2a2a2a] p-4 sticky top-0 z-10">
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={() => router.push('/contests')}
+                        onClick={() => router.push('/home')}
                         className="text-white hover:text-gray-300"
                     >
                         <ArrowLeft size={24} />
                     </button>
-                    <h1 className="text-white font-medium">Make picks</h1>
+                    <h1 className="text-white font-medium">Home</h1>
                 </div>
                 <div className="mt-4 inline-block">
                     <div className="bg-[#333] rounded-full px-4 py-2 text-sm">
@@ -248,7 +248,7 @@ export default function TomorrowPicks() {
                                                     <div className="w-full h-full bg-gray-200 rounded-full" />
                                                 )}
                                             </div>
-                                            <span className="font-medium">{game.awayTeam.name}</span>
+                                            <span className="font-medium text-gray-800">{game.awayTeam.name}</span>
                                         </div>
                                     </button>
                                     <button 
@@ -272,7 +272,7 @@ export default function TomorrowPicks() {
                                                     <div className="w-full h-full bg-gray-200 rounded-full" />
                                                 )}
                                             </div>
-                                            <span className="font-medium">{game.homeTeam.name}</span>
+                                            <span className="font-medium text-gray-800">{game.homeTeam.name}</span>
                                         </div>
                                     </button>
                                 </div>
@@ -295,7 +295,7 @@ export default function TomorrowPicks() {
                                     View Today&apos;s Games
                                 </button>
                                 <button
-                                    onClick={() => router.push('/contests')}
+                                    onClick={() => router.push('/home')}
                                     className="px-6 py-3 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#3a3a3a] transition-colors"
                                 >
                                     Back to Contests
