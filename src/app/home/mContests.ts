@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Contest } from '../types/contest';
-import ContestsPage from './page';
+import ContestsPage from '../contests/page';
 
 const now = Date.now();
 const offsetDays = (days: number) => new Date(now + days * 86400000).toString();

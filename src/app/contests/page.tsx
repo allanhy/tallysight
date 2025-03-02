@@ -1,11 +1,9 @@
+/* Currently the home page, keeping this saved in case we decide to go back to having a specific contest page. -JA */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ContestCard from '../components/ContestCard';
-import WeekSelector from '../components/WeekSelector';
-import { Contest } from '../types/contest';
-import { getNBAContests } from './mContests';
+
 
 interface Game {
     id: string;
