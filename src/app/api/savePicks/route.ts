@@ -36,6 +36,12 @@ export async function POST(req: NextRequest) {
     if (!picks || !Array.isArray(picks) || !pickDate) {
       return NextResponse.json({ message: 'Invalid picks format or missing date' }, { status: 400 });
     }
+    function convertToEST(dateStr: string): string {
+      const date = new Date(dateStr);
+      const estDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
+      return estDate.toISOString().split("T")[0]; // Returns YYYY-MM-DD
+  }
+  
 
     // First ensure all games exist
     for (const pick of picks) {
@@ -60,7 +66,7 @@ export async function POST(req: NextRequest) {
             ${pick.awayTeam.name},
             ${pick.homeTeam.logo || ''},
             ${pick.awayTeam.logo || ''},
-            ${pickDate}
+            ${convertToEST(pickDate)}
           )
         `;
       }
@@ -80,7 +86,7 @@ export async function POST(req: NextRequest) {
           ${userId},
           ${pick.gameId},
           ${pick.teamIndex},
-          NOW()
+          NOW() AT TIME ZONE 'America/New_York'
         )
         ON CONFLICT (id) DO NOTHING
       `;

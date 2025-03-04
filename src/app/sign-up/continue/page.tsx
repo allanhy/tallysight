@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import { useSignUp } from "@clerk/nextjs";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 export default function ContinueSignUpPage() {
   const { isLoaded, signUp } = useSignUp();
@@ -10,7 +11,25 @@ export default function ContinueSignUpPage() {
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   if (!isLoaded || !signUp) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
+        <div className="w-full flex justify-center flex-col items-center">
+          <header className="text-center w-full mb-4">
+            <div className="text-3xl font-extrabold text-black dark:text-white">
+              Continue Sign Up
+            </div>
+            <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
+              Please choose your username.
+            </h1>
+          </header>
+
+          <div className="w-full sm:w-[550px] px-8 py-8 bg-white dark:bg-gray-900 shadow-md border border-gray-400 rounded-2xl">
+            <Skeleton className="h-10 w-full rounded-lg mb-4" /> {/* Input Field */}
+            <Skeleton className="h-10 w-full rounded-lg" /> {/* Continue Button */}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

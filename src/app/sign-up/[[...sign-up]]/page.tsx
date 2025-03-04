@@ -9,6 +9,7 @@ import axios from 'axios';
 import { AuthenticateWithRedirectCallback } from '@clerk/nextjs';
 import { useParams } from 'next/navigation';
 import UserMatch from '../../components/UserMatch';
+import { Skeleton } from '@/app/components/ui/skeleton';
 
 
 export default function SignUpPage() {
@@ -23,7 +24,23 @@ export default function SignUpPage() {
   if (isSSOCallback) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen">
-        <p className='text-black'>Please Wait...</p>
+        <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
+        <div className="w-full flex justify-center flex-col items-center">
+          <header className="text-center w-full mb-4">
+            <div className="text-3xl font-extrabold text-black dark:text-white">
+              Continue Sign Up
+            </div>
+            <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
+              Please choose your username.
+            </h1>
+          </header>
+
+          <div className="w-full sm:w-[550px] px-8 py-8 bg-white dark:bg-gray-900 shadow-md border border-gray-400 rounded-2xl">
+            <Skeleton className="h-10 w-full rounded-lg mb-4" /> {/* Input Field */}
+            <Skeleton className="h-10 w-full rounded-lg" /> {/* Continue Button */}
+          </div>
+        </div>
+      </div>
         {/* The Clerk component that finishes the OAuth flow */}
         <AuthenticateWithRedirectCallback continueSignUpUrl="/sign-up/continue" />
       </div>
@@ -224,7 +241,7 @@ export default function SignUpPage() {
                 Verify email code
               </div>
               <h1 className="mt-4 text-l font-medium tracking-tight text-gray-800">
-                Enter the code that was sent to you email address.
+                Enter the code that was sent to your email address.
               </h1>
             </header>
             <Clerk.GlobalError className="block text-sm text-rose-400" />
