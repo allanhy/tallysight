@@ -10,6 +10,11 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '../components/ui/tooltip';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "../components/ui/popover"
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
 
@@ -55,10 +60,18 @@ export default function TomorrowPicks() {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [pickPercentages, setPickPercentages] = useState<Record<string, { home: string; away: string }>>({});
     const [loadingPercentages, setLoadingPercentages] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
     });
+
+    useEffect(() => {
+        const checkScreenSize = () => setIsMobile(window.innerWidth < 768);
+        checkScreenSize(); // Run on mount
+        window.addEventListener("resize", checkScreenSize);
+        return () => window.removeEventListener("resize", checkScreenSize);
+    }, []);
 
     useEffect(() => {
         const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
@@ -277,6 +290,9 @@ export default function TomorrowPicks() {
                                     <Skeleton className="w-12 h-12 bg-gray-300 rounded-full" />
                                     <Skeleton className="h-6 bg-gray-300 w-3/4" />
                                 </div>
+                                <div className="flex items-center gap-3 mb-4 mt-4">
+                                    <Skeleton className="h-5 w-full bg-gray-300 rounded-full" />
+                                </div>
                                 <div className="flex items-center gap-3 mb-3">
                                     <Skeleton className="w-12 h-12 bg-gray-300 rounded-full" />
                                     <Skeleton className="h-6 w-3/4 bg-gray-300" />
@@ -392,11 +408,11 @@ export default function TomorrowPicks() {
                                             </span>
                                         </button>
 
-                                        <TooltipProvider delayDuration={0}>
-                                            {pickPercentages[game.id] || pickPercentages[game.id]?.home === undefined ? ( // Ensure data is loaded before showing the tooltip
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <div className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2 cursor-pointer">
+                                        {isMobile ? (
+                                            (pickPercentages[game.id] || pickPercentages[game.id]?.home === undefined) ? (
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <button className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2 cursor-pointer">
                                                             {awayPercentage === homePercentage ? (
                                                                 <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                             ) : (
@@ -404,7 +420,7 @@ export default function TomorrowPicks() {
                                                                     {/* Away Team Progress */}
                                                                     <div
                                                                         className={`absolute left-0 top-0 h-full transition-all duration-500 ease-in-out overflow-hidden 
-                                                                    ${awayIsHigher ? 'bg-blue-400' : 'bg-gray-300'}`}
+                                                                                                            ${awayIsHigher ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                         style={{ width: `${awayPercentage}%` }}
                                                                     >
                                                                         {awayIsHigher && (
@@ -414,7 +430,7 @@ export default function TomorrowPicks() {
                                                                     {/* Home Team Progress */}
                                                                     <div
                                                                         className={`absolute right-0 top-0 h-full transition-all duration-500 ease-in-out overflow-hidden 
-                                                                    ${homePercentage > awayPercentage ? 'bg-blue-400' : 'bg-gray-300'}`}
+                                                                                                            ${homePercentage > awayPercentage ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                         style={{ width: `${homePercentage}%` }}
                                                                     >
                                                                         {homePercentage > awayPercentage && (
@@ -423,9 +439,10 @@ export default function TomorrowPicks() {
                                                                     </div>
                                                                 </>
                                                             )}
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="top" align="center" className="pointer-events-none">
+                                                        </button>
+                                                    </PopoverTrigger>
+
+                                                    <PopoverContent side="top" align="center" className="bg-black text-white text-xs px-3 py-2 rounded-md shadow-md w-65">
                                                         {pickPercentages[game.id]?.home === undefined || pickPercentages[game.id]?.away === undefined ? (
                                                             <p>Not enough user data to determine majority pick.</p> // If not enough data, show this message
                                                         ) : homePercentage === awayPercentage ? (
@@ -433,15 +450,66 @@ export default function TomorrowPicks() {
                                                         ) : (
                                                             <p>Majority of users picked the {awayIsHigher ? game.awayTeam.name : game.homeTeam.name}.</p>
                                                         )}
-                                                    </TooltipContent>
-                                                </Tooltip>
+                                                    </PopoverContent>
+                                                </Popover>
                                             ) : (
-                                                // Show a placeholder (or just the progress bar) while loading
+                                                // Show skeleton while loading or no data
                                                 <div className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2">
                                                     <Skeleton className="absolute w-full h-full bg-gray-400 animate-pulse" />
                                                 </div>
-                                            )}
-                                        </TooltipProvider>
+                                            )
+                                        ) : (
+                                            <TooltipProvider delayDuration={0}>
+                                                {pickPercentages[game.id] && pickPercentages[game.id]?.home !== undefined ? ( // Ensure data is loaded before showing the tooltip
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2 cursor-pointer">
+                                                                {awayPercentage === homePercentage ? (
+                                                                    <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
+                                                                ) : (
+                                                                    <>
+                                                                        {/* Away Team Progress */}
+                                                                        <div
+                                                                            className={`absolute left-0 top-0 h-full transition-all duration-500 ease-in-out overflow-hidden 
+                                                                                                            ${awayIsHigher ? 'bg-blue-400' : 'bg-gray-300'}`}
+                                                                            style={{ width: `${awayPercentage}%` }}
+                                                                        >
+                                                                            {awayIsHigher && (
+                                                                                <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
+                                                                            )}
+                                                                        </div>
+                                                                        {/* Home Team Progress */}
+                                                                        <div
+                                                                            className={`absolute right-0 top-0 h-full transition-all duration-500 ease-in-out overflow-hidden 
+                                                                                                            ${homePercentage > awayPercentage ? 'bg-blue-400' : 'bg-gray-300'}`}
+                                                                            style={{ width: `${homePercentage}%` }}
+                                                                        >
+                                                                            {homePercentage > awayPercentage && (
+                                                                                <div className="absolute top-0 left-0 w-full h-full animate-shimmer-right bg-white opacity-20"></div>
+                                                                            )}
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" align="center" className="pointer-events-none">
+                                                            {pickPercentages[game.id]?.home === undefined || pickPercentages[game.id]?.away === undefined ? (
+                                                                <p>Not enough user data to determine majority pick.</p> // If not enough data, show this message
+                                                            ) : homePercentage === awayPercentage ? (
+                                                                <p>Majority pick was split between both teams.</p>
+                                                            ) : (
+                                                                <p>Majority of users picked the {awayIsHigher ? game.awayTeam.name : game.homeTeam.name}.</p>
+                                                            )}
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                ) : (
+                                                    // Show a placeholder (or just the progress bar) while loading
+                                                    <div className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2">
+                                                        <Skeleton className="absolute w-full h-full bg-gray-400 animate-pulse" />
+                                                    </div>
+                                                )}
+                                            </TooltipProvider>
+                                        )}
 
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'home')}
