@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import 'react-multi-carousel/lib/styles.css';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '../components/ui/skeleton';
 
 interface Game {
     id: string;
@@ -33,12 +34,12 @@ export default function Home() {
                 // Fetch today's games
                 const todayResponse = await fetch('/api/nba-games?day=today');
                 const todayData = await todayResponse.json();
-                setTodayGames(todayData);
+                setTodayGames(todayData.games);
 
                 // Fetch tomorrow's games
                 const tomorrowResponse = await fetch('/api/nba-games?day=tomorrow');
                 const tomorrowData = await tomorrowResponse.json();
-                setTomorrowGames(tomorrowData);
+                setTomorrowGames(tomorrowData.games);
             } catch (error) {
                 console.error('Error fetching games:', error);
             } finally {
@@ -49,10 +50,37 @@ export default function Home() {
         fetchGames();
     }, []);
 
-    if (loading) return <div>Loading contests...</div>;
+    if (loading) {
+        return (
+            <div className="p-4 sm:p-8 min-h-screen">
+                <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{ letterSpacing: '1.5px', fontSize: '65px' }}>
+                    Contests
+                </h1>
+                <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
+                    {/* Skeleton for Featured Contest */}
+                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gray-900 p-4 sm:p-8">
+                        <Skeleton className="h-5 w-1/4 bg-gray-600 mb-2" />
+                        <Skeleton className="h-8 w-3/4 bg-gray-500 mb-2" />
+                        <Skeleton className="h-4 w-1/2 bg-gray-600 mb-4" />
+                        <Skeleton className="h-10 w-full bg-gray-700 rounded-lg" />
+                    </div>
 
-  return (
-    <div className="p-4 sm:p-8 min-h-screen" >
+                    {/* Skeleton for Upcoming Contest */}
+                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gray-900 p-4 sm:p-8">
+                        <Skeleton className="h-5 w-1/4 bg-gray-600 mb-2" />
+                        <Skeleton className="h-8 w-3/4 bg-gray-500 mb-2" />
+                        <Skeleton className="h-4 w-1/2 bg-gray-600 mb-4" />
+                        <Skeleton className="h-10 w-full bg-gray-700 rounded-lg" />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="p-4 sm:p-8 min-h-screen" >
+        <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{ letterSpacing: '1.5px', fontSize: '65px' }}
+        >Contests</h1>
         <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
             <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}>
                 <div className="p-4 sm:p-8">

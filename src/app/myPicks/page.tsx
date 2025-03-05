@@ -261,6 +261,13 @@ export default function MyPicksPage() {
         }, {});
     };
 
+    const filteredPicks = userPicks.filter((pick) => {
+        const pickDate = new Date(pick.createdAt);
+        const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
+        if (!selectedWeekData) return false;
+        return pickDate >= selectedWeekData.startDate && pickDate <= selectedWeekData.endDate;
+    });
+
     return (
         <div className="picks-page">
             {/* Single history button */}
@@ -331,8 +338,8 @@ export default function MyPicksPage() {
                                 )}
                             </div>
 
-                            {isSignedIn && userPicks.length > 0 ? (
-                                Object.entries(groupPicksByGameDate(userPicks)).map(([date, datePicks]) => (
+                            {isSignedIn && filteredPicks.length > 0 ? (
+                                Object.entries(groupPicksByGameDate(filteredPicks)).map(([date, datePicks]) => (
                                     <div key={date} className="date-group">
                                         <h3 className="text-lg font-semibold">
                                             {date === 'Upcoming Games' 
