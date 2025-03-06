@@ -410,9 +410,38 @@ export default function MyPicksPage() {
                                                                 <div className="pick-result in-progress">
                                                                     Upcoming
                                                                 </div>
-                                                            ) : (
+                                                            ) : pick.Game.winner === null ? (
                                                                 <div className="pick-result in-progress">
-                                                                    Upcoming
+                                                                    In Progress
+                                                                </div>
+                                                            ) : (
+                                                                <div className={`pick-result ${pick.Game.winner ? 'win' : 'loss'}`}>
+                                                                    {/* Game Result Display */}
+                                                                    <div className={`pick-result ${pick.Game.winner ? 'win' : 'loss'}`}>
+                                                                        {(() => {
+                                                                            const getTeamName = (index: number) => 
+                                                                                index === 0 ? pick.Game.team1Name : pick.Game.team2Name;
+                                                                            
+                                                                            const userPick = getTeamName(pick.teamIndex);
+                                                                            const winningTeam = pick.Game.winner ? 
+                                                                                getTeamName(pick.teamIndex) : 
+                                                                                getTeamName(pick.teamIndex === 0 ? 1 : 0);
+                                                                            const isWinner = pick.Game.winner;
+
+                                                                            return (
+                                                                                <>
+                                                                                    <div>You picked: {userPick}</div>
+                                                                                    <div>Winner: {winningTeam}</div>
+                                                                                    <div>{isWinner ? 'Won' : 'Lost'}</div>
+                                                                                    {pick.Game.final_score && 
+                                                                                        <div className="final-score">
+                                                                                            Final: {pick.Game.final_score}
+                                                                                        </div>
+                                                                                    }
+                                                                                </>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -510,6 +539,32 @@ export default function MyPicksPage() {
                         max-width: 1000px; /* Match the picks container width */
                         margin-top: 20px; /* Add margin for spacing */
                     }
+                }
+
+                .pick-result {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-weight: 600;
+                }
+                
+                .win {
+                    background-color: #22c55e;
+                    color: white;
+                }
+                
+                .loss {
+                    background-color: #ef4444;
+                    color: white;
+                }
+                
+                .in-progress {
+                    background-color: #3b82f6;
+                    color: white;
+                }
+                
+                .final-score {
+                    font-size: 0.875rem;
+                    margin-top: 2px;
                 }
             `}</style>
         </div>

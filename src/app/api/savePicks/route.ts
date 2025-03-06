@@ -45,13 +45,12 @@ export async function POST(req: NextRequest) {
 
     // First ensure all games exist
     for (const pick of picks) {
-      // Check if game exists
       const gameExists = await sql`
         SELECT id FROM "Game" WHERE id = ${pick.gameId}
       `;
 
       if (gameExists.rowCount === 0) {
-        // Create game with exact column names from schema
+        // Create game with additional fields for tracking status
         await sql`
           INSERT INTO "Game" (
             id,
@@ -59,14 +58,22 @@ export async function POST(req: NextRequest) {
             "team2Name",
             "team1Logo",
             "team2Logo",
-            "gameDate"
+            "gameDate",
+            "status",
+            "winner",
+            "won",
+            "final_score"
           ) VALUES (
             ${pick.gameId},
             ${pick.homeTeam.name},
             ${pick.awayTeam.name},
             ${pick.homeTeam.logo || ''},
             ${pick.awayTeam.logo || ''},
-            ${convertToEST(pickDate)}
+            ${convertToEST(pickDate)},
+            ${pick.status || 'STATUS_SCHEDULED'},
+            ${null},  // winner
+            ${false},  // won
+            ${null}  // final_score
           )
         `;
       }
