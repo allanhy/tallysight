@@ -229,11 +229,14 @@ export default function MyPicksPage() {
         });
     };
 
-    // Update the filteredPicks logic to use Game.gameDate instead of createdAt
+    // Update the filteredPicks logic to add one day to the game date
     const filteredPicks = userPicks.filter((pick) => {
         if (!pick.Game?.gameDate) return false;
         
         const gameDate = new Date(pick.Game.gameDate);
+        // Add one day to the game date
+        gameDate.setDate(gameDate.getDate() + 1);
+        
         const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
         
         if (!selectedWeekData) return false;
@@ -246,9 +249,8 @@ export default function MyPicksPage() {
         return gameDate >= weekStart && gameDate <= weekEnd;
     });
 
-    // Update the groupPicksByGameDate function to sort by game date
+    // Update the groupPicksByGameDate function to add one day to the game date
     const groupPicksByGameDate = (picks: Pick[]) => {
-        // First remove duplicates based on gameId
         const uniquePicks = picks.reduce((acc: Pick[], current) => {
             const exists = acc.find(pick => pick.gameId === current.gameId);
             if (!exists) {
@@ -261,6 +263,9 @@ export default function MyPicksPage() {
         uniquePicks.sort((a, b) => {
             const dateA = new Date(a.Game?.gameDate || '');
             const dateB = new Date(b.Game?.gameDate || '');
+            // Add one day to both dates for comparison
+            dateA.setDate(dateA.getDate() + 1);
+            dateB.setDate(dateB.getDate() + 1);
             return dateA.getTime() - dateB.getTime();
         });
 
@@ -269,6 +274,9 @@ export default function MyPicksPage() {
             if (!pick.Game?.gameDate) return groups;
 
             const gameDate = new Date(pick.Game.gameDate);
+            // Add one day to the game date for display
+            gameDate.setDate(gameDate.getDate() + 1);
+            
             const date = gameDate.toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'short',
