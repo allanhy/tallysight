@@ -229,7 +229,24 @@ export default function MyPicksPage() {
         });
     };
 
-    // Group picks by game date
+    // Update the filteredPicks logic to use Game.gameDate instead of createdAt
+    const filteredPicks = userPicks.filter((pick) => {
+        if (!pick.Game?.gameDate) return false;
+        
+        const gameDate = new Date(pick.Game.gameDate);
+        const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
+        
+        if (!selectedWeekData) return false;
+        
+        // Set hours to 0 for accurate date comparison
+        gameDate.setHours(0, 0, 0, 0);
+        const weekStart = new Date(selectedWeekData.startDate);
+        const weekEnd = new Date(selectedWeekData.endDate);
+        
+        return gameDate >= weekStart && gameDate <= weekEnd;
+    });
+
+    // Update the groupPicksByGameDate function to sort by game date
     const groupPicksByGameDate = (picks: Pick[]) => {
         // First remove duplicates based on gameId
         const uniquePicks = picks.reduce((acc: Pick[], current) => {
@@ -240,17 +257,23 @@ export default function MyPicksPage() {
             return acc;
         }, []);
 
+        // Sort picks by game date
+        uniquePicks.sort((a, b) => {
+            const dateA = new Date(a.Game?.gameDate || '');
+            const dateB = new Date(b.Game?.gameDate || '');
+            return dateA.getTime() - dateB.getTime();
+        });
+
         // Then group by date
         return uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
-            const gameDate = pick.Game?.gameDate 
-                ? new Date(pick.Game.gameDate)
-                : new Date();
+            if (!pick.Game?.gameDate) return groups;
 
+            const gameDate = new Date(pick.Game.gameDate);
             const date = gameDate.toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'short',
                 day: 'numeric',
-                timeZone: 'America/New_York'  // Use ET timezone
+                timeZone: 'America/New_York'
             });
 
             if (!groups[date]) {
@@ -260,13 +283,6 @@ export default function MyPicksPage() {
             return groups;
         }, {});
     };
-
-    const filteredPicks = userPicks.filter((pick) => {
-        const pickDate = new Date(pick.createdAt);
-        const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
-        if (!selectedWeekData) return false;
-        return pickDate >= selectedWeekData.startDate && pickDate <= selectedWeekData.endDate;
-    });
 
     return (
         <div className="picks-page">

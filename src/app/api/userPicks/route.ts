@@ -97,3 +97,34 @@ export async function GET(req: NextRequest) {
         );
     }
 }
+
+// New function to get all unique games a user has picked
+export async function POST(req: NextRequest) {
+    try {
+        const { userId } = getAuth(req);
+        if (!userId) {
+            return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+        }
+
+        const picks = await sql`
+            SELECT DISTINCT g.*
+            FROM "Game" g
+            JOIN "Pick" p ON p."gameId" = g.id
+            WHERE p."userId" = ${userId}
+            ORDER BY g."gameDate" DESC
+        `;
+
+        return NextResponse.json(picks.rows);
+
+    } catch (error) {
+        console.error('Error fetching user games:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                message: 'Failed to fetch user games',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            },
+            { status: 500 }
+        );
+    }
+}
