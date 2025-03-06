@@ -292,15 +292,6 @@ export default function MyPicksPage() {
         }, {});
     };
 
-    // Add this helper function to determine pick result
-    const getPickResult = (pick: Pick) => {
-        if (!pick.Game.winner) return 'Upcoming';
-        
-        // winner is stored as 0 (team1) or 1 (team2)
-        const userPickedWinner = pick.teamIndex === pick.Game.winner;
-        return userPickedWinner ? 'Win' : 'Loss';
-    };
-
     return (
         <div className="picks-page">
             {/* Single history button */}
@@ -411,18 +402,17 @@ export default function MyPicksPage() {
 
                                                         {/* Game status */}
                                                         <div className="game-status">
-                                                            {!pick.Game.winner ? (
-                                                                <div className="pick-result upcoming">
+                                                            {!pick.Game ? (
+                                                                <div className="pick-result in-progress">
+                                                                    Upcoming
+                                                                </div>
+                                                            ) : pick.Game.status === 'STATUS_SCHEDULED' ? (
+                                                                <div className="pick-result in-progress">
                                                                     Upcoming
                                                                 </div>
                                                             ) : (
-                                                                <div className={`pick-result ${getPickResult(pick).toLowerCase()}`}>
-                                                                    {getPickResult(pick)}
-                                                                    {pick.Game.final_score && (
-                                                                        <div className="final-score">
-                                                                            Score: {pick.Game.final_score}
-                                                                        </div>
-                                                                    )}
+                                                                <div className="pick-result in-progress">
+                                                                    Upcoming
                                                                 </div>
                                                             )}
                                                         </div>
@@ -520,32 +510,6 @@ export default function MyPicksPage() {
                         max-width: 1000px; /* Match the picks container width */
                         margin-top: 20px; /* Add margin for spacing */
                     }
-                }
-
-                .pick-result {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-weight: 600;
-                }
-                
-                .upcoming {
-                    background-color: #4a5568;
-                    color: white;
-                }
-                
-                .win {
-                    background-color: #48bb78;
-                    color: white;
-                }
-                
-                .loss {
-                    background-color: #f56565;
-                    color: white;
-                }
-                
-                .final-score {
-                    font-size: 0.8em;
-                    margin-top: 4px;
                 }
             `}</style>
         </div>
