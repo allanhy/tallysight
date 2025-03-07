@@ -23,32 +23,6 @@ interface Pick {
   pickDate?: string;
 }
 
-export async function GET() {
-  try {
-    const games = await sql`
-      SELECT g.*, 
-             p."teamIndex",
-             p."userId"
-      FROM "Game" g
-      LEFT JOIN "Pick" p ON g.id = p."gameId"
-      ORDER BY g."gameDate" DESC
-    `;
-
-    return NextResponse.json({ 
-      success: true, 
-      games: games.rows 
-    });
-
-  } catch (error) {
-    console.error('Error fetching games:', error);
-    return NextResponse.json({ 
-      success: false,
-      message: 'Failed to fetch games',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { userId } = getAuth(req);
@@ -71,38 +45,38 @@ export async function POST(req: NextRequest) {
 
     // First ensure all games exist
     for (const pick of picks) {
-      await sql`
-        INSERT INTO "Game" (
-          id,
-          "team1Name",
-          "team2Name",
-          "team1Logo",
-          "team2Logo",
-          "gameDate",
-          "status",
-          "winner",
-          "won",
-          "final_score"
-        ) VALUES (
-          ${pick.gameId},
-          ${pick.homeTeam.name},
-          ${pick.awayTeam.name},
-          ${pick.homeTeam.logo || ''},
-          ${pick.awayTeam.logo || ''},
-          ${convertToEST(pickDate)},
-          ${pick.status || 'STATUS_SCHEDULED'},
-          ${null},  // winner
-          ${false},  // won
-          ${null}  // final_score
-        )
-        ON CONFLICT (id) DO UPDATE SET
-          "team1Name" = EXCLUDED."team1Name",
-          "team2Name" = EXCLUDED."team2Name",
-          "team1Logo" = EXCLUDED."team1Logo",
-          "team2Logo" = EXCLUDED."team2Logo",
-          "gameDate" = EXCLUDED."gameDate",
-          "status" = EXCLUDED."status"
+      const gameExists = await sql`
+        SELECT id FROM "Game" WHERE id = ${pick.gameId}
       `;
+
+      if (gameExists.rowCount === 0) {
+        // Create game with additional fields for tracking status
+        await sql`
+          INSERT INTO "Game" (
+            id,
+            "team1Name",
+            "team2Name",
+            "team1Logo",
+            "team2Logo",
+            "gameDate",
+            "status",
+            "winner",
+            "won",
+            "final_score"
+          ) VALUES (
+            ${pick.gameId},
+            ${pick.homeTeam.name},
+            ${pick.awayTeam.name},
+            ${pick.homeTeam.logo || ''},
+            ${pick.awayTeam.logo || ''},
+            ${convertToEST(pickDate)},
+            ${pick.status || 'STATUS_SCHEDULED'},
+            ${null},  // winner
+            ${false},  // won
+            ${null}  // final_score
+          )
+        `;
+      }
     }
 
     // Create picks
