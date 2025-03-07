@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 "use client"
 
 import { useUser } from '@clerk/nextjs';
@@ -277,7 +279,7 @@ const Profile = () => {
         return (
           <div>
             <h2 className="text-5xl font-semibold mb-4 text-gray-700">Activity</h2>
-            <p className="text-gray-700">This page will display a user's past activity, including their contest participation, results, and other relevant stats.</p>
+            <p className="text-gray-700">This page will display a user&apos;s past activity, including their contest participation, results, and other relevant stats.</p>
           </div>
         );
       case 'Preferences':

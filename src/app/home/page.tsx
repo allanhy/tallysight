@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any a*/
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect/*, useRef*/ } from 'react';
 import 'react-multi-carousel/lib/styles.css';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../components/ui/skeleton';
+import UserMatch from '../components/UserMatch';
 
 interface Game {
     id: string;
@@ -53,6 +53,7 @@ export default function Home() {
     if (loading) {
         return (
             <div className="p-4 sm:p-8 min-h-screen">
+                <UserMatch/>
                 <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{ letterSpacing: '1.5px', fontSize: '65px' }}>
                     Contests
                 </h1>
@@ -88,10 +89,10 @@ export default function Home() {
                         Featured Contest
                     </div>
                     <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
-                        Today's NBA Games ({todayGames.length} games)
+                        Today&apos;s NBA Games ({todayGames.length} games)
                     </h1>
                     <p className="mt-2 text-slate-500">
-                        Make your picks for today's NBA matchups!
+                        Make your picks for today&apos;s NBA matchups!
                     </p>
                     <button
                         onClick={() => router.push('/daily-picks')}
@@ -108,10 +109,10 @@ export default function Home() {
                         Upcoming Contest
                     </div>
                     <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
-                        Tomorrow's NBA Games ({tomorrowGames.length} games)
+                        Tomorrow&apos;s NBA Games ({tomorrowGames.length} games)
                     </h1>
                     <p className="mt-2 text-slate-500">
-                        Get ready for tomorrow's NBA matchups!
+                        Get ready for tomorrow&apos;s NBA matchups!
                     </p>
                     <button
                         onClick={() => router.push('/tomorrow-picks')}
