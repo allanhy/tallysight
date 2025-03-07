@@ -36,11 +36,61 @@ export async function POST(req: NextRequest) {
     if (!picks || !Array.isArray(picks) || !pickDate) {
       return NextResponse.json({ message: 'Invalid picks format or missing date' }, { status: 400 });
     }
+
+    // Check if first game has started
+    const currentTime = new Date();
+    
+    // Convert current time to EST/EDT
+    const estCurrentTime = new Date(currentTime.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    
+    // Sort picks by game time
+    const sortedPicks = [...picks].sort((a, b) => {
+      const timeA = new Date(`${pickDate}T${a.gameTime}`);
+      const timeB = new Date(`${pickDate}T${b.gameTime}`);
+      return timeA.getTime() - timeB.getTime();
+    });
+
+    // Get first game time and convert to EST/EDT
+    const firstGameDateTime = new Date(`${pickDate}T${sortedPicks[0].gameTime}`);
+    
+    console.log('Current time (EST):', estCurrentTime);
+    console.log('First game time:', firstGameDateTime);
+
+    if (estCurrentTime >= firstGameDateTime) {
+      console.log('Picks rejected - games have started');
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Cannot save picks - Games have already started',
+          currentTime: estCurrentTime,
+          firstGameTime: firstGameDateTime
+        }, 
+        { status: 400 }
+      );
+    }
+
+    // Check if any individual game has started
+    for (const pick of picks) {
+      const gameDateTime = new Date(`${pickDate}T${pick.gameTime}`);
+      if (estCurrentTime >= gameDateTime) {
+        console.log(`Game ${pick.gameId} has already started`);
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Cannot save picks - Some games have already started',
+            currentTime: estCurrentTime,
+            gameTime: gameDateTime
+          }, 
+          { status: 400 }
+        );
+      }
+    }
+
     function convertToEST(dateStr: string): string {
       const date = new Date(dateStr);
       const estDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
       return estDate.toISOString().split("T")[0]; // Returns YYYY-MM-DD
-  }
+    }
   
 
     // First ensure all games exist

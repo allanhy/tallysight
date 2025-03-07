@@ -66,6 +66,8 @@ export default function DailyPicks() {
     const [pickPercentages, setPickPercentages] = useState<Record<string, { home: string; away: string }>>({});
     const [loadingPercentages, setLoadingPercentages] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+    const [submissionLocked, setSubmissionLocked] = useState(false);
+    const [gamesLocked, setGamesLocked] = useState(false);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -117,6 +119,49 @@ export default function DailyPicks() {
 
     const { userId } = useAuth();
 
+    const checkIfSubmissionLocked = (games: Game[]) => {
+        if (games.length === 0) return false;
+        
+        // Sort games by time
+        const sortedGames = [...games].sort((a, b) => {
+            const timeA = new Date(`${new Date().toDateString()} ${a.gameTime}`);
+            const timeB = new Date(`${new Date().toDateString()} ${b.gameTime}`);
+            return timeA.getTime() - timeB.getTime();
+        });
+
+        // Get first game time
+        const firstGameTime = new Date(`${new Date().toDateString()} ${sortedGames[0].gameTime}`);
+        const now = new Date();
+
+        return now >= firstGameTime;
+    };
+
+    const checkIfGamesLocked = (games: Game[]) => {
+        if (games.length === 0) return false;
+        
+        // Get current time in ET (Eastern Time)
+        const now = new Date();
+        const etNow = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+        console.log('Current time (ET):', etNow);
+
+        // Sort games by time
+        const sortedGames = [...games].sort((a, b) => {
+            const timeA = new Date(`${new Date().toDateString()} ${a.gameTime}`);
+            const timeB = new Date(`${new Date().toDateString()} ${b.gameTime}`);
+            return timeA.getTime() - timeB.getTime();
+        });
+
+        // Get first game time
+        const firstGame = sortedGames[0];
+        const [time, period] = firstGame.gameTime.split(' ');
+        const [hours, minutes] = time.split(':');
+        
+        // Convert game time to proper Date object in ET
+        const gameTime = new Date(`${new Date().toDateString()} ${time} ${period}`);
+
+        return etNow >= gameTime;
+    };
+
     useEffect(() => {
         const fetchTodayGames = async () => {
             try {
@@ -137,6 +182,11 @@ export default function DailyPicks() {
                     console.log(`Game ID: ${game.id}, Status: ${game.status}`);
                 });
                 setGames(data.games);
+                
+                // Check if games should be locked
+                const gamesLocked = checkIfGamesLocked(data.games);
+                console.log('Games locked status:', gamesLocked);
+                setGamesLocked(gamesLocked);
             } catch (error) {
                 console.error('Error fetching games:', error);
                 setError('Failed to load today\'s games');
@@ -171,9 +221,25 @@ export default function DailyPicks() {
         };
         fetchTodayGames();
         fetchPickPercentages();
+
+        // Set up an interval to check if games should be locked every minute
+        const interval = setInterval(() => {
+            const isLocked = checkIfGamesLocked(games);
+            console.log('Checking games lock status:', isLocked);
+            setGamesLocked(isLocked);
+        }, 60000); // Check every minute
+
+        return () => {
+            clearInterval(interval);
+        };
     }, []);
 
     const handleTeamSelect = async (gameId: string, teamType: 'home' | 'away') => {
+        if (gamesLocked) {
+            setSubmitError('Cannot make picks - Games have already started');
+            return;
+        }
+
         setSelectedPicks(prevPicks => {
             const newPicks = new Set(prevPicks);
             const pickId = `${gameId}-${teamType}`;
@@ -194,12 +260,24 @@ export default function DailyPicks() {
     };
 
     const handleSubmitPicks = async () => {
+        // Check submission lock status before proceeding
+        if (submissionLocked) {
+            console.log('Submission blocked - games have started');
+            setSubmitError('Cannot submit picks - Games have already started');
+            return;
+        }
+
         if (selectedPicks.size !== games.length) return;
 
         setSubmitting(true);
         setSubmitError(null);
 
         try {
+            // Double check right before submission
+            if (checkIfGamesLocked(games)) {
+                throw new Error('Games have already started. Picks cannot be submitted.');
+            }
+
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
@@ -378,6 +456,18 @@ export default function DailyPicks() {
                 Spread finalized | Picks lock at the start of each game
             </div>
 
+            {/* Add locked games banner */}
+            {gamesLocked && (
+                <div className="bg-red-500 text-white p-2 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                        </svg>
+                        Picks are locked - Games have started
+                    </div>
+                </div>
+            )}
+
             {/* Games Grid */}
             <div className="p-4 max-w-5xl mx-auto pb-20 ">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -387,7 +477,7 @@ export default function DailyPicks() {
                             const homePercentage = parseFloat(pickPercentages[game.id]?.home) || 0;
                             const awayIsHigher = awayPercentage > homePercentage;
                             return (
-                                <div key={game.id} className="bg-white rounded-lg shadow border border-gray-200">
+                                <div key={game.id} className={`bg-white rounded-lg shadow ${gamesLocked ? 'opacity-75' : ''}`}>
                                     <div className="flex justify-between items-center p-3 border-b">
                                         <div className="text-sm text-gray-500">
                                             <span>{game.gameTime} ET</span>
@@ -416,13 +506,13 @@ export default function DailyPicks() {
                                     <div className="p-4 space-y-3">
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'away')}
-                                            disabled={game.status.toLowerCase() !== 'scheduled'} // Disable when game is in progress or finished
+                                            disabled={gamesLocked}
                                             className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border 
-                                                    ${selectedPicks.has(`${game.id}-away`)
+                                                ${selectedPicks.has(`${game.id}-away`)
                                                     ? 'bg-blue-50 border-2 border-blue-500'
                                                     : 'border-gray-400 hover:bg-gray-200'
                                                 }
-                                                ${game.status.toLowerCase() !== 'scheduled' ? 'opacity-50 cursor-not-allowed' : ''} // Visually disable
+                                                ${gamesLocked ? 'opacity-50 cursor-not-allowed' : ''}
                                             `}
                                         >
                                             <div className="flex items-center gap-3">
@@ -554,10 +644,14 @@ export default function DailyPicks() {
 
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'home')}
-                                            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border ${selectedPicks.has(`${game.id}-home`)
-                                                ? 'bg-blue-50 border-2 border-blue-500'
-                                                : 'border-gray-400 hover:bg-gray-200'
-                                                }`}
+                                            disabled={gamesLocked}
+                                            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border 
+                                                ${selectedPicks.has(`${game.id}-home`)
+                                                    ? 'bg-blue-50 border-2 border-blue-500'
+                                                    : 'border-gray-400 hover:bg-gray-200'
+                                                }
+                                                ${gamesLocked ? 'opacity-50 cursor-not-allowed' : ''}
+                                            `}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className="relative w-8 h-8 rounded-full overflow-hidden">
@@ -618,9 +712,12 @@ export default function DailyPicks() {
                 <div className="fixed bottom-0 left-0 right-0 bg-[#2a2a2a] p-4 z-50 shadow-lg">
                     <div className="max-w-5xl mx-auto">
                         <div className="flex flex-col items-center gap-2">
-                            {submitError && (
+                            {(submitError || gamesLocked) && (
                                 <div className="text-red-500 text-sm mb-2">
-                                    {submitError}
+                                    {gamesLocked 
+                                        ? 'Cannot make picks - Games have already started'
+                                        : submitError
+                                    }
                                 </div>
                             )}
                             <div className="flex items-center gap-2 text-white">
@@ -630,21 +727,28 @@ export default function DailyPicks() {
                                 {[...Array(games.length)].map((_, i) => (
                                     <div
                                         key={i}
-                                        className={`flex-1 h-1 rounded-full ${i < selectedPicks.size ? 'bg-blue-500' : 'bg-gray-600'
-                                            }`}
+                                        className={`flex-1 h-1 rounded-full ${
+                                            i < selectedPicks.size ? 'bg-blue-500' : 'bg-gray-600'
+                                        }`}
                                     />
                                 ))}
                             </div>
                             {selectedPicks.size === games.length && (
                                 <button
-                                    className={`w-full mt-3 py-3 rounded-lg font-medium transition-all ${submitting
-                                        ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                                        }`}
-                                    disabled={submitting}
+                                    className={`w-full mt-3 py-3 rounded-lg font-medium transition-all ${
+                                        submitting || gamesLocked
+                                            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                    }`}
+                                    disabled={submitting || gamesLocked}
                                     onClick={handleSubmitPicks}
                                 >
-                                    {submitting ? 'Submitting...' : 'Submit Picks'}
+                                    {submitting 
+                                        ? 'Submitting...' 
+                                        : gamesLocked 
+                                            ? 'Submissions Locked'
+                                            : 'Submit Picks'
+                                    }
                                 </button>
                             )}
                         </div>
