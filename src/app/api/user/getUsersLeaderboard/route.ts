@@ -1,4 +1,4 @@
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { clerkClient, User } from '@clerk/clerk-sdk-node';
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
     // Extract Clerk IDs and filter out invalid ones
     const clerkIds = users.rows.map(user => user.clerk_id).filter(id => id && id !== '-1');
 
-    let clerkUsers;
+    let clerkUsers: { data: User[] } | undefined;
     if (clerkIds.length > 0) {
       const response = await clerkClient.users.getUserList({ userId: clerkIds });
 
