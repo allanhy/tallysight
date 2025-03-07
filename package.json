@@ -13,7 +13,7 @@
     "test": "jest --config=jest.config.cjs"
   },
   "dependencies": {
-    "@clerk/clerk-sdk-node": "^5.0.59",
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@clerk/elements": "^0.18.0",
     "@clerk/nextjs": "^6.2.0",
     "@prisma/client": "^6.3.1",

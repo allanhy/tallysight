@@ -4,6 +4,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image'
 import styles from '../styles/leaderboardProfiles.module.css';
+//import { useUser } from '@clerk/nextjs';
 
 interface user {
     rank: number;
@@ -15,6 +16,8 @@ interface user {
     bio?: string;
     fav_team?: string;
     user_id: number;
+    clerk_id: string;
+    imageUrl: string;
 }
 
 interface leaderboardProfileProps {
@@ -40,9 +43,13 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
                 const queryStr = `user_id=${userIds.join(',')}`;
                 const res = await fetch(`/api/user/getUsersLeaderboard?${queryStr}`);
                 const data = await res.json();
-
+        
                 if (res.ok) {
-                    setUsers(data.data); // { success: true, data: [...] }
+                    const updatedUsers = data.data.map((user: user) => ({
+                        ...user,
+                        imageUrl: user.imageUrl || "/default-profile.png", // Ensure fallback image
+                    }));
+                    setUsers(updatedUsers);
                 } else {
                     setError(data.message || 'Users Fetch: Failed');
                 }
@@ -138,13 +145,14 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
                             ×
                         </button>
                         <div className={styles.popoutHeader}>
-                            <Image 
-                                src={getImageSrc(selectedUser.img)} 
-                                alt={`Profile image of ${selectedUser.username}`} 
-                                width={100} 
-                                height={100}
-                                className={styles.popoutImage}
-                            />
+                        <Image 
+                            src={getImageSrc(selectedUser.imageUrl)} 
+                            alt={`Profile image of ${selectedUser.username}`} 
+                            width={100} 
+                            height={100}
+                            className={styles.popoutImage}
+                        />
+
                             <h2>{selectedUser.username}</h2>
                             <div className={styles.popoutRank}>Rank: {selectedUser.rank}</div>
                         </div>
@@ -182,6 +190,7 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
 function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) => void }) {
     // Double check sorting
     const sortedData = [...data].sort((a, b) => a.rank - b.rank);
+    //const { user } = useUser(); // to display signed in user differently
     
     return(
         <>
@@ -192,12 +201,13 @@ function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) =
                     onClick={() => onUserClick(user)}
                 >
                     <div className={styles.rank}>{user.rank}</div>
-                    <Image 
-                        src={getImageSrc(user.img)} 
-                        alt={`Profile image of ${user.username}`} 
+                    <Image
+                        src={getImageSrc(user.imageUrl)}
+                        alt={`Profile image of ${user.username}`}
                         loading='lazy'
-                        width={60} 
+                        width={60}
                         height={60}
+                        quality={100}
                         className={styles.image}/>
                     <div className={styles.username}>{user.username}</div>
                     <div className={styles.performance}>{user.performance}%</div>
@@ -208,6 +218,7 @@ function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) =
     );
 }
 
-function getImageSrc(img: string){
-    return img?.startsWith('data:image') || img?.startsWith('http') ? img : '/default-profile.png';
+function getImageSrc(img?: string) {
+    if (!img) return '/default-profile.png'; // Fallback for missing images
+    return img.startsWith('data:image') || img.startsWith('http') ? img : '/default-profile.png';
 }
