@@ -55,6 +55,12 @@ const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => voi
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
+interface TimeLeft {
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
 export default function DailyPicks() {
     const router = useRouter();
     const [games, setGames] = useState<Game[]>([]);
@@ -66,6 +72,8 @@ export default function DailyPicks() {
     const [pickPercentages, setPickPercentages] = useState<Record<string, { home: string; away: string }>>({});
     const [loadingPercentages, setLoadingPercentages] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+    const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
+    const [isLocked, setIsLocked] = useState(false);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -173,7 +181,55 @@ export default function DailyPicks() {
         fetchPickPercentages();
     }, []);
 
-    const handleTeamSelect = async (gameId: string, teamType: 'home' | 'away') => {
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            if (games.length === 0) return;
+
+            // Get current time in ET
+            const now = new Date();
+            
+            // Create tomorrow's date at 1 PM ET (first game time)
+            const gameTime = new Date();
+            gameTime.setDate(gameTime.getDate() + 1); // Set to tomorrow
+            gameTime.setHours(13, 0, 0, 0); // 1 PM ET (13:00)
+
+            const diff = gameTime.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setIsLocked(true);
+                setSelectedPicks(new Set());
+                router.push('/myPicks');
+                return { hours: 0, minutes: 0, seconds: 0 };
+            }
+
+            setIsLocked(false);
+            return {
+                hours: Math.floor(diff / (1000 * 60 * 60)),
+                minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds: Math.floor((diff % (1000 * 60)) / 1000)
+            };
+        };
+
+        // Initial calculation
+        const initialTimeLeft = calculateTimeLeft();
+        if (initialTimeLeft) {
+            setTimeLeft(initialTimeLeft);
+        }
+
+        // Update timer every second
+        const timer = setInterval(() => {
+            const timeLeft = calculateTimeLeft();
+            if (timeLeft) {
+                setTimeLeft(timeLeft);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [games, router]);
+
+    const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
+        if (isLocked) return; // Prevent selections if locked
+
         setSelectedPicks(prevPicks => {
             const newPicks = new Set(prevPicks);
             const pickId = `${gameId}-${teamType}`;
@@ -378,6 +434,23 @@ export default function DailyPicks() {
                 Spread finalized | Picks lock at the start of each game
             </div>
 
+            {/* Timer/Lock Status */}
+            {!isLocked ? (
+                <div className="bg-blue-50 p-2 text-center text-sm">
+                    <span className="text-blue-600">
+                        Time until first game: {String(timeLeft.hours).padStart(2, '0')}:
+                        {String(timeLeft.minutes).padStart(2, '0')}:
+                        {String(timeLeft.seconds).padStart(2, '0')}
+                    </span>
+                </div>
+            ) : (
+                <div className="bg-red-50 p-2 text-center text-sm">
+                    <span className="text-red-600">
+                        Picks are locked - Games have started
+                    </span>
+                </div>
+            )}
+
             {/* Games Grid */}
             <div className="p-4 max-w-5xl mx-auto pb-20 ">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -554,9 +627,12 @@ export default function DailyPicks() {
 
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'home')}
-                                            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border ${selectedPicks.has(`${game.id}-home`)
-                                                ? 'bg-blue-50 border-2 border-blue-500'
-                                                : 'border-gray-400 hover:bg-gray-200'
+                                            disabled={isLocked}
+                                            className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border 
+                                                ${isLocked ? 'opacity-50 cursor-not-allowed' : ''} 
+                                                ${selectedPicks.has(`${game.id}-home`)
+                                                    ? 'bg-blue-50 border-2 border-blue-500'
+                                                    : 'border-gray-400 hover:bg-gray-200'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
