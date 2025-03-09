@@ -9,15 +9,17 @@ import '../styles/myPicks.css';
 //TODO: Add a history button to the picks page
 // Define TypeScript interfaces for data structures
 interface Pick {
+    id: string;
     gameId: string;
     teamIndex: number;
     createdAt: string;
     Game: {
+        id: string;
         team1Name: string;
         team2Name: string;
-        team1Logo: string;
-        team2Logo: string;
-        winner: number | null;
+        team1Logo: string | null;
+        team2Logo: string | null;
+        winner: number | null;  // 0 for team1, 1 for team2, null for not decided
         final_score: string | null;
         status?: string;
         gameDate: string;
@@ -66,6 +68,7 @@ export default function MyPicksPage() {
     const [weekEnd, setWeekEnd] = useState<string | null>(null);
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
     const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
+    const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
     // Hooks for authentication and navigation
     const { isSignedIn } = useUser();
@@ -84,11 +87,11 @@ export default function MyPicksPage() {
                 const response = await axios.get('/api/userPicks');
                 console.log('Response:', response.data); // Debug log
 
-                // Sort picks by gameDate
+                // Sort picks by gameDate in descending order (newest first)
                 const sortedPicks = response.data.sort((a: Pick, b: Pick) => {
                     const dateA = new Date(a.Game.gameDate);
                     const dateB = new Date(b.Game.gameDate);
-                    return dateA.getTime() - dateB.getTime();
+                    return dateB.getTime() - dateA.getTime(); // Changed to show newest first
                 });
 
                 setUserPicks(sortedPicks);
@@ -159,54 +162,65 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Generate array of week options with dates
+    // Add this helper function to determine if a date falls within a week
+    const isDateInWeek = (date: Date, weekStart: Date, weekEnd: Date) => {
+        // Set all dates to midnight for comparison
+        const normalizedDate = new Date(date);
+        normalizedDate.setHours(0, 0, 0, 0);
+        
+        const normalizedStart = new Date(weekStart);
+        normalizedStart.setHours(0, 0, 0, 0);
+        
+        const normalizedEnd = new Date(weekEnd);
+        normalizedEnd.setHours(23, 59, 59, 999);
+        
+        return normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd;
+    };
+
+    // Update the generateWeeks function to create more accurate week ranges
     const generateWeeks = (): WeekOption[] => {
-        if (currentWeek === null) return [];
-        
         const weeks: WeekOption[] = [];
-        const weeksToDisplay = 52;
         
-        // Use a fixed date for initial render to avoid hydration mismatch
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Start from the beginning of the year
+        const currentYear = new Date().getFullYear();
+        const yearStart = new Date(currentYear, 0, 1);
+        yearStart.setHours(0, 0, 0, 0);
         
-        // Get the start of the current week (Sunday)
-        const currentWeekStart = new Date(today);
-        const day = currentWeekStart.getDay();
-        currentWeekStart.setDate(currentWeekStart.getDate() - day);
-        currentWeekStart.setHours(0, 0, 0, 0);
+        // Get the first Sunday of the year (or use Jan 1 if it's a Sunday)
+        const firstSunday = new Date(yearStart);
+        while (firstSunday.getDay() !== 0) {
+            firstSunday.setDate(firstSunday.getDate() + 1);
+        }
         
-        for (let i = 0; i < weeksToDisplay; i++) {
-            const weekStart = new Date(currentWeekStart);
-            weekStart.setDate(currentWeekStart.getDate() - (i * 7));
+        // Generate 52 weeks
+        for (let i = 0; i < 52; i++) {
+            const weekStart = new Date(firstSunday);
+            weekStart.setDate(firstSunday.getDate() + (i * 7));
             weekStart.setHours(0, 0, 0, 0);
             
             const weekEnd = new Date(weekStart);
             weekEnd.setDate(weekStart.getDate() + 6);
             weekEnd.setHours(0, 0, 0, 0);
             
-            const weekNumber = currentWeek - i;
-            if (weekNumber > 0) {
-                // Use consistent date formatting
-                const formattedStart = new Intl.DateTimeFormat('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    timeZone: 'UTC'
-                }).format(weekStart);
-                
-                const formattedEnd = new Intl.DateTimeFormat('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    timeZone: 'UTC'
-                }).format(weekEnd);
-                
-                weeks.push({
-                    weekNumber,
-                    startDate: weekStart,
-                    endDate: weekEnd,
-                    label: `Week ${weekNumber} (${formattedStart} - ${formattedEnd})`
-                });
-            }
+            const weekNumber = i + 1;
+            const formattedStart = new Intl.DateTimeFormat('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                timeZone: 'UTC'
+            }).format(weekStart);
+            
+            const formattedEnd = new Intl.DateTimeFormat('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                timeZone: 'UTC'
+            }).format(weekEnd);
+            
+            weeks.push({
+                weekNumber,
+                startDate: weekStart,
+                endDate: weekEnd,
+                label: `Week ${weekNumber} (${formattedStart} - ${formattedEnd})`
+            });
         }
         return weeks;
     };
@@ -229,8 +243,30 @@ export default function MyPicksPage() {
         });
     };
 
-    // Group picks by game date
+    // Add this at the top of your component
+    useEffect(() => {
+        console.log("Current userPicks state:", userPicks);
+        
+        if (userPicks.length > 0) {
+            // Check the first pick to see its structure
+            console.log("Sample pick:", userPicks[0]);
+            console.log("Sample Game property:", userPicks[0].Game);
+            
+            // Check if grouping works
+            const grouped = groupPicksByGameDate(userPicks);
+            console.log("Grouped picks:", grouped);
+            console.log("Grouped keys:", Object.keys(grouped));
+        }
+    }, [userPicks]);
+
+    // Modify the groupPicksByGameDate function with more logging
     const groupPicksByGameDate = (picks: Pick[]) => {
+        console.log("Starting to group picks, count:", picks.length);
+        
+        if (picks.length > 0) {
+            console.log("First pick gameDate:", picks[0].Game?.gameDate);
+        }
+        
         // First remove duplicates based on gameId
         const uniquePicks = picks.reduce((acc: Pick[], current) => {
             const exists = acc.find(pick => pick.gameId === current.gameId);
@@ -241,31 +277,143 @@ export default function MyPicksPage() {
         }, []);
 
         // Then group by date
-        return uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
-            const gameDate = pick.Game?.gameDate 
-                ? new Date(pick.Game.gameDate)
-                : new Date();
-
-            const date = gameDate.toLocaleDateString('en-US', {
+        const grouped = uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
+            const gameDate = new Date(pick.Game.gameDate);
+            
+            // Format the date as a string
+            const dateKey = gameDate.toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'short',
                 day: 'numeric',
-                timeZone: 'America/New_York'  // Use ET timezone
+                timeZone: 'America/New_York'
             });
 
-            if (!groups[date]) {
-                groups[date] = [];
+            if (!groups[dateKey]) {
+                groups[dateKey] = [];
             }
-            groups[date].push(pick);
+            groups[dateKey].push(pick);
             return groups;
         }, {});
+
+        // Sort picks within each group by game time
+        Object.keys(grouped).forEach(date => {
+            grouped[date].sort((a, b) => {
+                const timeA = new Date(a.Game.gameDate).getTime();
+                const timeB = new Date(b.Game.gameDate).getTime();
+                return timeA - timeB;
+            });
+        });
+
+        return grouped;
     };
 
-    const filteredPicks = userPicks.filter((pick) => {
-        const pickDate = new Date(pick.createdAt);
-        const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
-        if (!selectedWeekData) return false;
-        return pickDate >= selectedWeekData.startDate && pickDate <= selectedWeekData.endDate;
+    // At the top of your component, add this useEffect
+    useEffect(() => {
+        // Set selectedWeek to 0 to show all picks by default
+        setSelectedWeek(0);
+    }, []);
+
+    // Add this function to get unique days from filtered picks
+    const getUniqueDays = (picks: Pick[]) => {
+        const days = picks.reduce((acc: string[], pick) => {
+            if (!pick.Game || !pick.Game.gameDate) return acc;
+            
+            const gameDate = new Date(pick.Game.gameDate);
+            const dateKey = gameDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'America/New_York'
+            });
+            
+            if (!acc.includes(dateKey)) {
+                acc.push(dateKey);
+            }
+            
+            return acc;
+        }, []);
+        
+        // Sort days chronologically
+        return days.sort((a, b) => {
+            const dateA = new Date(a);
+            const dateB = new Date(b);
+            return dateA.getTime() - dateB.getTime();
+        });
+    };
+
+    // Update your filtering logic to include day filtering
+    const weekFilteredPicks = selectedWeek === 0 
+        ? userPicks // Show all picks if no week selected
+        : userPicks.filter((pick) => {
+            if (!pick.Game || !pick.Game.gameDate) return false;
+            
+            const pickDate = new Date(pick.Game.gameDate);
+            const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
+            if (!selectedWeekData) return false;
+            
+            return isDateInWeek(pickDate, selectedWeekData.startDate, selectedWeekData.endDate);
+        });
+
+    // Group picks by date with improved date handling
+    const groupPicksByDate = (picks: Pick[]) => {
+        const grouped = picks.reduce((groups: { [key: string]: Pick[] }, pick) => {
+            if (!pick.Game || !pick.Game.gameDate) return groups;
+            
+            // Parse the date string properly
+            const gameDate = new Date(pick.Game.gameDate);
+            
+            // Format the date as a string with full details for the key
+            const dateKey = gameDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                timeZone: 'America/New_York'
+            });
+            
+            // Log for debugging
+            console.log(`Game ID: ${pick.gameId}, Date: ${pick.Game.gameDate}, Formatted: ${dateKey}`);
+            
+            if (!groups[dateKey]) {
+                groups[dateKey] = [];
+            }
+            
+            groups[dateKey].push(pick);
+            return groups;
+        }, {});
+
+        // Sort picks within each day by game time
+        Object.keys(grouped).forEach(date => {
+            grouped[date].sort((a, b) => {
+                const timeA = new Date(a.Game.gameDate).getTime();
+                const timeB = new Date(b.Game.gameDate).getTime();
+                return timeA - timeB;
+            });
+        });
+
+        return grouped;
+    };
+
+    // Get grouped picks
+    const groupedPicks = groupPicksByDate(weekFilteredPicks);
+
+    // Get sorted dates with proper date parsing
+    const sortedDates = Object.keys(groupedPicks).sort((a, b) => {
+        // Create Date objects from the formatted date strings
+        const datePartsA = a.split(', ')[1].split(' ');
+        const monthA = datePartsA[0];
+        const dayA = parseInt(datePartsA[1]);
+        const yearA = parseInt(datePartsA[2]);
+        
+        const datePartsB = b.split(', ')[1].split(' ');
+        const monthB = datePartsB[0];
+        const dayB = parseInt(datePartsB[1]);
+        const yearB = parseInt(datePartsB[2]);
+        
+        const dateA = new Date(`${monthA} ${dayA}, ${yearA}`);
+        const dateB = new Date(`${monthB} ${dayB}, ${yearB}`);
+        
+        return dateA.getTime() - dateB.getTime();
     });
 
     return (
@@ -319,7 +467,7 @@ export default function MyPicksPage() {
                                     onChange={(e) => setSelectedWeek(parseInt(e.target.value))} 
                                     value={selectedWeek}
                                 >
-                                    <option value="" disabled>Select Week</option>
+                                    <option value="0">All Weeks</option>
                                     {weekOptions.map((week) => (
                                         <option key={week.weekNumber} value={week.weekNumber}>
                                             {week.label}
@@ -338,69 +486,131 @@ export default function MyPicksPage() {
                                 )}
                             </div>
 
-                            {isSignedIn && filteredPicks.length > 0 ? (
-                                Object.entries(groupPicksByGameDate(filteredPicks)).map(([date, datePicks]) => (
-                                    <div key={date} className="date-group">
-                                        <h3 className="text-lg font-semibold">
-                                            {date === 'Upcoming Games' 
-                                                ? 'Upcoming Games'
-                                                : `Games for ${date}`}
+                            {/* Add this debugging section right after your picks-subtitle section */}
+                            <div className="debug-section p-4 mb-4 bg-red-800/30 rounded-lg">
+                                <h3 className="text-lg font-semibold text-white mb-4">
+                                    Debug Information
+                                </h3>
+                                <div>
+                                    <p className="text-white">Total picks: {userPicks.length}</p>
+                                    <p className="text-white">Filtered picks: {weekFilteredPicks.length}</p>
+                                    <p className="text-white">Unique dates: {sortedDates.length}</p>
+                                    <p className="text-white">Dates: {sortedDates.join(', ')}</p>
+                                    
+                                    {weekFilteredPicks.length > 0 && (
+                                        <div className="mt-4">
+                                            <h4 className="text-white font-semibold">Sample Game Dates:</h4>
+                                            <ul className="text-white">
+                                                {weekFilteredPicks.slice(0, 5).map((pick, index) => (
+                                                    <li key={index}>
+                                                        Game ID: {pick.gameId}, 
+                                                        Raw Date: {pick.Game.gameDate}, 
+                                                        Parsed: {new Date(pick.Game.gameDate).toLocaleString('en-US', {
+                                                            weekday: 'long',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                            year: 'numeric',
+                                                            hour: 'numeric',
+                                                            minute: '2-digit',
+                                                            timeZone: 'America/New_York'
+                                                        })}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Replace your existing picks display with this simplified version */}
+                            <div className="days-container space-y-6">
+                                {sortedDates.map(date => (
+                                    <div key={date} className="date-group p-4 bg-gray-800/30 rounded-lg">
+                                        <h3 className="text-lg font-semibold text-white mb-4 border-b border-gray-700 pb-2">
+                                            {date}
                                         </h3>
-                                     
-                                        {datePicks.map((pick, index) => {
-                                            return (
-                                                <div key={`${date}-${index}`} className="pick-item">
-                                                    <div className="pick-details">
-                                                        {/* Teams display */}
-                                                        <div className={`team ${pick.teamIndex === 0 ? 'selected-team' : ''}`}>
+                                        
+                                        <div className="space-y-4">
+                                            {groupedPicks[date].map((pick, index) => (
+                                                <div key={`${pick.gameId}-${index}`} 
+                                                     className="pick-item bg-gray-800/50 p-4 rounded-lg">
+                                                    <div className="pick-details flex items-center justify-between">
+                                                        {/* Team 1 */}
+                                                        <div className={`team flex items-center gap-3 ${pick.teamIndex === 0 ? 'selected-team' : ''}`}>
                                                             {pick.Game.team1Logo && (
                                                                 <img 
-                                                                    src={pick.Game.team1Logo || '/default-team-logo.png'} 
+                                                                    src={pick.Game.team1Logo} 
                                                                     alt={pick.Game.team1Name} 
-                                                                    className="team-logo" 
+                                                                    className="team-logo w-8 h-8 object-contain" 
                                                                 />
                                                             )}
-                                                            <div className="team-name">{pick.Game.team1Name}</div>
+                                                            <span className="team-name text-white">{pick.Game.team1Name}</span>
                                                         </div>
 
-                                                        <div className="vs">VS</div>
+                                                        <span className="vs text-gray-400 mx-4">VS</span>
 
-                                                        <div className={`team ${pick.teamIndex === 1 ? 'selected-team' : ''}`}>
+                                                        {/* Team 2 */}
+                                                        <div className={`team flex items-center gap-3 ${pick.teamIndex === 1 ? 'selected-team' : ''}`}>
                                                             {pick.Game.team2Logo && (
                                                                 <img 
-                                                                    src={pick.Game.team2Logo || '/default-team-logo.png'} 
+                                                                    src={pick.Game.team2Logo} 
                                                                     alt={pick.Game.team2Name} 
-                                                                    className="team-logo" 
+                                                                    className="team-logo w-8 h-8 object-contain" 
                                                                 />
                                                             )}
-                                                            <div className="team-name">{pick.Game.team2Name}</div>
+                                                            <span className="team-name text-white">{pick.Game.team2Name}</span>
                                                         </div>
 
-                                                        {/* Game status */}
-                                                        <div className="game-status">
-                                                            {!pick.Game ? (
-                                                                <div className="pick-result in-progress">
-                                                                    Upcoming
-                                                                </div>
-                                                            ) : pick.Game.status === 'STATUS_SCHEDULED' ? (
-                                                                <div className="pick-result in-progress">
-                                                                    Upcoming
-                                                                </div>
-                                                            ) : (
-                                                                <div className="pick-result in-progress">
-                                                                    Upcoming
-                                                                </div>
-                                                            )}
+                                                        {/* Game Status */}
+                                                        <div className="game-status ml-4">
+                                                            {(() => {
+                                                                const gameDate = new Date(pick.Game.gameDate);
+                                                                const now = new Date();
+                                                                
+                                                                // If the game has a final score or winner, it's finished
+                                                                if (pick.Game.status === 'STATUS_FINAL' || pick.Game.final_score || pick.Game.winner !== null) {
+                                                                    return (
+                                                                        <div className={`pick-result ${
+                                                                            pick.Game.winner === pick.teamIndex ? 'win' : 'loss'
+                                                                        }`}>
+                                                                            {pick.Game.final_score || 'Finished'}
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                
+                                                                // If the game date is in the past (more than 3 hours ago), mark as finished
+                                                                if (gameDate.getTime() < now.getTime() - (3 * 60 * 60 * 1000)) {
+                                                                    return (
+                                                                        <div className="pick-result finished">
+                                                                            Finished
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                
+                                                                // If the game date is within 3 hours of now (before or after), it might be in progress
+                                                                if (Math.abs(gameDate.getTime() - now.getTime()) < (3 * 60 * 60 * 1000)) {
+                                                                    return (
+                                                                        <div className="pick-result in-progress">
+                                                                            In Progress
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                
+                                                                // Otherwise, it's an upcoming game - without time
+                                                                return (
+                                                                    <div className="pick-result upcoming">
+                                                                        Upcoming
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
+                                            ))}
+                                        </div>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="message">No picks available. Please make your picks!</div>
-                            )}
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -486,6 +696,53 @@ export default function MyPicksPage() {
                         max-width: 1000px; /* Match the picks container width */
                         margin-top: 20px; /* Add margin for spacing */
                     }
+                }
+
+                .pick-result {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-weight: 500;
+                    text-align: center;
+                }
+
+                .win {
+                    background-color: #22c55e;
+                    color: white;
+                }
+
+                .loss {
+                    background-color: #ef4444;
+                    color: white;
+                }
+
+                .in-progress {
+                    background-color: #3b82f6;
+                    color: white;
+                }
+
+                .upcoming {
+                    background-color: #6b7280;
+                    color: white;
+                }
+                
+                .finished {
+                    background-color: #4b5563;
+                    color: white;
+                }
+                
+                .selected-team {
+                    font-weight: bold;
+                    position: relative;
+                }
+                
+                .selected-team::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -4px;
+                    left: 0;
+                    width: 100%;
+                    height: 2px;
+                    background-color: #3b82f6;
                 }
             `}</style>
         </div>
