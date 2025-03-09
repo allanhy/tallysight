@@ -40,7 +40,19 @@ export async function GET(req: Request) {
         ORDER BY le.rank ASC`;
 
         const values = [leaderboard_id, sport, week];
-        */
+      */
+
+      // Updating rank before getting users
+      await client.query(`
+        UPDATE leaderboard_entries
+        SET rank = subquery.rank
+        FROM (
+          SELECT user_id, DENSE_RANK() OVER (ORDER BY points DESC) AS rank
+          FROM users
+        ) AS subquery
+        WHERE leaderboard_entries.user_id = subquery.user_id
+        AND leaderboard_entries.leaderboard_id IN (SELECT leaderboard_id FROM leaderboards WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW()));
+      `, [sport, week]);
 
       const query = 
         `SELECT u.user_id, u.clerk_id, u.username, le.points, le.rank, u.performance, u.bio, u.fav_team, u.max_points
