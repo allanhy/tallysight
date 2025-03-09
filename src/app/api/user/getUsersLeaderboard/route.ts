@@ -2,6 +2,7 @@ import { clerkClient, User } from '@clerk/clerk-sdk-node';
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
+// get all users for total leaderboard
 export async function GET(req: Request) {
   let client;
 
