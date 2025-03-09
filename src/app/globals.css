@@ -11,30 +11,33 @@
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --accent-color: #3B82F6;
-  --background-color: black;
-  --text-color: white;
+  --accent-color-hover: #2563eb;
+  --background-color: #ffffff;
+  --text-color: #111827;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --card-background: #1f2937;
+    --card-background: #374151;
     --card-border: #374151;
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
     --accent-color: #3B82F6;
-    --background-color: black;
-    --text-color: white;
+    --background-color: #1f2937;
+    --text-color: #f3f4f6;
   }
 }
 
 :root[data-theme="light"] {
-  --background-color: white;
-  --text-color: black;
+  --background-color: #ffffff;
+  --text-color: #111827;
+  --card-background: #ffffff;
 }
 
 :root[data-theme="dark"] {
-  --background-color: black;
-  --text-color: white;
+  --background-color: #1f2937;
+  --text-color: #f3f4f6;
+  --card-background: #374151;
 }
 
 .font-montserrat {
@@ -42,8 +45,8 @@
 }
 
 body {
-  background-color: var(--background);
-  color: var(--text-primary);
+  background-color: var(--background-color);
+  color: var(--text-color);
   font-family: var(--font-family);
 }
 
@@ -154,4 +157,48 @@ body {
 
 .animate-shimmer-button {
   animation: shimmer 1.5s infinite linear;
+}
+
+.navbar-fixed {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Update button styles to use accent color */
+.btn-primary {
+  background-color: var(--accent-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-color-hover);
+}
+
+/* Add this class to use accent color for other elements */
+.accent-color {
+  color: var(--accent-color);
+}
+
+.accent-bg {
+  background-color: var(--accent-color);
+}
+
+.accent-border {
+  border-color: var(--accent-color);
+}
+
+/* Add these utility classes if they're not already present */
+.bg-accent {
+  background-color: var(--accent-color);
+}
+
+.hover\:bg-accent-hover:hover {
+  background-color: var(--accent-color-hover);
+}
+
+.border-accent {
+  border-color: var(--accent-color);
+}
+
+.ring-accent {
+  --tw-ring-color: var(--accent-color);
 }

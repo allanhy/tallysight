@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -18,14 +18,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [accentColor, setAccentColor] = useState('#3B82F6'); // Default blue
 
   useEffect(() => {
-    // Load theme from localStorage on initial render
+    // Load theme and accent color from localStorage on initial render
     const savedTheme = localStorage.getItem('theme') as Theme;
     const savedAccentColor = localStorage.getItem('accentColor');
+    
     if (savedTheme) {
       setTheme(savedTheme);
       applyTheme(savedTheme);
     }
-    if (savedAccentColor) setAccentColor(savedAccentColor);
+    if (savedAccentColor) {
+      setAccentColor(savedAccentColor);
+      applyAccentColor(savedAccentColor);
+    }
 
     // Set the data-theme attribute on the root element
     const root = document.documentElement;
@@ -56,6 +60,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.toggle('dark', isDark);
   };
 
+  const applyAccentColor = (color: string) => {
+    document.documentElement.style.setProperty('--accent-color', color);
+    // Update button hover states
+    document.documentElement.style.setProperty('--accent-color-hover', adjustColorBrightness(color, -10));
+  };
+
+  // Helper function to darken/lighten colors for hover states
+  const adjustColorBrightness = (hex: string, percent: number) => {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return '#' + (
+      0x1000000 +
+      (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+      (B < 255 ? B < 1 ? 0 : B : 255)
+    ).toString(16).slice(1);
+  };
+
   const toggleTheme = (newTheme: Theme) => {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
@@ -65,10 +90,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const updateAccentColor = (color: string) => {
     setAccentColor(color);
     localStorage.setItem('accentColor', color);
+    applyAccentColor(color);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, accentColor, toggleTheme, setAccentColor: updateAccentColor }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      accentColor, 
+      toggleTheme, 
+      setAccentColor: updateAccentColor 
+    }}>
       {children}
     </ThemeContext.Provider>
   );

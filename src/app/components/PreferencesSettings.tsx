@@ -13,24 +13,31 @@ const ACCENT_COLORS = [
 ];
 
 const PreferencesSettings = () => {
-  const { theme, toggleTheme } = useTheme();
-  const [accentColor, setAccentColor] = useState('#3B82F6');
+  const { theme, toggleTheme, accentColor, setAccentColor } = useTheme();
   const [customColor, setCustomColor] = useState('');
+
+  const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const color = e.target.value;
+    setCustomColor(color);
+    if (color.match(/^#[0-9A-Fa-f]{6}$/)) {
+      setAccentColor(color);
+    }
+  };
 
   return (
     <div className="space-y-8">
       {/* Appearance Section */}
       <div>
-        <h3 className="text-5xl font-medium text-gray-900 dark:text-black-400 mb-4">
+        <h3 className="text-5xl font-medium mb-4 text-gray-900 dark:text-gray-100">
           Appearance
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-900 mb-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Change how Untitled UI looks and feels in your browser.
         </p>
 
         {/* Accent Color */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-800 dark:text-gray-400 mb-2">
+          <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
             Accent color
           </label>
           <div className="flex items-center gap-2">
@@ -39,7 +46,7 @@ const PreferencesSettings = () => {
                 key={color.value}
                 className={`w-8 h-8 rounded-full border-2 ${
                   accentColor === color.value
-                    ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2'
+                    ? 'border-[var(--accent-color)] ring-2 ring-[var(--accent-color)] ring-offset-2'
                     : 'border-transparent'
                 }`}
                 style={{ backgroundColor: color.value }}
@@ -48,28 +55,57 @@ const PreferencesSettings = () => {
               />
             ))}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Custom</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Custom</span>
               <input
                 type="text"
                 value={customColor}
-                onChange={(e) => setCustomColor(e.target.value)}
+                onChange={handleCustomColorChange}
                 placeholder="#F5F5F5"
-                className="w-20 px-2 py-1 text-sm border rounded"
+                className="w-20 px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:text-gray-200"
               />
             </div>
           </div>
         </div>
 
+        {/* Theme Toggle */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
+            Theme
+          </label>
+          <div className="flex items-center">
+            <button
+              onClick={() => toggleTheme('light')}
+              className={`px-4 py-2 rounded ${
+                theme === 'light' 
+                  ? 'bg-[var(--accent-color)] text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              Light
+            </button>
+            <button
+              onClick={() => toggleTheme('dark')}
+              className={`px-4 py-2 rounded ${
+                theme === 'dark' 
+                  ? 'bg-[var(--accent-color)] text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              Dark
+            </button>
+          </div>
+        </div>
+
         {/* Interface Theme */}
         <div>
-          <label className="block text-sm font-medium text-gray-800 dark:text-gray-400 mb-2">
+          <label className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">
             Interface theme
           </label>
           <div className="grid grid-cols-3 gap-4">
             <div
               className={`relative rounded-lg border-2 p-2 cursor-pointer ${
                 theme === 'system'
-                  ? 'border-blue-500 ring-2 ring-blue-500'
+                  ? 'border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]'
                   : 'border-gray-200'
               }`}
               onClick={() => toggleTheme('system')}
@@ -81,13 +117,13 @@ const PreferencesSettings = () => {
                   className="w-full h-full object-cover rounded"
                 />
               </div>
-              <p className="text-base font-medium text-gray-900 dark:text-gray-400 text-center">System preference</p>
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 text-center">System preference</p>
             </div>
             
             <div
               className={`relative rounded-lg border-2 p-2 cursor-pointer ${
                 theme === 'light'
-                  ? 'border-blue-500 ring-2 ring-blue-500'
+                  ? 'border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]'
                   : 'border-gray-200'
               }`}
               onClick={() => toggleTheme('light')}
@@ -99,13 +135,13 @@ const PreferencesSettings = () => {
                   className="w-full h-full object-cover rounded"
                 />
               </div>
-              <p className="text-base font-medium text-gray-900 dark:text-gray-400 text-center">Light</p>
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 text-center">Light</p>
             </div>
 
             <div
               className={`relative rounded-lg border-2 p-2 cursor-pointer ${
                 theme === 'dark'
-                  ? 'border-blue-500 ring-2 ring-blue-500'
+                  ? 'border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]'
                   : 'border-gray-200'
               }`}
               onClick={() => toggleTheme('dark')}
@@ -117,35 +153,13 @@ const PreferencesSettings = () => {
                   className="w-full h-full object-cover rounded"
                 />
               </div>
-              <p className="text-base font-medium text-gray-900 dark:text-gray-400 text-center">Dark</p>
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 text-center">Dark</p>
             </div>
           </div>
-        </div>
-
-        
-
-        {/* Action Buttons */}
-        <div className="mt-8 flex justify-end space-x-4">
-          <button
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            onClick={() => {
-              // Reset logic here
-            }}
-          >
-            Reset to default
-          </button>
-          <button
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            onClick={() => {
-              // Save changes logic here
-            }}
-          >
-            Save changes
-          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default PreferencesSettings;
+export default PreferencesSettings; 
