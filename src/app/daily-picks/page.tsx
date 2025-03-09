@@ -74,6 +74,10 @@ export default function DailyPicks() {
     const [isMobile, setIsMobile] = useState(false);
     const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [isLocked, setIsLocked] = useState(false);
+    const [startedGames, setStartedGames] = useState<Set<string>>(new Set());
+    const [firstGameLocked, setFirstGameLocked] = useState(false);
+    const [allGamesEnded, setAllGamesEnded] = useState(false);
+    const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -182,53 +186,72 @@ export default function DailyPicks() {
     }, []);
 
     useEffect(() => {
-        const calculateTimeLeft = () => {
-            if (games.length === 0) return;
-
-            // Get current time in ET
-            const now = new Date();
+        // Force lock for games that started at 10 AM PT
+        const now = new Date();
+        const firstGameTime = new Date();
+        firstGameTime.setHours(10, 0, 0, 0); // 10 AM PT
+        
+        if (now > firstGameTime) {
+            console.log("FORCING LOCK: First game has started at 10 AM PT");
+            setFirstGameLocked(true);
             
-            // Create tomorrow's date at 1 PM ET (first game time)
-            const gameTime = new Date();
-            gameTime.setDate(gameTime.getDate() + 1); // Set to tomorrow
-            gameTime.setHours(13, 0, 0, 0); // 1 PM ET (13:00)
-
-            const diff = gameTime.getTime() - now.getTime();
-
-            if (diff <= 0) {
-                setIsLocked(true);
-                setSelectedPicks(new Set());
-                router.push('/myPicks');
-                return { hours: 0, minutes: 0, seconds: 0 };
+            // Mark all games with start time at or before 10 AM PT as started
+            const lockedGames = new Set<string>();
+            
+            games.forEach(game => {
+                // For simplicity, let's just lock all games for now
+                lockedGames.add(game.id);
+            });
+            
+            setStartedGames(lockedGames);
+            setIsLocked(true); // Lock all picks
+            
+            // Set time remaining to 0
+            setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+            
+            // Check if all games have ended (assuming a game lasts ~3 hours)
+            const lastGameEndTime = new Date(firstGameTime);
+            lastGameEndTime.setHours(lastGameEndTime.getHours() + 3); // Assuming last game ends 3 hours after first game
+            
+            if (now > lastGameEndTime) {
+                setAllGamesEnded(true);
             }
+        }
+    }, [games]); // Only run when games are loaded
 
-            setIsLocked(false);
+    // Add a new effect to calculate time until next day's games
+    useEffect(() => {
+        if (!allGamesEnded) return;
+        
+        const calculateNextDayTimeLeft = () => {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(10, 0, 0, 0); // 10 AM PT next day
+            
+            const diff = tomorrow.getTime() - now.getTime();
+            
             return {
                 hours: Math.floor(diff / (1000 * 60 * 60)),
                 minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
                 seconds: Math.floor((diff % (1000 * 60)) / 1000)
             };
         };
-
+        
         // Initial calculation
-        const initialTimeLeft = calculateTimeLeft();
-        if (initialTimeLeft) {
-            setTimeLeft(initialTimeLeft);
-        }
-
+        setNextDayTimeLeft(calculateNextDayTimeLeft());
+        
         // Update timer every second
         const timer = setInterval(() => {
-            const timeLeft = calculateTimeLeft();
-            if (timeLeft) {
-                setTimeLeft(timeLeft);
-            }
+            setNextDayTimeLeft(calculateNextDayTimeLeft());
         }, 1000);
-
+        
         return () => clearInterval(timer);
-    }, [games, router]);
+    }, [allGamesEnded]);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
-        if (isLocked) return; // Prevent selections if locked
+        // Prevent selections if all games are locked or this specific game is locked
+        if (isLocked || startedGames.has(gameId)) return;
 
         setSelectedPicks(prevPicks => {
             const newPicks = new Set(prevPicks);
@@ -429,38 +452,67 @@ export default function DailyPicks() {
                 </div>
             </div>
 
-            {/* Info Bar */}
-            <div className="bg-blue-50 p-2 text-center text-sm text-blue-600">
-                Spread finalized | Picks lock at the start of each game
-            </div>
-
-            {/* Timer/Lock Status */}
-            {!isLocked ? (
+            {/* Conditional display based on game status */}
+            {!isLocked && (
                 <div className="bg-blue-50 p-2 text-center text-sm">
                     <span className="text-blue-600">
-                        Time until first game: {String(timeLeft.hours).padStart(2, '0')}:
+                        Time until games start: {String(timeLeft.hours).padStart(2, '0')}:
                         {String(timeLeft.minutes).padStart(2, '0')}:
                         {String(timeLeft.seconds).padStart(2, '0')}
                     </span>
                 </div>
-            ) : (
+            )}
+            
+            {isLocked && !allGamesEnded && (
                 <div className="bg-red-50 p-2 text-center text-sm">
-                    <span className="text-red-600">
-                        Picks are locked - Games have started
+                    <span className="text-red-600 font-bold">
+                        PICKS ARE LOCKED - GAMES HAVE STARTED
+                    </span>
+                </div>
+            )}
+            
+            {allGamesEnded && (
+                <div className="bg-green-50 p-2 text-center text-sm">
+                    <span className="text-green-600">
+                        Today's games have ended. Next games in: {String(nextDayTimeLeft.hours).padStart(2, '0')}:
+                        {String(nextDayTimeLeft.minutes).padStart(2, '0')}:
+                        {String(nextDayTimeLeft.seconds).padStart(2, '0')}
                     </span>
                 </div>
             )}
 
+            {/* Enhanced Status Bar with more prominent lock indication and countdown */}
+            <div className="text-center py-2 text-sm">
+                <div className="text-gray-300">
+                    Spread finalized | Picks lock: At the start of each game 
+                    <span className="ml-2 font-bold">
+                        {isLocked ? 'LOCKED (0:00:00)' : 
+                         `${String(timeLeft.hours).padStart(2, '0')}:${String(timeLeft.minutes).padStart(2, '0')}:${String(timeLeft.seconds).padStart(2, '0')}`}
+                    </span>
+                </div>
+                {isLocked && (
+                    <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
+                        GAMES LOCKED - REFRESH PAGE TO CONTINUE
+                    </div>
+                )}
+                {firstGameLocked && !isLocked && (
+                    <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
+                        FIRST GAME HAS STARTED - SOME PICKS ARE LOCKED
+                    </div>
+                )}
+            </div>
+
             {/* Games Grid */}
-            <div className="p-4 max-w-5xl mx-auto pb-20 ">
+            <div className="p-4 max-w-5xl mx-auto pb-20">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {games.length > 0 ? (
                         games.map((game) => {
+                            const gameIsLocked = startedGames.has(game.id);
                             const awayPercentage = parseFloat(pickPercentages[game.id]?.away) || 0;
                             const homePercentage = parseFloat(pickPercentages[game.id]?.home) || 0;
                             const awayIsHigher = awayPercentage > homePercentage;
                             return (
-                                <div key={game.id} className="bg-white rounded-lg shadow border border-gray-200">
+                                <div key={game.id} className={`bg-white rounded-lg shadow border ${gameIsLocked ? 'border-red-200' : 'border-gray-200'}`}>
                                     <div className="flex justify-between items-center p-3 border-b">
                                         <div className="text-sm text-gray-500">
                                             <span>{game.gameTime} ET</span>
@@ -479,23 +531,28 @@ export default function DailyPicks() {
                                                 })()}
                                             </span>
                                         </div>
-                                        <button
-                                            onClick={() => handleGetSpread(game.id, 'home')}
-                                            className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
-                                        >
-                                            Preview
-                                        </button>
+                                        <div className="flex items-center">
+                                            {gameIsLocked && (
+                                                <span className="text-red-500 text-xs mr-2">LOCKED</span>
+                                            )}
+                                            <button
+                                                onClick={() => handleGetSpread(game.id, 'home')}
+                                                className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
+                                            >
+                                                Preview
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="p-4 space-y-3">
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'away')}
-                                            disabled={game.status.toLowerCase() !== 'scheduled'} // Disable when game is in progress or finished
+                                            disabled={gameIsLocked} // Disable when this specific game is locked
                                             className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border 
                                                     ${selectedPicks.has(`${game.id}-away`)
                                                     ? 'bg-blue-50 border-2 border-blue-500'
                                                     : 'border-gray-400 hover:bg-gray-200'
                                                 }
-                                                ${game.status.toLowerCase() !== 'scheduled' ? 'opacity-50 cursor-not-allowed' : ''} // Visually disable
+                                                    ${gameIsLocked ? 'opacity-50 cursor-not-allowed' : ''} // Visually disable
                                             `}
                                         >
                                             <div className="flex items-center gap-3">
@@ -627,9 +684,9 @@ export default function DailyPicks() {
 
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'home')}
-                                            disabled={isLocked}
+                                            disabled={gameIsLocked} // Disable when this specific game is locked
                                             className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border 
-                                                ${isLocked ? 'opacity-50 cursor-not-allowed' : ''} 
+                                                ${gameIsLocked ? 'opacity-50 cursor-not-allowed' : ''} 
                                                 ${selectedPicks.has(`${game.id}-home`)
                                                     ? 'bg-blue-50 border-2 border-blue-500'
                                                     : 'border-gray-400 hover:bg-gray-200'

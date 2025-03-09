@@ -162,9 +162,66 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Add this helper function to determine if a date falls within a week
+    // Add this helper function to format dates consistently
+    const formatGameDate = (dateString: string) => {
+        // Ensure we're working with a valid date string
+        if (!dateString) return '';
+        
+        // Create a date object in the correct timezone
+        const date = new Date(dateString);
+        
+        // Format the date consistently for display and comparison
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            timeZone: 'America/New_York'  // Use ET timezone consistently
+        });
+    };
+
+    // Update the groupPicksByDate function to use the consistent formatter
+    const groupPicksByDate = (picks: Pick[]) => {
+        console.log("Starting to group picks, count:", picks.length);
+        
+        // First remove duplicates based on gameId
+        const uniquePicks = picks.reduce((acc: Pick[], current) => {
+            const exists = acc.find(pick => pick.gameId === current.gameId);
+            if (!exists) {
+                acc.push(current);
+            }
+            return acc;
+        }, []);
+
+        // Then group by date using the consistent formatter
+        const grouped = uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
+            if (!pick.Game || !pick.Game.gameDate) return groups;
+            
+            // Use the consistent date formatter
+            const dateKey = formatGameDate(pick.Game.gameDate);
+            
+            if (!groups[dateKey]) {
+                groups[dateKey] = [];
+            }
+            groups[dateKey].push(pick);
+            return groups;
+        }, {});
+
+        // Sort picks within each group by game time
+        Object.keys(grouped).forEach(date => {
+            grouped[date].sort((a, b) => {
+                const timeA = new Date(a.Game.gameDate).getTime();
+                const timeB = new Date(b.Game.gameDate).getTime();
+                return timeA - timeB;
+            });
+        });
+
+        return grouped;
+    };
+
+    // Update the isDateInWeek function to handle timezone consistently
     const isDateInWeek = (date: Date, weekStart: Date, weekEnd: Date) => {
-        // Set all dates to midnight for comparison
+        // Set all dates to midnight ET for comparison
         const normalizedDate = new Date(date);
         normalizedDate.setHours(0, 0, 0, 0);
         
@@ -176,6 +233,28 @@ export default function MyPicksPage() {
         
         return normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd;
     };
+
+    // Update the week filtering logic to use the consistent date handling
+    const weekFilteredPicks = selectedWeek === 0 
+        ? userPicks // Show all picks if no week selected
+        : userPicks.filter((pick) => {
+            if (!pick.Game || !pick.Game.gameDate) return false;
+            
+            // Parse the date string properly
+            const pickDate = new Date(pick.Game.gameDate);
+            const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
+            if (!selectedWeekData) return false;
+            
+            return isDateInWeek(pickDate, selectedWeekData.startDate, selectedWeekData.endDate);
+        });
+
+    // Move week options generation to a useEffect to ensure client-side only
+    useEffect(() => {
+        if (currentWeek !== null) {
+            const options = generateWeeks();
+            setWeekOptions(options);
+        }
+    }, [currentWeek]);
 
     // Update the generateWeeks function to create more accurate week ranges
     const generateWeeks = (): WeekOption[] => {
@@ -223,24 +302,6 @@ export default function MyPicksPage() {
             });
         }
         return weeks;
-    };
-
-    // Move week options generation to a useEffect to ensure client-side only
-    useEffect(() => {
-        if (currentWeek !== null) {
-            const options = generateWeeks();
-            setWeekOptions(options);
-        }
-    }, [currentWeek]);
-
-    // Add this helper function to format dates consistently
-    const formatDate = (date: Date) => {
-        return new Date(date).toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'short',
-            day: 'numeric',
-            timeZone: 'America/New_York'  // Use ET timezone
-        });
     };
 
     // Add this at the top of your component
@@ -341,59 +402,6 @@ export default function MyPicksPage() {
         });
     };
 
-    // Update your filtering logic to include day filtering
-    const weekFilteredPicks = selectedWeek === 0 
-        ? userPicks // Show all picks if no week selected
-        : userPicks.filter((pick) => {
-            if (!pick.Game || !pick.Game.gameDate) return false;
-            
-            const pickDate = new Date(pick.Game.gameDate);
-            const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
-            if (!selectedWeekData) return false;
-            
-            return isDateInWeek(pickDate, selectedWeekData.startDate, selectedWeekData.endDate);
-        });
-
-    // Group picks by date with improved date handling
-    const groupPicksByDate = (picks: Pick[]) => {
-        const grouped = picks.reduce((groups: { [key: string]: Pick[] }, pick) => {
-            if (!pick.Game || !pick.Game.gameDate) return groups;
-            
-            // Parse the date string properly
-            const gameDate = new Date(pick.Game.gameDate);
-            
-            // Format the date as a string with full details for the key
-            const dateKey = gameDate.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-                timeZone: 'America/New_York'
-            });
-            
-            // Log for debugging
-            console.log(`Game ID: ${pick.gameId}, Date: ${pick.Game.gameDate}, Formatted: ${dateKey}`);
-            
-            if (!groups[dateKey]) {
-                groups[dateKey] = [];
-            }
-            
-            groups[dateKey].push(pick);
-            return groups;
-        }, {});
-
-        // Sort picks within each day by game time
-        Object.keys(grouped).forEach(date => {
-            grouped[date].sort((a, b) => {
-                const timeA = new Date(a.Game.gameDate).getTime();
-                const timeB = new Date(b.Game.gameDate).getTime();
-                return timeA - timeB;
-            });
-        });
-
-        return grouped;
-    };
-
     // Get grouped picks
     const groupedPicks = groupPicksByDate(weekFilteredPicks);
 
@@ -415,6 +423,46 @@ export default function MyPicksPage() {
         
         return dateA.getTime() - dateB.getTime();
     });
+
+    // Update the parseGameDate function to be more robust
+    const parseGameDate = (dateString: string) => {
+        try {
+            // Try to parse the date string
+            const date = new Date(dateString);
+            
+            // Check if the date is valid
+            if (isNaN(date.getTime())) {
+                console.error(`Invalid date string: ${dateString}`);
+                return new Date(); // Return current date as fallback
+            }
+            
+            // Log the parsed date for debugging
+            console.log(`Parsed date: ${dateString} -> ${date.toLocaleString()}`);
+            
+            return date;
+        } catch (error) {
+            console.error(`Error parsing date: ${dateString}`, error);
+            return new Date(); // Return current date as fallback
+        }
+    };
+
+    // Add this helper function to check if a date is today
+    const isToday = (date: Date) => {
+        const today = new Date();
+        return date.getDate() === today.getDate() &&
+               date.getMonth() === today.getMonth() &&
+               date.getFullYear() === today.getFullYear();
+    };
+
+    // Add this helper function to check if a date is in the future
+    const isFutureDate = (date: Date) => {
+        const now = new Date();
+        // Compare just the dates (ignoring time)
+        const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        return dateOnly > todayOnly;
+    };
 
     return (
         <div className="picks-page">
@@ -564,44 +612,100 @@ export default function MyPicksPage() {
                                                         {/* Game Status */}
                                                         <div className="game-status ml-4">
                                                             {(() => {
-                                                                const gameDate = new Date(pick.Game.gameDate);
-                                                                const now = new Date();
-                                                                
-                                                                // If the game has a final score or winner, it's finished
-                                                                if (pick.Game.status === 'STATUS_FINAL' || pick.Game.final_score || pick.Game.winner !== null) {
+                                                                try {
+                                                                    // Parse the game date
+                                                                    const gameDate = new Date(pick.Game.gameDate);
+                                                                    const now = new Date();
+                                                                    
+                                                                    // Get today's date (without time)
+                                                                    const today = new Date();
+                                                                    today.setHours(0, 0, 0, 0);
+                                                                    
+                                                                    // Get tomorrow's date (without time)
+                                                                    const tomorrow = new Date(today);
+                                                                    tomorrow.setDate(tomorrow.getDate() + 1);
+                                                                    
+                                                                    // Get game date without time for comparison
+                                                                    const gameDateOnly = new Date(gameDate);
+                                                                    gameDateOnly.setHours(0, 0, 0, 0);
+                                                                    
+                                                                    // Check if game is today or in the future
+                                                                    const isGameToday = gameDateOnly.getTime() === today.getTime();
+                                                                    const isGameTomorrow = gameDateOnly.getTime() === tomorrow.getTime();
+                                                                    const isGameInFuture = gameDateOnly > today;
+                                                                    
+                                                                    // Check if game has started (current time is past game time)
+                                                                    const hasGameStarted = now > gameDate;
+                                                                    
+                                                                    // Game status logic
+                                                                    if (isGameInFuture) {
+                                                                        if (isGameToday) {
+                                                                            // Game is today but hasn't started yet
+                                                                            return (
+                                                                                <div className="pick-result upcoming">
+                                                                                    Today at {gameDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                                                </div>
+                                                                            );
+                                                                        } else if (isGameTomorrow) {
+                                                                            // Game is tomorrow
+                                                                            return (
+                                                                                <div className="pick-result upcoming">
+                                                                                    Tomorrow at {gameDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                                                </div>
+                                                                            );
+                                                                        } else {
+                                                                            // Game is in the future (not today or tomorrow)
+                                                                            const options: Intl.DateTimeFormatOptions = { 
+                                                                                weekday: 'short', 
+                                                                                month: 'short', 
+                                                                                day: 'numeric',
+                                                                                hour: '2-digit',
+                                                                                minute: '2-digit',
+                                                                                timeZone: 'America/New_York'  // Specify timezone explicitly
+                                                                            };
+                                                                            return (
+                                                                                <div className="pick-result upcoming">
+                                                                                    {gameDate.toLocaleDateString('en-US', options)}
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                    } else {
+                                                                        // Game is in the past or today and has started
+                                                                        if (pick.Game.winner !== null) {
+                                                                            // Game has a winner
+                                                                            const userWon = pick.Game.winner === pick.teamIndex;
+                                                                            return (
+                                                                                <div className={`pick-result ${userWon ? 'win' : 'loss'}`}>
+                                                                                    {userWon ? 'Won' : 'Lost'}
+                                                                                    {pick.Game.final_score && (
+                                                                                        <span className="ml-1">({pick.Game.final_score})</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        } else if (hasGameStarted) {
+                                                                            // Game has started but no winner yet
+                                                                            return (
+                                                                                <div className="pick-result in-progress">
+                                                                                    In Progress
+                                                                                </div>
+                                                                            );
+                                                                        } else {
+                                                                            // Fallback for edge cases
+                                                                            return (
+                                                                                <div className="pick-result upcoming">
+                                                                                    Scheduled
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                    }
+                                                                } catch (error) {
+                                                                    console.error("Error rendering game status:", error);
                                                                     return (
-                                                                        <div className={`pick-result ${
-                                                                            pick.Game.winner === pick.teamIndex ? 'win' : 'loss'
-                                                                        }`}>
-                                                                            {pick.Game.final_score || 'Finished'}
+                                                                        <div className="pick-result upcoming">
+                                                                            Scheduled
                                                                         </div>
                                                                     );
                                                                 }
-                                                                
-                                                                // If the game date is in the past (more than 3 hours ago), mark as finished
-                                                                if (gameDate.getTime() < now.getTime() - (3 * 60 * 60 * 1000)) {
-                                                                    return (
-                                                                        <div className="pick-result finished">
-                                                                            Finished
-                                                                        </div>
-                                                                    );
-                                                                }
-                                                                
-                                                                // If the game date is within 3 hours of now (before or after), it might be in progress
-                                                                if (Math.abs(gameDate.getTime() - now.getTime()) < (3 * 60 * 60 * 1000)) {
-                                                                    return (
-                                                                        <div className="pick-result in-progress">
-                                                                            In Progress
-                                                                        </div>
-                                                                    );
-                                                                }
-                                                                
-                                                                // Otherwise, it's an upcoming game - without time
-                                                                return (
-                                                                    <div className="pick-result upcoming">
-                                                                        Upcoming
-                                                                    </div>
-                                                                );
                                                             })()}
                                                         </div>
                                                     </div>
@@ -703,6 +807,7 @@ export default function MyPicksPage() {
                     border-radius: 4px;
                     font-weight: 500;
                     text-align: center;
+                    min-width: 80px;
                 }
 
                 .win {
