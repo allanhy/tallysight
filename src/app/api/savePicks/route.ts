@@ -72,7 +72,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Create picks
+    // Check if picks have already been made for today
+    const today = convertToEST(pickDate);
+    const existingPicks = await sql`
+      SELECT * FROM "Pick"
+      WHERE "userId" = ${userId} AND "createdAt"::date = ${today}
+    `;
+
+    if (existingPicks.rows.length > 0) {
+      return NextResponse.json({ message: 'Picks have already been made for today.', }, { status: 409 }); // Conflict status code
+    }
+
+    // Create picks, conflict if user already made picks for that game
     for (const pick of picks) {
       await sql`
         INSERT INTO "Pick" (
@@ -88,7 +99,7 @@ export async function POST(req: NextRequest) {
           ${pick.teamIndex},
           NOW() AT TIME ZONE 'America/New_York'
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT ("userId", "gameId") DO NOTHING
       `;
     }
 
