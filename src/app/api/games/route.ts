@@ -105,8 +105,8 @@ export async function GET() {
         awayTeamLogo: getTeamLogo(awayTeamData?.name),
         venue: competition.venue?.fullName || 'TBD',
         broadcast: competition.broadcasts?.[0]?.names?.[0] || 'TBD',
-        homeScore: competition.competitors.find((t: any) => t.homeAway === 'home')?.score || '0',
-        awayScore: competition.competitors.find((t: any) => t.homeAway === 'away')?.score || '0',
+        homeScore: parseInt(competition.competitors.find((t: any) => t.homeAway === 'home')?.score || '0', 10),
+        awayScore: parseInt(competition.competitors.find((t: any) => t.homeAway === 'away')?.score || '0', 10),
         period: competition.status?.period || 0,
         clock: competition.status?.displayClock || ''
       };

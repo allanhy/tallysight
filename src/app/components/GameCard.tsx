@@ -57,9 +57,9 @@ export const GameCard = ({ game }: { game: Game }) => {
               <span className="text-sm font-medium text-black truncate">
                 {shortenTeamName(game.homeTeam)}
               </span>
-              {game.homeTeamScore !== undefined && (
+              {game.status === 'status_in_progress' && game.homeScore !== undefined && (
                 <span className="text-sm text-gray-600">
-                  {game.homeTeamScore}
+                  {game.homeScore}
                 </span>
               )}
             </div>
@@ -74,9 +74,9 @@ export const GameCard = ({ game }: { game: Game }) => {
               <span className="text-sm font-medium text-black truncate">
                 {shortenTeamName(game.awayTeam)}
               </span>
-              {game.awayTeamScore !== undefined && (
+              {game.status === 'status_in_progress' && game.awayScore !== undefined && (
                 <span className="text-sm text-gray-600">
-                  {game.awayTeamScore}
+                  {game.awayScore}
                 </span>
               )}
             </div>
