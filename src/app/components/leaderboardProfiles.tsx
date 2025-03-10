@@ -9,7 +9,6 @@ import styles from '../styles/leaderboardProfiles.module.css';
 interface user {
     rank: number;
     username: string;
-    img: string;
     points: number;
     max_points: number;
     performance: string;
@@ -20,47 +19,78 @@ interface user {
     imageUrl: string;
 }
 
-interface leaderboardProfileProps {
+type Sport = 'NFL' | 'MLB' | 'NBA' | 'SELECT';
+
+interface leaderboardProfileProps{
+    sport: Sport;
+    week: number | null;
     userIds: number[];
 }
 
-export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileProps) {
+//export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileProps) {
+export default function LeaderboardProfiles({ sport, week, userIds = [] }: leaderboardProfileProps) {
     const [users, setUsers] = useState<user[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [lastUpdated, setLastUpdated] = useState<number>(0); // Timestamp for updating leaderboard
     const [selectedUser, setSelectedUser] = useState<user | null>(null);
-
-    useEffect(() =>{
-        if (userIds.length === 0){
-            setLoading(false);
-            setError('No user_ids provided');
-            return;
-        }
-
-        const fetchUsers = async () => {
-            try {
-                const queryStr = `user_id=${userIds.join(',')}`;
-                const res = await fetch(`/api/user/getUsersLeaderboard?${queryStr}`);
-                const data = await res.json();
-        
-                if (res.ok) {
-                    const updatedUsers = data.data.map((user: user) => ({
-                        ...user,
-                        imageUrl: user.imageUrl || "/default-profile.png", // Ensure fallback image
-                    }));
-                    setUsers(updatedUsers);
-                } else {
-                    setError(data.message || 'Users Fetch: Failed');
-                }
-            } catch (error) {
-                setError(`Network error fetching users: ${error}`);
+    
+    useEffect(() => {
+        if (sport === 'SELECT' || week === -1 || week === null) {
+            // Fetch user data based on userIds
+            if (userIds.length === 0) {
+                setLoading(false);
+                setError('No user_ids provided');
+                return;
             }
-            setLoading(false);
-        };
+    
+            const fetchUsers = async () => {
+                try {
+                    const queryStr = `user_id=${userIds.join(',')}`;
+                    const res = await fetch(`/api/user/getUsersLeaderboard?${queryStr}`); // For total leaderboard
+                    const data = await res.json();
+    
+                    if (res.ok) {
+                        const updatedUsers = data.data.map((user: user) => ({
+                            ...user,
+                            imageUrl: user.imageUrl || "/default-profile.png", // Ensure fallback image
+                        }));
+                        setUsers(updatedUsers);
+                    } else {
+                        setError(data.message || 'Users Fetch: Failed');
+                    }
+                } catch (error) {
+                    setError(`Network error fetching users: ${error}`);
+                }
+                setLoading(false);
+            };
+    
+            fetchUsers();
+        } else {
+            // Fetch leaderboard data based on sport and week
+            const fetchSpecificLeaderboardUsers = async () => {
+                try{
+                    const res = await fetch(`/api/leaderboard-entries/getEntriesForLeaderboard?sport=${sport}&week=${week}`);
+                    const data = await res.json();
 
-        fetchUsers();
-    }, [userIds]);
+                    if(res.ok) {
+                        const updatedUsers = data.data.map((user: user) => ({
+                            ...user,
+                            imageUrl: user.imageUrl || "/default-profile.png", // Ensure fallback image
+                        }));
+                        setUsers(updatedUsers);
+                    } else {
+                        setError(data.message || 'User Fetch for Specific Leaderboard: Failed')
+                    }
+                } catch (error) {
+                    setError(`Network error fetching users for specific leaderboard: ${error}`);
+                }
+                setLoading(false);
+            };
+            fetchSpecificLeaderboardUsers();
+        }
+    }, [sport, week, userIds]);
+    
 
     // Close profile popout when clicking outside
     useEffect(() => {
@@ -109,17 +139,17 @@ export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileP
         }
     }, [users]);
 
-    // Update leaderboard daily
+    // Update leaderboard hourly
     useEffect(() => { 
         const currentTime = Date.now();
         const sinceUpdate = currentTime - lastUpdated;
 
-        if (sinceUpdate > 86400000) // More than 24hrs
+        if (sinceUpdate > 3600000) // More than 1hr, 86400000 for 24hrs
             updateAllUserPerformance();
 
         const interval = setInterval(() => {
             updateAllUserPerformance();
-        }, 86400000)
+        }, 3600000)
 
         return () => clearInterval(interval);
     }, [lastUpdated, updateAllUserPerformance]);

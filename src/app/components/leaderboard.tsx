@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import LeaderboardProfiles from '../components/leaderboardProfiles';
 
-type Sport = 'NFL' | 'MLB' | 'NBA';
+type Sport = 'NFL' | 'MLB' | 'NBA' | 'SELECT';
 
 type LeaderboardEntry = {
     user_id: number;
@@ -17,7 +17,7 @@ const Leaderboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
-    const [selectedSport, setSelectedSport] = useState<Sport | 'SELECT'>('SELECT'); // type selected sport
+    const [selectedSport, setSelectedSport] = useState<Sport>("SELECT"); // type selected sport
     const [selectedWeek, setSelectedWeek] = useState<number | null>(-1);
 
     // Updating Weekly Items
@@ -114,9 +114,9 @@ const Leaderboard: React.FC = () => {
                                 value={selectedSport}
                                 onChange={handleSportChange}>
                                 <option value='SELECT' disabled>Select Sport</option>
-                                <option value='NFL'>NFL</option>
-                                <option value='MLB'>MLB</option>
-                                <option value='NBA'>NBA</option>
+                                <option value='NFL' disabled>NFL</option>
+                                <option value='MLB' disabled>MLB</option>
+                                <option value='NBA' >NBA</option>
                             </select>
 
                             <select 
@@ -144,7 +144,8 @@ const Leaderboard: React.FC = () => {
                                         {leaderboard.length <= 0 ? (
                                                 <div>No rankings available for the selected sport and week. Please choose a different option.</div>
                                         ) : (
-                                            <div><LeaderboardProfiles userIds={leaderboard.map(entry => entry.user_id)}></LeaderboardProfiles></div>
+                                            /*<div><LeaderboardProfiles userIds={leaderboard.map(entry => entry.user_id)}></LeaderboardProfiles></div>*/
+                                            <div><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
                                         )}
                                 </div>
                         )}

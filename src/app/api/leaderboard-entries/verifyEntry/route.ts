@@ -1,17 +1,19 @@
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
+
+// Checks for user entry in week's leaderboard
 export async function POST(req: Request) {
   let client;
 
   try {
     client = await db.connect();
     const data = await req.json();
-    const { clerk_id, sport, week, points } = data;
+    const { clerk_id, sport, week } = data;
 
     if (!clerk_id || !week || !sport) {
       return NextResponse.json(
-        { success: false, message: 'Required Fields: clerk_id, week, sport, points' },
+        { success: false, message: 'Required Fields: clerk_id, week, sport' },
         { status: 400 }
       );
     }
@@ -46,7 +48,7 @@ export async function POST(req: Request) {
 
     // Check if entry already exists
     const entryResult = await client.query(
-      `SELECT points, rank FROM leaderboard_entries WHERE user_id = $1 AND leaderboard_id = $2`,
+      `SELECT * FROM leaderboard_entries WHERE user_id = $1 AND leaderboard_id = $2`,
       [user_id, leaderboard_id]
     );
 
@@ -55,19 +57,11 @@ export async function POST(req: Request) {
       await client.query(
         `INSERT INTO leaderboard_entries (user_id, leaderboard_id, rank, points, start_date) 
         VALUES ($1, $2, 0, $3, NOW())`,
-        [user_id, leaderboard_id, points]
-      );
-    } else {
-      // Update existing entry
-      await client.query(
-        `UPDATE leaderboard_entries 
-        SET points = points + $1 
-        WHERE user_id = $2 AND leaderboard_id = $3`,
-        [points, user_id, leaderboard_id]
+        [user_id, leaderboard_id, 0]
       );
     }
 
-    return NextResponse.json({ success: true, message: 'Leaderboard entry updated successfully' }, { status: 201 });
+    return NextResponse.json({ success: true, message: 'Leaderboard entry updated/created successfully' }, { status: 201 });
 
   } catch (error) {
     console.error('Error inserting into leaderboard entries:', error);
