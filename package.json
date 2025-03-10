@@ -16,6 +16,7 @@
     "@clerk/clerk-sdk-node": "^5.1.6",
     "@clerk/elements": "^0.18.0",
     "@clerk/nextjs": "^6.2.0",
+    "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.3.1",
     "@radix-ui/react-popover": "^1.1.6",
     "@radix-ui/react-tooltip": "^1.1.8",

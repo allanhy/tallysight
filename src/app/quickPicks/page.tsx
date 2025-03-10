@@ -18,6 +18,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
+import { LockClosedIcon } from '@heroicons/react/24/solid';
 
 // Add these type definitions at the top of the file
 interface Team {
@@ -77,6 +78,12 @@ export default function PicksPage() {
   const [isSubmitting, setIsSubmitting] = useState(false); // Track if form is submitting
   const [submissionStatus, setSubmissionStatus] = useState('Submit Entry'); // New state for tracking button text
   const picksCount = selectedPicks.size;
+  // Add a state to track if games are locked
+  const [gamesLocked, setGamesLocked] = useState(false);
+  // Add state for game locking based on start time
+  const [firstGameLocked, setFirstGameLocked] = useState(false);
+  // Add state for countdown timer
+  const [countdown, setCountdown] = useState<string | null>(null);
 
   // Modify the useEffect to update a games state instead of relying on MOCK_GAMES
   const [games, setGames] = useState<Game[]>([]);
@@ -87,6 +94,100 @@ export default function PicksPage() {
 
   const availableGames = games.filter(game => game.isAvailable);
   const isSubmitDisabled = isSubmitting || selectedPicks.size === 0;
+
+  // Add this at the beginning of your component
+  const forceZeroCountdown = () => {
+    // Get the current time
+    const now = new Date();
+    
+    // If there are no games, we can't determine if they've started
+    if (games.length === 0) return false;
+    
+    // Sort games by date
+    const sortedGames = [...games].sort((a, b) => {
+      if (!a.date || !b.date) return 0;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+    
+    // Get the first game
+    const firstGame = sortedGames[0];
+    if (!firstGame.date) return false;
+    
+    // Parse the game time
+    const gameTime = new Date(firstGame.date);
+    
+    // Log the times for debugging
+    console.log('First game time:', gameTime);
+    console.log('Current time:', now);
+    console.log('Difference (ms):', gameTime.getTime() - now.getTime());
+    
+    // If the game has started, return true
+    return now.getTime() >= gameTime.getTime();
+  };
+
+  // Function to check if first game has started
+  const checkFirstGameStarted = () => {
+    if (games.length === 0) return false;
+    
+    // Sort games by date
+    const sortedGames = [...games].sort((a, b) => {
+      if (!a.date || !b.date) return 0;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+    
+    // Check if first game has started
+    const firstGame = sortedGames[0];
+    if (!firstGame.date) return false;
+    
+    const gameTime = new Date(firstGame.date);
+    const currentTime = new Date();
+    
+    console.log('First game time:', gameTime);
+    console.log('Current time:', currentTime);
+    console.log('Game started:', currentTime >= gameTime);
+    
+    return currentTime >= gameTime;
+  };
+
+  // Function to calculate time remaining until first game
+  const calculateTimeRemaining = () => {
+    // If games are locked or first game is locked, return 0
+    if (games.length === 0 || firstGameLocked) return "0:00:00";
+    
+    // Sort games by date
+    const sortedGames = [...games].sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+    
+    // Get first game
+    const firstGame = sortedGames[0];
+    if (!firstGame.date) return "0:00:00";
+    
+    const gameTime = new Date(firstGame.date);
+    const currentTime = new Date();
+    
+    // Subtract 24 hours from the game time
+    const adjustedGameTime = new Date(gameTime.getTime() - 24 * 60 * 60 * 1000);
+    
+    // If the adjusted game time has passed, return 0
+    if (currentTime >= adjustedGameTime) {
+        // If we detect the game has started, make sure to set the lock state
+        if (!firstGameLocked) {
+            setFirstGameLocked(true);
+            localStorage.setItem('firstGameLocked', 'true');
+        }
+        return "0:00:00";
+    }
+    
+    // Calculate time difference
+    const diffMs = adjustedGameTime.getTime() - currentTime.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+    
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   const fetchOdds = async () => {
     try {
@@ -100,8 +201,6 @@ export default function PicksPage() {
         pickedGameIds = new Set<string>(picksResponse.data.map((pick: any) => pick.gameId));
         setUserPicks(pickedGameIds);
       }
-      const response = await axios.get('/api/odds');
-      const { weekStart, weekEnd, week } = response.data;
       
       // Fetch both odds and team stats
       const [oddsResponse, statsResponse] = await Promise.all([
@@ -137,6 +236,21 @@ export default function PicksPage() {
       setWeek(week);
       setWeekStart(weekStart);
       setWeekEnd(weekEnd);
+      
+      // Check if first game has started and persist the lock state
+      const isFirstGameStarted = checkFirstGameStarted();
+      
+      // Only update the lock state if it's not already locked or if we detect it should be locked
+      // This ensures we don't reset a locked state back to unlocked
+      if (!firstGameLocked || isFirstGameStarted) {
+        setFirstGameLocked(isFirstGameStarted);
+      }
+      
+      // Reset the games locked state when fresh data is loaded
+      setGamesLocked(false);
+
+      // Set initial countdown
+      setCountdown(calculateTimeRemaining());
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       console.error('API Error:', errorMessage);
@@ -147,12 +261,60 @@ export default function PicksPage() {
   };
 
   useEffect(() => {
+    // Load initial data
     fetchOdds();
-    // Refresh odds every 5 minutes
-    const interval = setInterval(fetchOdds, 5 * 60 * 1000);
     
-    return () => clearInterval(interval);
+    // Check local storage for persisted lock state
+    const savedLockState = localStorage.getItem('firstGameLocked');
+    if (savedLockState === 'true') {
+      setFirstGameLocked(true);
+    }
+    
+    // Set initial countdown
+    setCountdown(calculateTimeRemaining());
+    
+    // Update countdown every second
+    const countdownInterval = setInterval(() => {
+      setCountdown(calculateTimeRemaining());
+    }, 1000);
+    
+    // Refresh odds every 5 minutes
+    const interval = setInterval(() => {
+      // Lock games before refreshing data
+      setGamesLocked(true);
+      fetchOdds();
+    }, 5 * 60 * 1000);
+    
+    // Add a timer to check if first game has started every minute
+    const lockCheckInterval = setInterval(() => {
+      const isLocked = checkFirstGameStarted();
+      if (isLocked) {
+        setFirstGameLocked(true);
+        // Persist the lock state
+        localStorage.setItem('firstGameLocked', 'true');
+      }
+    }, 60 * 1000);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(lockCheckInterval);
+      clearInterval(countdownInterval);
+    };
   }, []);
+
+  // Add an effect to persist the lock state
+  useEffect(() => {
+    if (firstGameLocked) {
+      localStorage.setItem('firstGameLocked', 'true');
+    }
+  }, [firstGameLocked]);
+
+  // Add a function to reset the lock state when new games are loaded
+  // This should be called when a new set of games becomes available
+  const resetLockState = () => {
+    setFirstGameLocked(false);
+    localStorage.removeItem('firstGameLocked');
+  };
 
   // Prevents scrolling when previews are open
   useEffect(() => {
@@ -168,6 +330,15 @@ export default function PicksPage() {
     };
   }, [isPreviewOpen]);
   
+  // Add this at the top of your component, right after your state declarations
+  useEffect(() => {
+    // Force the countdown to show 0:00:00
+    setCountdown("0:00:00");
+    
+    // Force the lock state to be true
+    setFirstGameLocked(true);
+    localStorage.setItem('firstGameLocked', 'true');
+  }, []);
 
   // Show loading state or nothing during initial render
   // Ensures real time data is rendered otherwise stuck in loading state
@@ -191,6 +362,9 @@ export default function PicksPage() {
   };
   
   const handleTeamSelection = (gameId: string, teamIndex: number) => {
+    // Don't allow selection if games are locked
+    if (gamesLocked) return;
+    
     const newPicks = new Set(selectedPicks);
     const pickId = `${gameId}-${teamIndex}`;
     const opposingPickId = `${gameId}-${teamIndex === 0 ? 1 : 0}`;
@@ -216,9 +390,16 @@ export default function PicksPage() {
   const handleSignIn = async () => {
     if (!isSignedIn) {
       const returnUrl = window.location.pathname;
-      router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`); // Update this path to match your sign-in page route
+      router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`);
       return;
     }
+    
+    // Check if entry fee is selected
+    if (!selectedFee) {
+      alert("Please select an entry fee");
+      return;
+    }
+    
     // Format selected picks
     const picksArray = Array.from(selectedPicks).map((pickId) => {
       const match = pickId.match(/^(.+?)-(\d+)$/);
@@ -233,13 +414,18 @@ export default function PicksPage() {
     try {
       setIsSubmitting(true); // Set submitting state to true
       setSubmissionStatus('Submitting...');
-      const response = await axios.post('/api/savePicks', { picks: picksArray }, {
+      console.log('Sending picks to server:', picksArray); // Debug log
+      
+      const response = await axios.post('/api/savePicks', { 
+        picks: picksArray,
+        entryFee: selectedFee // Include the entry fee
+      }, {
         headers: { 'Content-Type': 'application/json' }
-    });
+      });
 
       if (response.status === 200) {
-        console.log('Picks saved successfully');
-        setSubmissionStatus('Picks Saved!'); // Update to show success message
+        console.log('Picks saved successfully:', response.data);
+        setSubmissionStatus('Picks Saved!');
         // Wait for 2 seconds before routing
         setTimeout(() => {
           router.push('/myPicks');
@@ -247,9 +433,12 @@ export default function PicksPage() {
       } else {
         console.error('Failed to save picks:', response.data.message);
         setSubmissionStatus('Failed to Save Picks');
+        alert('Failed to save picks. Please try again.');
       }
     } catch (error) {
       console.error('Error saving picks:', error);
+      setSubmissionStatus('Error Saving Picks');
+      alert('Error saving picks. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -259,6 +448,23 @@ export default function PicksPage() {
   const handleReset = () => {
     setSelectedPicks(new Set());
     setStarredPicks(new Set());
+  };
+
+  // Add this to your component to log the current state
+  useEffect(() => {
+    console.log('First game locked:', firstGameLocked);
+    console.log('Current countdown:', countdown);
+  }, [firstGameLocked, countdown]);
+
+  // Add this function to explicitly check if the countdown should be zero
+  const getDisplayCountdown = () => {
+    // Always return "0:00:00" if the game is locked
+    if (firstGameLocked) {
+      return "0:00:00";
+    }
+    
+    // Otherwise return the calculated countdown
+    return countdown || "0:00:00";
   };
 
   return (
@@ -275,14 +481,48 @@ export default function PicksPage() {
         </div>
       </div>
 
-      {/* Status Bar: Updated colors */}
+      {/* Enhanced Status Bar with more prominent lock indication and countdown */}
       <div className="text-center py-2 text-sm">
-        <div className="text-gray-300">Spread finalized | Picks lock: At the start of each game</div>
-        <div className="bg-blue-600 py-2 mt-1 text-white">Make your picks</div>
+        <div className="text-gray-300">
+          Spread finalized | Picks lock: At the start of each game 
+          <span className="ml-2 font-bold">
+            LOCKED (0:00:00)
+          </span>
+        </div>
+        {gamesLocked ? (
+          <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
+            <LockClosedIcon className="h-6 w-6 mr-2" />
+            GAMES LOCKED - REFRESH PAGE TO CONTINUE
+            <LockClosedIcon className="h-6 w-6 ml-2" />
+          </div>
+        ) : null}
+        {firstGameLocked && (
+          <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
+            <LockClosedIcon className="h-6 w-6 mr-2" />
+            FIRST GAME HAS STARTED - PICKS ARE LOCKED (0:00:00)
+            <LockClosedIcon className="h-6 w-6 ml-2" />
+          </div>
+        )}
       </div>
 
-      {/* Games Grid: Updated card styling */}
-      <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 pb-24">
+      {/* Games Grid with lock overlay when locked */}
+      <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 pb-24 relative">
+        {/* Add a semi-transparent overlay with lock icon when games are locked */}
+        {(gamesLocked || firstGameLocked) && (
+          <div className="absolute inset-0 bg-red-900/30 z-10 flex flex-col items-center justify-center">
+            <LockClosedIcon className="h-24 w-24 text-white mb-4" />
+            <div className="text-white text-2xl font-bold">
+              {firstGameLocked ? "FIRST GAME HAS STARTED - PICKS ARE LOCKED" : "GAMES LOCKED"}
+            </div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg text-xl"
+            >
+              Refresh Page to Continue
+            </button>
+          </div>
+        )}
+        
         {games.map((game) => (
           <div key={game.id} className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg shadow border border-gray-700">
             {/* Game Header */}
@@ -299,12 +539,12 @@ export default function PicksPage() {
               <button
                 key={idx}
                 onClick={() => handleTeamSelection(game.id, idx)}
-                disabled={!game.isAvailable}
+                disabled={!game.isAvailable || gamesLocked}
                 className={`w-full p-4 flex items-center justify-between border-2 ${
                   selectedPicks.has(`${game.id}-${idx}`)
                     ? 'border-blue-500 rounded-lg'
                     : 'border-transparent'
-                  } ${!game.isAvailable ? 'opacity-25 cursor-not-allowed' : ''} 
+                  } ${!game.isAvailable || gamesLocked ? 'opacity-25 cursor-not-allowed' : ''} 
                   hover:bg-gray-700/50 transition-colors`}
               >
                 <div className="flex items-center gap-4">
@@ -327,6 +567,9 @@ export default function PicksPage() {
               <span className="text-gray-300">Best pick</span>
               <button 
                 onClick={() => {
+                  // Don't allow changes if games are locked
+                  if (gamesLocked) return;
+                  
                   const newStarred = new Set(starredPicks);
                   if (newStarred.has(game.id)) {
                     newStarred.delete(game.id);
@@ -335,7 +578,8 @@ export default function PicksPage() {
                   }
                   setStarredPicks(newStarred);
                 }}
-                className="text-2xl"
+                disabled={gamesLocked}
+                className={`text-2xl ${gamesLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {starredPicks.has(game.id) ? '⭐' : '☆'}
               </button>
