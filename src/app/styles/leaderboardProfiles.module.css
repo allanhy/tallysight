@@ -65,34 +65,51 @@
         align-items: center;
         text-align: center;
         font-size: .75em;
+        padding: 10px;
+        gap: 8px;
     }
 
     .rank {
         text-align: left;
         margin-bottom: 5px;
+        font-size: 14px;
+        width: 20px;
     }
 
     .points {
         text-align: right;
         margin-bottom: 5px;
+        font-size: 14px;
+        width: 30px;
     }
 
     .performance{
         text-align: left;
         margin-bottom: 5px;
         margin-right: 5em;
+        font-size: 14px;
+        width: 40px;
     }
-    
-    .username {
 
+    .username {
         text-align: left;
+        font-size: 14px;
+        width: 80px;
     }
 
     .image {
         margin-bottom: 10px;
+        width: 40px;
+        height: 40px;
     }
 
+    .popoutSocialLinks, .popoutFavTeamSection {
+        padding: 0.75rem;
+    }
     
+    .socialLink {
+        font-size: 0.8rem;
+    }
 }
 
 .popoutOverlay {
@@ -109,15 +126,18 @@
 }
 
 .profilePopout {
+    position: relative;
     background-color: white;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 20px;
     width: 90%;
     max-width: 500px;
-    max-height: 80vh;
+    max-height: 90vh;
     overflow-y: auto;
-    position: relative;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .closeButton {
@@ -142,6 +162,11 @@
     margin-bottom: 20px;
 }
 
+.popoutHeader h2 {
+    color: #000000;
+    font-weight: bold;
+}
+
 .popoutImage {
     border-radius: 50%;
     margin-bottom: 10px;
@@ -157,6 +182,7 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
+    color: #000000;
 }
 
 .popoutBio, .popoutFavTeam {
@@ -167,7 +193,12 @@
 .popoutBio h3, .popoutFavTeam h3, .popoutStats h3 {
     margin-bottom: 5px;
     font-size: 16px;
-    color: #444;
+    color: #000000;
+    font-weight: bold;
+}
+
+.popoutBio p, .popoutFavTeam p, .popoutStats p {
+    color: #000000;
 }
 
 .popoutStats {
@@ -176,4 +207,62 @@
     border-top: 1px solid #eee;
     padding-top: 15px;
     text-align: center;
+}
+
+.popoutSocialLinks {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    width: 100%;
+    color: #000000;
+}
+
+.socialLinksContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.socialLink {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #000000;
+}
+
+.socialLink span {
+    font-weight: bold;
+    min-width: 80px;
+    color: #000000;
+}
+
+.socialMessage {
+    color: #000000;
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+.popoutFavTeamSection {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    width: 100%;
+    color: #000000;
+}
+
+.favTeamContainer {
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.favTeamText {
+    color: #000000;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
