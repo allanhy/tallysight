@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function SyncSportsRadarPage() {
@@ -9,6 +9,8 @@ export default function SyncSportsRadarPage() {
   const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState<string>('');
   const [gameIds, setGameIds] = useState<string>('');
+  const [autoSync, setAutoSync] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const router = useRouter();
 
   const handleSync = async () => {
@@ -38,6 +40,7 @@ export default function SyncSportsRadarPage() {
       }
 
       setResult(data);
+      setLastSyncTime(new Date().toLocaleString());
       router.refresh(); // Refresh the page data if needed
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -45,6 +48,26 @@ export default function SyncSportsRadarPage() {
       setIsLoading(false);
     }
   };
+
+  // Set up auto-sync interval
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    
+    if (autoSync) {
+      // Run immediately on activation
+      handleSync();
+      
+      // Set interval for every 6 hours (6 * 60 * 60 * 1000 ms)
+      intervalId = setInterval(handleSync, 6 * 60 * 60 * 1000);
+    }
+    
+    // Clean up interval on component unmount or when autoSync changes
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [autoSync]);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -75,6 +98,23 @@ export default function SyncSportsRadarPage() {
               rows={3}
             />
           </label>
+        </div>
+        
+        <div className="flex items-center mb-4">
+          <label className="flex items-center text-gray-700">
+            <input
+              type="checkbox"
+              checked={autoSync}
+              onChange={(e) => setAutoSync(e.target.checked)}
+              className="mr-2"
+            />
+            Auto-sync every 6 hours
+          </label>
+          {lastSyncTime && (
+            <span className="ml-4 text-sm text-gray-500">
+              Last sync: {lastSyncTime}
+            </span>
+          )}
         </div>
         
         <button
