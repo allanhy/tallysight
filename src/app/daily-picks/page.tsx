@@ -640,7 +640,7 @@ export default function DailyPicks() {
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <button className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2 cursor-pointer">
-                                                            {awayPercentage === homePercentage ? (
+                                                            {awayPercentage === homePercentage && !gameIsLocked ? (
                                                                 <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                             ) : (
                                                                 <>
@@ -650,7 +650,7 @@ export default function DailyPicks() {
                                                                     ${awayIsHigher ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                         style={{ width: `${awayPercentage}%` }}
                                                                     >
-                                                                        {awayIsHigher && (
+                                                                        {awayIsHigher && !gameIsLocked && (
                                                                             <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                                         )}
                                                                     </div>
@@ -660,7 +660,7 @@ export default function DailyPicks() {
                                                                     ${homePercentage > awayPercentage ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                         style={{ width: `${homePercentage}%` }}
                                                                     >
-                                                                        {homePercentage > awayPercentage && (
+                                                                        {homePercentage > awayPercentage && !gameIsLocked && (
                                                                             <div className="absolute top-0 left-0 w-full h-full animate-shimmer-right bg-white opacity-20"></div>
                                                                         )}
                                                                     </div>
@@ -686,7 +686,7 @@ export default function DailyPicks() {
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <div className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2 cursor-pointer">
-                                                                {awayPercentage === homePercentage ? (
+                                                                {awayPercentage === homePercentage && !gameIsLocked ? (
                                                                     <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                                 ) : (
                                                                     <>
@@ -696,7 +696,7 @@ export default function DailyPicks() {
                                                                     ${awayIsHigher ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                             style={{ width: `${awayPercentage}%` }}
                                                                         >
-                                                                            {awayIsHigher && (
+                                                                            {awayIsHigher && !gameIsLocked && (
                                                                                 <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                                             )}
                                                                         </div>
@@ -706,7 +706,7 @@ export default function DailyPicks() {
                                                                     ${homePercentage > awayPercentage ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                             style={{ width: `${homePercentage}%` }}
                                                                         >
-                                                                            {homePercentage > awayPercentage && (
+                                                                            {homePercentage > awayPercentage &&  !gameIsLocked && (
                                                                                 <div className="absolute top-0 left-0 w-full h-full animate-shimmer-right bg-white opacity-20"></div>
                                                                             )}
                                                                         </div>

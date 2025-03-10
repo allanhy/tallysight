@@ -7,6 +7,7 @@ import * as SignIn from '@clerk/elements/sign-in';
 import { AuthenticateWithRedirectCallback, useSignIn } from '@clerk/nextjs';
 import { OAuthStrategy } from '@clerk/types'
 import { usePathname } from 'next/navigation';
+import { Skeleton } from '@/app/components/ui/skeleton';
 
 export default function SignInPage() {
   const { signIn } = useSignIn()
@@ -16,7 +17,23 @@ export default function SignInPage() {
   if (isSSOCallback) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen">
-        <p className='text-black'>Please Wait...</p>
+        <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
+        <div className="w-full flex justify-center flex-col items-center">
+          <header className="text-center w-full mb-4">
+            <div className="text-3xl font-extrabold text-black dark:text-white">
+              Continue Sign Up
+            </div>
+            <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
+              Please choose your username.
+            </h1>
+          </header>
+
+          <div className="w-full sm:w-[550px] px-8 py-8 bg-white dark:bg-gray-900 shadow-md border border-gray-400 rounded-2xl">
+            <Skeleton className="h-10 w-full rounded-lg mb-4" /> {/* Input Field */}
+            <Skeleton className="h-10 w-full rounded-lg" /> {/* Continue Button */}
+          </div>
+        </div>
+      </div>
         {/* The Clerk component that finishes the OAuth flow */}
         <AuthenticateWithRedirectCallback continueSignUpUrl="/sign-up/continue" />
       </div>

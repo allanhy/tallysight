@@ -187,9 +187,28 @@ export default function TomorrowPicks() {
 
         try {
             // Get tomorrow's date once
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
+            const now = new Date();
+
+            // Convert UTC time to EST (UTC-5)
+            // EST is UTC-5 for non daylight saving, -4 for during daylight saving (CHANGE savePicks Route too)
+            const estOffset =
+                new Intl.DateTimeFormat("en-US", {
+                    timeZone: "America/New_York",
+                    timeZoneName: "short",
+                })
+                    .formatToParts(now)
+                    .find((part) => part.type === "timeZoneName")?.value === "EST"
+                    ? -5
+                    : -4;
+
+            const today = new Date(now.getTime() + estOffset * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0];
+
+            // Calculate tomorrow based on today
+            const tomorrow = new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
+                .toISOString()
+                .split("T")[0];
 
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
@@ -222,7 +241,7 @@ export default function TomorrowPicks() {
                 },
                 body: JSON.stringify({
                     picks: picksArray,
-                    pickDate: tomorrow.toISOString()
+                    pickDate: tomorrow
                 }),
             });
 
