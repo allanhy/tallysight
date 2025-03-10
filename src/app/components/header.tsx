@@ -21,7 +21,7 @@ const Header = () => {
                         <div className="flex items-center">
                             <Link href="/" className="flex-shrink-0">
                                 <Image
-                                    src={theme === 'dark' ? "/Tallysight.png" : "/TallysightDark.png"}
+                                    src={theme === 'dark' ? "/TallySight.png" : "/TallysightDark.png"}
                                     alt="Tallysight"
                                     width={120}
                                     height={32}
