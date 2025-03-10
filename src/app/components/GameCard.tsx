@@ -60,6 +60,7 @@ export const GameCard = ({ game }: { game: Game }) => {
               {/* Home Team Score */}
               {(game.status === 'STATUS_IN_PROGRESS' || 
                 game.status === 'STATUS_HALFTIME' || 
+                game.status === 'STATUS_FINAL' ||
                 game.status === 'IN_PROGRESS') && 
                 game.homeScore && (
                 <span className="text-sm text-gray-600">
@@ -81,6 +82,7 @@ export const GameCard = ({ game }: { game: Game }) => {
               {/* Away Team Score */}
               {(game.status === 'STATUS_IN_PROGRESS' || 
                 game.status === 'STATUS_HALFTIME' || 
+                game.status === 'STATUS_FINAL' ||
                 game.status === 'IN_PROGRESS') && 
                 game.awayScore && (
                 <span className="text-sm text-gray-600">
