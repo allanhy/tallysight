@@ -7,4 +7,6 @@ export interface Game {
   status: string;
   homeTeamLogo?: string;
   awayTeamLogo?: string;
+  homeScore?: string;
+  awayScore?: string;
 } 

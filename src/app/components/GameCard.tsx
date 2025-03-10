@@ -53,9 +53,21 @@ export const GameCard = ({ game }: { game: Game }) => {
                 />
               )}
             </div>
-            <span className="text-sm font-medium text-black truncate">
-              {shortenTeamName(game.homeTeam)}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-black truncate">
+                {shortenTeamName(game.homeTeam)}
+              </span>
+              {/* Home Team Score */}
+              {(game.status === 'STATUS_IN_PROGRESS' || 
+                game.status === 'STATUS_HALFTIME' || 
+                game.status === 'STATUS_FINAL' ||
+                game.status === 'IN_PROGRESS') && 
+                game.homeScore && (
+                <span className="text-sm text-gray-600">
+                  {game.homeScore}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* VS */}
@@ -63,9 +75,21 @@ export const GameCard = ({ game }: { game: Game }) => {
 
           {/* Away Team */}
           <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <span className="text-sm font-medium text-black truncate">
-              {shortenTeamName(game.awayTeam)}
-            </span>
+            <div className="flex flex-col items-end">
+              <span className="text-sm font-medium text-black truncate">
+                {shortenTeamName(game.awayTeam)}
+              </span>
+              {/* Away Team Score */}
+              {(game.status === 'STATUS_IN_PROGRESS' || 
+                game.status === 'STATUS_HALFTIME' || 
+                game.status === 'STATUS_FINAL' ||
+                game.status === 'IN_PROGRESS') && 
+                game.awayScore && (
+                <span className="text-sm text-gray-600">
+                  {game.awayScore}
+                </span>
+              )}
+            </div>
             {game.awayTeamLogo && (
               <img 
                 src={game.awayTeamLogo} 
