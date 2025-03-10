@@ -26,12 +26,19 @@ export async function POST(req: Request) {
             WHERE le.leaderboard_id = (SELECT leaderboard_id FROM leaderboards 
                                     WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW())) 
             `, [sport , week]);
+
+        
         
         // Get the games from yesterday
-        const games = await client.query(
-            `SELECT * 
+        const games = await client.query(`
+            SELECT * 
             FROM "Game"
-            WHERE "gameDate" = CURRENT_DATE`
+            WHERE "gameDate" = (
+                CASE 
+                    WHEN EXTRACT(HOUR FROM NOW()) BETWEEN 0 AND 3 
+                    THEN (CURRENT_DATE - INTERVAL '1 day') 
+                    ELSE CURRENT_DATE 
+                END);`
         );
 
         const gamesIds = games.rows.map(game => game.id);
