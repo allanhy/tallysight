@@ -19,7 +19,7 @@ interface Pick {
         team2Name: string;
         team1Logo: string | null;
         team2Logo: string | null;
-        winner: number | null;  // 0 for team1, 1 for team2, null for not decided
+        winner: boolean | null;  // 0 for team1, 1 for team2, null for not decided
         final_score: string | null;
         status?: string;
         gameDate: string;
@@ -464,6 +464,22 @@ export default function MyPicksPage() {
         return dateOnly > todayOnly;
     };
 
+    // Determine if the user's pick was correct
+    const isPickCorrect = (teamPicked: number, gameWinner: boolean) => {
+        // teamPicked: 1 = Team1, 2 = Team2
+        // gameWinner: false = Team1 won, true = Team2 won
+        
+        if (teamPicked === 1 && gameWinner === false) {
+            return true;  // User picked Team1 and Team1 won
+        }
+        
+        if (teamPicked === 2 && gameWinner === true) {
+            return true;  // User picked Team2 and Team2 won
+        }
+        
+        return false;  // User's pick was incorrect
+    }
+
     return (
         <div className="picks-page">
             {/* Single history button */}
@@ -673,7 +689,13 @@ export default function MyPicksPage() {
                                                                         // Game is in the past or today and has started
                                                                         if (pick.Game.winner !== null) {
                                                                             // Game has a winner
-                                                                            const userWon = pick.Game.winner === pick.teamIndex;
+                                                                            
+                                                                            // Determine if user won based on their pick and the game result
+                                                                            // If user picked team1 (teamIndex === 0), they win if winner is false
+                                                                            // If user picked team2 (teamIndex === 1), they win if winner is true
+                                                                            const userWon = (pick.teamIndex === 0 && pick.Game.winner === false) || 
+                                                                                            (pick.teamIndex === 1 && pick.Game.winner === true);
+                                                                            
                                                                             return (
                                                                                 <div className={`pick-result ${userWon ? 'win' : 'loss'}`}>
                                                                                     {userWon ? 'Won' : 'Lost'}
