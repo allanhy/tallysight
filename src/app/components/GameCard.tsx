@@ -57,7 +57,11 @@ export const GameCard = ({ game }: { game: Game }) => {
               <span className="text-sm font-medium text-black truncate">
                 {shortenTeamName(game.homeTeam)}
               </span>
-              {game.status === 'status_in_progress' && game.homeScore !== undefined && (
+              {/* Home Team Score */}
+              {(game.status === 'STATUS_IN_PROGRESS' || 
+                game.status === 'STATUS_HALFTIME' || 
+                game.status === 'IN_PROGRESS') && 
+                game.homeScore && (
                 <span className="text-sm text-gray-600">
                   {game.homeScore}
                 </span>
@@ -74,7 +78,11 @@ export const GameCard = ({ game }: { game: Game }) => {
               <span className="text-sm font-medium text-black truncate">
                 {shortenTeamName(game.awayTeam)}
               </span>
-              {game.status === 'status_in_progress' && game.awayScore !== undefined && (
+              {/* Away Team Score */}
+              {(game.status === 'STATUS_IN_PROGRESS' || 
+                game.status === 'STATUS_HALFTIME' || 
+                game.status === 'IN_PROGRESS') && 
+                game.awayScore && (
                 <span className="text-sm text-gray-600">
                   {game.awayScore}
                 </span>
