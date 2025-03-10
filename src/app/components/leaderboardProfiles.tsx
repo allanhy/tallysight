@@ -19,6 +19,14 @@ interface user {
     imageUrl: string;
 }
 
+interface SocialLinks {
+    x?: string;
+    instagram?: string;
+    discord?: string;
+    facebook?: string;
+    snapchat?: string;
+}
+
 type Sport = 'NFL' | 'MLB' | 'NBA' | 'SELECT';
 
 interface leaderboardProfileProps{
@@ -34,6 +42,8 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
     const [error, setError] = useState('');
     const [lastUpdated, setLastUpdated] = useState<number>(0); // Timestamp for updating leaderboard
     const [selectedUser, setSelectedUser] = useState<user | null>(null);
+    const [socialLinks, setSocialLinks] = useState<SocialLinks | null>(null);
+    const [loadingSocial, setLoadingSocial] = useState(false);
     
     useEffect(() => {
         if (sport === 'SELECT' || week === -1 || week === null) {
@@ -98,6 +108,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
             const popout = document.getElementById('profilePopout');
             if (popout && !popout.contains(event.target as Node) && selectedUser) {
                 setSelectedUser(null);
+                setSocialLinks(null);
             }
         };
 
@@ -154,8 +165,35 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
         return () => clearInterval(interval);
     }, [lastUpdated, updateAllUserPerformance]);
 
+    // Fetch user social media links and favorite team from Clerk
+    const fetchUserSocialLinks = async (clerkId: string) => {
+        if (!clerkId) return;
+        
+        setLoadingSocial(true);
+        try {
+            const response = await fetch(`/api/user/getUserProfile?clerkId=${clerkId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch user profile data');
+            }
+            const data = await response.json();
+            setSocialLinks(data.socialLinks);
+        } catch (error) {
+            console.error('Error fetching user social links:', error);
+            setSocialLinks(null);
+        } finally {
+            setLoadingSocial(false);
+        }
+    };
+
     const handleUserClick = (user: user) => {
         setSelectedUser(user);
+        fetchUserSocialLinks(user.clerk_id);
+    };
+
+    // Helper function to check if user has any social media links
+    const hasSocialLinks = (links: SocialLinks | null) => {
+        if (!links) return false;
+        return Object.values(links).some(link => link && link.trim() !== '');
     };
 
     if (loading) return <div>Loading users...</div>;
@@ -170,44 +208,73 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
                     <div id="profilePopout" className={styles.profilePopout}>
                         <button 
                             className={styles.closeButton}
-                            onClick={() => setSelectedUser(null)}
+                            onClick={() => {
+                                setSelectedUser(null);
+                                setSocialLinks(null);
+                            }}
                         >
                             ×
                         </button>
                         <div className={styles.popoutHeader}>
-                        <Image 
-                            src={getImageSrc(selectedUser.imageUrl)} 
-                            alt={`Profile image of ${selectedUser.username}`} 
-                            width={100} 
-                            height={100}
-                            className={styles.popoutImage}
-                        />
-
+                            <Image 
+                                src={getImageSrc(selectedUser.imageUrl)} 
+                                alt={`Profile image of ${selectedUser.username}`} 
+                                width={100} 
+                                height={100}
+                                className={styles.popoutImage}
+                            />
                             <h2>{selectedUser.username}</h2>
-                            <div className={styles.popoutRank}>Rank: {selectedUser.rank}</div>
                         </div>
                         <div className={styles.popoutDetails}>
-                            {selectedUser.bio && (
-                                <div className={styles.popoutBio}>
-                                    <h3>Bio</h3>
-                                    <p>{selectedUser.bio}</p>
-                                </div>
-                            )}
-                            {selectedUser.fav_team && (
-                                <div className={styles.popoutFavTeam}>
+                            {selectedUser.fav_team ? (
+                                <div className={styles.popoutFavTeamSection}>
                                     <h3>Favorite Team</h3>
-                                    <p>{selectedUser.fav_team}</p>
+                                    <div className={styles.favTeamContainer}>
+                                        <p className={styles.favTeamText}>{selectedUser.fav_team}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className={styles.popoutFavTeamSection}>
+                                    <h3>Favorite Team</h3>
+                                    <p className={styles.socialMessage}>No favorite team selected</p>
                                 </div>
                             )}
-                            <div className={styles.popoutStats}>
-                                <div>
-                                    <h3>Performance</h3>
-                                    <p>{selectedUser.performance}%</p>
-                                </div>
-                                <div>
-                                    <h3>Points</h3>
-                                    <p>{selectedUser.points}</p>
-                                </div>
+                            
+                            <div className={styles.popoutSocialLinks}>
+                                <h3>Social Media</h3>
+                                {loadingSocial ? (
+                                    <p className={styles.socialMessage}>Loading social media links...</p>
+                                ) : hasSocialLinks(socialLinks) ? (
+                                    <div className={styles.socialLinksContainer}>
+                                        {socialLinks?.x && (
+                                            <div className={styles.socialLink}>
+                                                <span>X:</span> {socialLinks.x}
+                                            </div>
+                                        )}
+                                        {socialLinks?.instagram && (
+                                            <div className={styles.socialLink}>
+                                                <span>Instagram:</span> {socialLinks.instagram}
+                                            </div>
+                                        )}
+                                        {socialLinks?.discord && (
+                                            <div className={styles.socialLink}>
+                                                <span>Discord:</span> {socialLinks.discord}
+                                            </div>
+                                        )}
+                                        {socialLinks?.facebook && (
+                                            <div className={styles.socialLink}>
+                                                <span>Facebook:</span> {socialLinks.facebook}
+                                            </div>
+                                        )}
+                                        {socialLinks?.snapchat && (
+                                            <div className={styles.socialLink}>
+                                                <span>Snapchat:</span> {socialLinks.snapchat}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className={styles.socialMessage}>No social media linked to this profile</p>
+                                )}
                             </div>
                         </div>
                     </div>
