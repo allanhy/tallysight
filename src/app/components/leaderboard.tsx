@@ -114,9 +114,9 @@ const Leaderboard: React.FC = () => {
                                 value={selectedSport}
                                 onChange={handleSportChange}>
                                 <option value='SELECT' disabled>Select Sport</option>
-                                <option value='NFL'>NFL</option>
-                                <option value='MLB'>MLB</option>
-                                <option value='NBA'>NBA</option>
+                                <option value='NFL' disabled>NFL</option>
+                                <option value='MLB' disabled>MLB</option>
+                                <option value='NBA' >NBA</option>
                             </select>
 
                             <select 

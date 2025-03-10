@@ -139,17 +139,17 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
         }
     }, [users]);
 
-    // Update leaderboard daily
+    // Update leaderboard hourly
     useEffect(() => { 
         const currentTime = Date.now();
         const sinceUpdate = currentTime - lastUpdated;
 
-        if (sinceUpdate > 86400000) // More than 24hrs
+        if (sinceUpdate > 3600000) // More than 1hr, 86400000 for 24hrs
             updateAllUserPerformance();
 
         const interval = setInterval(() => {
             updateAllUserPerformance();
-        }, 86400000)
+        }, 3600000)
 
         return () => clearInterval(interval);
     }, [lastUpdated, updateAllUserPerformance]);
