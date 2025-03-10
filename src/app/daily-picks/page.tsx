@@ -186,81 +186,46 @@ export default function DailyPicks() {
     }, []);
 
     useEffect(() => {
-        // Force lock for games that started at 10 AM PT
-        const now = new Date();
-        const firstGameTime = new Date();
-        firstGameTime.setHours(10, 0, 0, 0); // 10 AM PT
-        
-        if (now > firstGameTime) {
-            console.log("FORCING LOCK: First game has started at 10 AM PT");
-            setFirstGameLocked(true);
-            
-            // Mark all games with start time at or before 10 AM PT as started
-            const lockedGames = new Set<string>();
-            
-            games.forEach(game => {
-                // For simplicity, let's just lock all games for now
-                lockedGames.add(game.id);
-            });
-            
-            setStartedGames(lockedGames);
-            setIsLocked(true); // Lock all picks
-            
-            // Set time remaining to 0
-            setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
-            
-            // Check if all games have ended (assuming a game lasts ~3 hours)
-            const lastGameEndTime = new Date(firstGameTime);
-            lastGameEndTime.setHours(lastGameEndTime.getHours() + 3); // Assuming last game ends 3 hours after first game
-            
-            if (now > lastGameEndTime) {
-                setAllGamesEnded(true);
-            }
-        }
-    }, [games]); // Only run when games are loaded
+        console.log("Current state:", {
+            isLocked,
+            firstGameLocked,
+            startedGames: Array.from(startedGames),
+            selectedPicks: Array.from(selectedPicks),
+            games: games.map(g => g.id)
+        });
+    }, [isLocked, firstGameLocked, startedGames, selectedPicks, games]);
 
-    // Add a new effect to calculate time until next day's games
     useEffect(() => {
-        if (!allGamesEnded) return;
+        // Force enable picks for testing
+        setFirstGameLocked(false);
+        setStartedGames(new Set<string>());
+        setIsLocked(false);
+        setAllGamesEnded(false);
         
-        const calculateNextDayTimeLeft = () => {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(10, 0, 0, 0); // 10 AM PT next day
-            
-            const diff = tomorrow.getTime() - now.getTime();
-            
-            return {
-                hours: Math.floor(diff / (1000 * 60 * 60)),
-                minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-                seconds: Math.floor((diff % (1000 * 60)) / 1000)
-            };
-        };
+        // Set a reasonable time left
+        setTimeLeft({
+            hours: 1,
+            minutes: 0,
+            seconds: 0
+        });
         
-        // Initial calculation
-        setNextDayTimeLeft(calculateNextDayTimeLeft());
-        
-        // Update timer every second
-        const timer = setInterval(() => {
-            setNextDayTimeLeft(calculateNextDayTimeLeft());
-        }, 1000);
-        
-        return () => clearInterval(timer);
-    }, [allGamesEnded]);
+        console.log("PICKS ENABLED: Forcing picks to be enabled for testing");
+    }, []);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
-        // Prevent selections if all games are locked or this specific game is locked
-        if (isLocked || startedGames.has(gameId)) return;
-
+        console.log(`Attempting to select ${teamType} team for game ${gameId}`);
+        
+        // Always allow selection for testing
         setSelectedPicks(prevPicks => {
             const newPicks = new Set(prevPicks);
             const pickId = `${gameId}-${teamType}`;
             const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
 
             if (newPicks.has(pickId)) {
+                console.log(`Removing pick: ${pickId}`);
                 newPicks.delete(pickId);
             } else {
+                console.log(`Adding pick: ${pickId}, removing opposite: ${oppositePick}`);
                 newPicks.add(pickId);
                 newPicks.delete(oppositePick);
             }
