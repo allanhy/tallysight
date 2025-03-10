@@ -3,14 +3,36 @@ import { sql } from "@vercel/postgres"; // Ensure this is correct for your setup
 
 export async function GET() {
   try {
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+
+    // Convert UTC time to EST (UTC-5)
+    // EST is UTC-5 for non daylight saving, -4 for during daylight saving
+    const estOffset =
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        timeZoneName: "short",
+      })
+        .formatToParts(now)
+        .find((part) => part.type === "timeZoneName")?.value === "EST"
+        ? -5
+        : -4;
+
+    const today = new Date(now.getTime() + estOffset * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
+    // Calculate tomorrow based on today
+    const tomorrow = new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
 
     const userCountResult = await sql`
     SELECT COUNT(DISTINCT p."userId") AS uniqueUsers
     FROM "Pick" p
     JOIN "Game" g ON p."gameId" = g.id
-    WHERE DATE(g."gameDate") = ${today};
+    WHERE DATE(g."gameDate") = ${today}
+    OR DATE(g."gameDate") = ${tomorrow}
+;
   `;
 
     const uniqueUsers = userCountResult.rows[0]?.uniqueusers || 0;
@@ -38,7 +60,8 @@ export async function GET() {
             FROM "Pick" p
             ORDER BY p."userId", p."gameId", p."createdAt" DESC
         ) AS recent_picks ON g.id = recent_picks."gameId"
-        WHERE DATE(g."gameDate") = ${today}
+        WHERE DATE(g."gameDate") = ${today} 
+            OR DATE(g."gameDate") = ${tomorrow}
         GROUP BY g.id, g."team1Name", g."team2Name";
         `;
 

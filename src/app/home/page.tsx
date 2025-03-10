@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect/*, useRef*/ } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'react-multi-carousel/lib/styles.css';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../components/ui/skeleton';

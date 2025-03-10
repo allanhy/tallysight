@@ -5,9 +5,9 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const { clerkId, email } = data;
+    const { clerkId, email, username } = data;
 
-    if (!clerkId || !email) {
+    if (!clerkId || !email || !username) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields: clerkId and email' },
         { status: 400 }
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     await sql`
       INSERT INTO users (clerk_id, email, username, password, role)
-      VALUES (${clerkId}, ${email}, ${email.split('@')[0]}, ${'clerk-auth'}, ${1})
+      VALUES (${clerkId}, ${email}, ${username}, ${'clerk-auth'}, ${1})
       ON CONFLICT (email) DO UPDATE 
       SET clerk_id = EXCLUDED.clerk_id
       RETURNING *;
