@@ -6,7 +6,7 @@ import Navigation from '@/app/components/header';
 export default function NavigationWrapper() {
   const pathname = usePathname();
   
-  if (pathname === '/daily-picks' || pathname === '/tomorrow-picks' || pathname === '/profile') {        // This is so the header does not appear while using this page.
+  if (pathname === '/daily-picks' || pathname === '/tomorrow-picks') {        // This is so the header does not appear while using this page.
     return null; 
   }
 

@@ -8,6 +8,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/n
 import Link from 'next/link'
 import { useTheme } from '@/context/ThemeContext';
 import CarouselWithGames from './carouselWithGames';
+import { usePathname } from 'next/navigation';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,6 +16,7 @@ const Header = () => {
     const [points, setPoints] = useState<number | null>(null);
     const [error, setError] = useState('');
     const { theme } = useTheme();
+    const pathname = usePathname();
 
     useEffect(() => {
         const getPoints = async () => {
@@ -160,9 +162,14 @@ const Header = () => {
                     </div>
                 </div>
             </nav>     
-            <div className="pt-10">
-                <CarouselWithGames/>
-            </div>   
+            {pathname !== '/profile' && (
+                <div className="pt-10">
+                    <CarouselWithGames />
+                </div>
+            )} 
+            {pathname === '/profile' && (
+                <div className="py-10"/>
+            )} 
         </div>        
     );
 };
