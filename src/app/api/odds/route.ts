@@ -51,11 +51,21 @@ export async function GET(request: Request) {
       { cache: 'no-store' }
     );
 
+    // Also fetch ESPN data for additional game details
+    const espnResponse = await fetch(
+      'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+      { cache: 'no-store' }
+    );
+
     if (!oddsResponse.ok) {
       throw new Error(`Odds API responded with status: ${oddsResponse.status}`);
     }
 
     const rawData = await oddsResponse.json();
+    const espnData = await espnResponse.json();
+    
+    // Log the raw data for debugging
+    console.log('Raw odds data:', JSON.stringify(rawData).substring(0, 500) + '...');
     
     // Find the matching game - try to match by team names if gameId doesn't match
     let matchedGame = null;
@@ -75,21 +85,45 @@ export async function GET(request: Request) {
     }
     
     // If still no match, just return the first game with odds
-    if (!matchedGame) {
+    if (!matchedGame && rawData.length > 0) {
       matchedGame = rawData.find((game: any) => game.bookmakers && game.bookmakers.length > 0);
+    }
+    
+    // If no games with bookmakers, return the first game
+    if (!matchedGame && rawData.length > 0) {
+      matchedGame = rawData[0];
+    }
+    
+    // Find matching ESPN game for additional details
+    let espnGame = null;
+    if (matchedGame) {
+      espnGame = espnData.events?.find((event: any) => {
+        const homeTeam = event.competitions[0].competitors.find((c: any) => c.homeAway === 'home')?.team.displayName;
+        const awayTeam = event.competitions[0].competitors.find((c: any) => c.homeAway === 'away')?.team.displayName;
+        
+        return (
+          homeTeam?.includes(matchedGame.home_team) || 
+          matchedGame.home_team.includes(homeTeam) ||
+          awayTeam?.includes(matchedGame.away_team) || 
+          matchedGame.away_team.includes(awayTeam)
+        );
+      });
     }
     
     // If we found a matching game, process it
     if (matchedGame) {
+      console.log('Matched game:', matchedGame.id, matchedGame.home_team, 'vs', matchedGame.away_team);
+      
       // Find the best bookmaker (prefer FanDuel)
       const fanduel = matchedGame.bookmakers.find((b: any) => b.key === 'fanduel');
       const draftkings = matchedGame.bookmakers.find((b: any) => b.key === 'draftkings');
       const bookmaker = fanduel || draftkings || matchedGame.bookmakers[0];
       
       if (bookmaker) {
+        console.log('Using bookmaker:', bookmaker.key);
+        
         // Extract markets
         const spreadsMarket = bookmaker.markets.find((market: any) => market.key === 'spreads');
-        const h2hMarket = bookmaker.markets.find((market: any) => market.key === 'h2h');
         
         // Find team outcomes
         const homeTeam = matchedGame.home_team;
@@ -97,109 +131,92 @@ export async function GET(request: Request) {
         
         const homeSpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
         const awaySpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
-        const homeH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
-        const awayH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
         
-        // Format the data
+        console.log('Spread outcomes:', 
+          homeSpreadOutcome ? `${homeTeam}: ${homeSpreadOutcome.point}` : 'No home spread',
+          awaySpreadOutcome ? `${awayTeam}: ${awaySpreadOutcome.point}` : 'No away spread'
+        );
+        
+        // Get additional details from ESPN
+        let venue = '';
+        let broadcast = '';
+        let homeRecord = '';
+        let awayRecord = '';
+        let status = '';
+        
+        if (espnGame) {
+          const competition = espnGame.competitions[0];
+          venue = competition.venue?.fullName || '';
+          if (competition.venue?.address?.city && competition.venue?.address?.state) {
+            venue += ` - ${competition.venue.address.city}, ${competition.venue.address.state}`;
+          }
+          
+          broadcast = competition.broadcasts?.[0]?.names?.join(', ') || '';
+          
+          const homeTeamData = competition.competitors.find((c: any) => c.homeAway === 'home');
+          const awayTeamData = competition.competitors.find((c: any) => c.homeAway === 'away');
+          
+          homeRecord = homeTeamData?.records?.[0]?.summary || '';
+          awayRecord = awayTeamData?.records?.[0]?.summary || '';
+          
+          status = espnGame.status?.type?.description || '';
+        }
+        
+        // Format the data using ONLY what we get from the API
         const processedGame = {
           id: matchedGame.id,
           date: formatGameTime(matchedGame.commence_time),
           team1: {
             name: homeTeam,
-            spread: homeSpreadOutcome ? formatSpread(homeSpreadOutcome.point) : 'N/A',
-            price: homeSpreadOutcome ? formatPrice(homeSpreadOutcome.price) : 'N/A',
-            moneyline: homeH2hOutcome ? formatPrice(homeH2hOutcome.price) : 'N/A',
+            spread: homeSpreadOutcome ? formatSpread(homeSpreadOutcome.point) : '',
+            record: homeRecord
           },
           team2: {
             name: awayTeam,
-            spread: awaySpreadOutcome ? formatSpread(awaySpreadOutcome.point) : 'N/A',
-            price: awaySpreadOutcome ? formatPrice(awaySpreadOutcome.price) : 'N/A',
-            moneyline: awayH2hOutcome ? formatPrice(awayH2hOutcome.price) : 'N/A',
+            spread: awaySpreadOutcome ? formatSpread(awaySpreadOutcome.point) : '',
+            record: awayRecord
           },
+          venue: venue,
+          broadcast: broadcast,
+          status: status,
           bookmaker: bookmaker.title
         };
         
+        console.log('Processed game:', processedGame);
         return NextResponse.json({ games: [processedGame] });
+      } else {
+        console.log('No bookmaker found for game');
       }
+    } else {
+      console.log('No matching game found');
     }
     
-    // If we couldn't find a matching game or process it, return all games
-    const processedGames = rawData.map((game: any) => {
-      const bookmaker = game.bookmakers && game.bookmakers.length > 0 ? game.bookmakers[0] : null;
-      
-      if (!bookmaker) {
-        return {
-          id: game.id,
-          date: formatGameTime(game.commence_time),
-          team1: { name: game.home_team, spread: 'N/A', moneyline: 'N/A' },
-          team2: { name: game.away_team, spread: 'N/A', moneyline: 'N/A' }
-        };
-      }
-      
-      const spreadsMarket = bookmaker.markets.find((market: any) => market.key === 'spreads');
-      const h2hMarket = bookmaker.markets.find((market: any) => market.key === 'h2h');
-      
-      const homeTeam = game.home_team;
-      const awayTeam = game.away_team;
-      
-      const homeSpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
-      const awaySpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
-      const homeH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
-      const awayH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
-      
-      return {
-        id: game.id,
-        date: formatGameTime(game.commence_time),
-        team1: {
-          name: homeTeam,
-          spread: homeSpreadOutcome ? formatSpread(homeSpreadOutcome.point) : 'N/A',
-          price: homeSpreadOutcome ? formatPrice(homeSpreadOutcome.price) : 'N/A',
-          moneyline: homeH2hOutcome ? formatPrice(homeH2hOutcome.price) : 'N/A',
-        },
-        team2: {
-          name: awayTeam,
-          spread: awaySpreadOutcome ? formatSpread(awaySpreadOutcome.point) : 'N/A',
-          price: awaySpreadOutcome ? formatPrice(awaySpreadOutcome.price) : 'N/A',
-          moneyline: awayH2hOutcome ? formatPrice(awayH2hOutcome.price) : 'N/A',
-        },
-        bookmaker: bookmaker.title
-      };
-    });
-    
-    return NextResponse.json({ games: processedGames });
+    // If we couldn't find a matching game or process it, return an empty response
+    return NextResponse.json({ games: [] });
   } catch (error) {
     console.error('Error in odds API:', error);
     
-    // Return a simple error response
-    return NextResponse.json(
-      { error: 'Failed to fetch odds data', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    // Return an empty response in case of error
+    return NextResponse.json({ games: [] });
   }
 }
 
 // Helper functions
 function formatSpread(spread: number | undefined): string {
-  if (spread === undefined) return 'N/A';
+  if (spread === undefined) return '';
   return spread > 0 ? `+${spread}` : spread.toString();
-}
-
-function formatPrice(price: number | undefined): string {
-  if (price === undefined) return 'N/A';
-  return price > 0 ? `+${price}` : price.toString();
 }
 
 function formatGameTime(dateString: string): string {
   const date = new Date(dateString);
   
-  // Format date like "Sun, Nov 19"
+  // Format date like "Thu, Nov 28 · 4:30 PM ET"
   const dayStr = date.toLocaleDateString('en-US', { 
     weekday: 'short',
     month: 'short',
     day: 'numeric'
   });
 
-  // Format time like "1:00 PM ET"
   const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
