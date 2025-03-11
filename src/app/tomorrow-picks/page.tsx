@@ -17,7 +17,6 @@ import {
 } from "../components/ui/popover"
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
-import OddsPreview from '../components/OddsPreview';
 
 interface Team {
     name: string;
@@ -62,7 +61,6 @@ export default function TomorrowPicks() {
     const [pickPercentages, setPickPercentages] = useState<Record<string, { home: string; away: string }>>({});
     const [loadingPercentages, setLoadingPercentages] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
-    const [previewGame, setPreviewGame] = useState<Game | null>(null);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -177,11 +175,8 @@ export default function TomorrowPicks() {
         });
     };
 
-    const handleGetSpread = (gameId: string) => {
-        const game = games.find(g => g.id === gameId);
-        if (game) {
-            setPreviewGame(game);
-        }
+    const handleGetSpread = (gameId: string, teamType: 'home' | 'away') => {
+        console.log(`Fetching spread for ${gameId} ${teamType} team`);
     };
 
     const handleSubmitPicks = async () => {
@@ -394,7 +389,7 @@ export default function TomorrowPicks() {
                                             </span>
                                         </div>
                                         <button
-                                            onClick={() => handleGetSpread(game.id)}
+                                            onClick={() => handleGetSpread(game.id, 'home')}
                                             className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
                                         >
                                             Preview
@@ -633,17 +628,6 @@ export default function TomorrowPicks() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {previewGame && (
-                <OddsPreview
-                    gameId={previewGame.id}
-                    homeTeam={previewGame.homeTeam}
-                    awayTeam={previewGame.awayTeam}
-                    gameTime={previewGame.gameTime}
-                    isOpen={!!previewGame}
-                    onClose={() => setPreviewGame(null)}
-                />
             )}
         </div>
     );
