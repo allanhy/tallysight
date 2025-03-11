@@ -105,11 +105,11 @@ const Profile = () => {
   {/* Navigation Buttons */}
   const renderNavigationButtons = () => (
     <ul className="flex flex-col w-full mt-4 space-y-2">
-      {["Profile", "Activity", "Preferences", "Favorite Teams", "Social Media"].map((section) => (
+      {["Profile", "Preferences", "Favorite Team", "Social Media"].map((section) => (
         <li key={section}>
           <button
             onClick={() => {
-              if (section === "Favorite Teams") {
+              if (section === "Favorite Team") {
                 setShowFavoriteTeamModal(true);
                 setSelectedSection(section);
               } else {
@@ -132,12 +132,16 @@ const Profile = () => {
   useEffect(() => {
     const fetchFavoriteTeam = async () => {
       try {
-        const response = await fetch('/api/FavoriteTeams');
+        const response = await fetch('/api/user/getFavoriteTeam');
         if (!response.ok) throw new Error('Failed to fetch favorite team');
         const data = await response.json();
-        // Expect data.team to be either an object or an array; adjust accordingly.
+        
         if (data.team) {
-          setFavoriteTeam(data.team);
+          setFavoriteTeam({
+            id: data.team.id || 0,
+            name: data.team.fav_team,
+            logoUrl: data.team.fav_team_logo
+          });
         }
       } catch (error) {
         console.error('Error fetching favorite team:', error);
@@ -147,24 +151,33 @@ const Profile = () => {
     fetchFavoriteTeam();
   }, []);
 
-  
   // Handles saving the favorite team
   const handleFavoriteTeamSave = async (selectedTeam: Team) => {
     try {
-      console.log("Saving favorite team:", selectedTeam);
-      // Update public metadata with the new favorite team.
-      await user?.update({
-        unsafeMetadata: {
-          ...user.unsafeMetadata,
-          favoriteTeam: selectedTeam,
+      
+      // Update the database
+      const response = await fetch('/api/user/postFavoriteTeam', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ 
+          teamName: selectedTeam.name,
+          teamLogoUrl: selectedTeam.logoUrl
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to update favorite team in database');
+      }
+
+      // Update local state
       setFavoriteTeam(selectedTeam);
       setShowFavoriteTeamModal(false);
       setSelectedSection("Profile");
-      console.log("Favorite team saved:", selectedTeam);
     } catch (error) {
       console.error("Error saving favorite team:", error);
+      alert('Failed to save favorite team. Please try again.');
     }
   };
   
@@ -203,6 +216,16 @@ const Profile = () => {
         return (
         <div>
             <h2 className="text-5xl font-medium mb-4 text-gray-900 dark:text-gray-100">Profile Information</h2>
+            {favoriteTeam && favoriteTeam.logoUrl && (<div className="flex items-center">
+            <img
+              src={favoriteTeam.logoUrl}
+              width="64"
+              height="64"
+              alt={favoriteTeam.name || "Favorite Team Logo"}
+              className="object-contain"
+            />
+          </div>
+        )}
             <table className="w-full text-left bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md table-fixed">
                 <tbody>
                     <tr>
@@ -278,16 +301,9 @@ const Profile = () => {
                   </form>
               </div>
           );
-      case 'Activity':
-        return (
-          <div>
-            <h2 className="text-5xl font-semibold mb-4 text-gray-700 dark:text-gray-100">Activity</h2>
-            <p className="text-gray-700 dark:text-gray-300">This page will display a user&apos;s past activity, including their contest participation, results, and other relevant stats.</p>
-          </div>
-        );
       case 'Preferences':
         return <PreferencesSettings />;
-      case 'Favorite Teams':
+      case 'Favorite Team':
         return (
           <div>
             {showFavoriteTeamModal && (
@@ -402,20 +418,7 @@ const Profile = () => {
       </div>
       {showCropper && selectedFile && (
         <ImageCropper imageFile={selectedFile} onCropComplete={handleCropComplete} onCancel={() => setShowCropper(false)} />
-      )}
-        {favoriteTeam && favoriteTeam.logoUrl && (
-        <div style={{ position: "fixed", top: "725px", left: "160px" }}>
-          <div className="w-12 h-12 rounded-full bg-white border-2 border-gray-300 shadow-lg flex items-center justify-center">
-            <img
-              src={favoriteTeam.logoUrl}
-              width="40"
-              height="40"
-              alt={favoriteTeam.name || "Favorite Team Logo"}
-              className="rounded-full"
-            />
-          </div>
-        </div>
-      )}
+      )}   
     </div>
   );
 };
