@@ -21,7 +21,6 @@ import {
 
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
-import OddsPreview from '../components/OddsPreview';
 
 interface Team {
     name: string;
@@ -39,8 +38,8 @@ interface Game {
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Sport = ['NBA']
-const MAXPOINTSPERGAME = 10;
-const BONUSPOINTS = 5;
+const MAXPOINTSPERGAME = 1;
+const BONUSPOINTS = 3;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
@@ -82,7 +81,6 @@ export default function DailyPicks() {
     const [firstGameLocked, setFirstGameLocked] = useState(false);
     const [allGamesEnded, setAllGamesEnded] = useState(false);
     const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
-    const [previewGame, setPreviewGame] = useState<Game | null>(null);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -154,19 +152,6 @@ export default function DailyPicks() {
                     console.log(`Game ID: ${game.id}, Status: ${game.status}`);
                 });
                 setGames(data.games);
-
-                const started = new Set<string>();
-                const allEnded = data.games.length > 0 && data.games.every((game: Game) => {
-                    const hasStarted = game.status.toLowerCase() !== 'scheduled';
-                    if (hasStarted) {
-                        started.add(game.id);
-                    }
-                    return game.status.toLowerCase() === 'final';
-                });
-
-                setStartedGames(started);
-                setFirstGameLocked(started.size > 0);
-                setAllGamesEnded(allEnded);
             } catch (error) {
                 console.error('Error fetching games:', error);
                 setError('Failed to load today\'s games');
@@ -204,62 +189,171 @@ export default function DailyPicks() {
     }, []);
 
     useEffect(() => {
-        const calculateTimeLeft = () => {
-            if (games.length === 0) return;
+        console.log("Current state:", {
+            isLocked,
+            firstGameLocked,
+            startedGames: Array.from(startedGames),
+            selectedPicks: Array.from(selectedPicks),
+            games: games.map(g => g.id)
+        });
+    }, [isLocked, firstGameLocked, startedGames, selectedPicks, games]);
 
-            // Get current time in ET
+    // This is the ONLY useEffect that should handle timing
+    useEffect(() => {
+        console.log("TIMER SETUP: Initializing single timer instance");
+        
+        // Function to update the countdown timer
+        const updateCountdown = () => {
             const now = new Date();
             
-            // Create tomorrow's date at 1 PM ET (first game time)
-            const gameTime = new Date();
-            gameTime.setDate(gameTime.getDate() + 1); // Set to tomorrow
-            gameTime.setHours(13, 0, 0, 0); // 1 PM ET (13:00)
-
-            const diff = gameTime.getTime() - now.getTime();
-
-            if (diff <= 0) {
-                setIsLocked(true);
-                setSelectedPicks(new Set());
-                router.push('/myPicks');
-                return { hours: 0, minutes: 0, seconds: 0 };
+            // If we have games, check if they've started
+            if (games.length > 0 && !allGamesEnded) {
+                // Sort games by start time
+                const sortedGames = [...games].sort((a, b) => {
+                    const timeA = new Date(`${new Date().toDateString()} ${a.gameTime}`);
+                    const timeB = new Date(`${new Date().toDateString()} ${b.gameTime}`);
+                    return timeA.getTime() - timeB.getTime();
+                });
+                
+                // Get the first game
+                const firstGame = sortedGames[0];
+                
+                // Parse the game time (which is in ET)
+                const [timeStr, period] = firstGame.gameTime.split(' ');
+                const [hourStr, minuteStr] = timeStr.split(':');
+                let etHours = parseInt(hourStr);
+                
+                // Convert ET time to 24-hour format
+                if (period === 'PM' && etHours !== 12) etHours += 12;
+                if (period === 'AM' && etHours === 12) etHours = 0;
+                
+                // Create a Date object for the game time in the user's local timezone
+                const gameStartTime = new Date();
+                
+                // Account for timezone difference between ET and local time
+                // ET is UTC-4 or UTC-5 depending on daylight saving
+                const now = new Date();
+                const etOffset = -4; // Assuming ET is UTC-4 (EDT)
+                const localOffset = -now.getTimezoneOffset() / 60;
+                const hourDifference = localOffset - etOffset;
+                
+                // Set the hours adjusted for timezone difference
+                gameStartTime.setHours(etHours + hourDifference, parseInt(minuteStr), 0, 0);
+                
+                // If the calculated time is in the past, it's for tomorrow
+                if (gameStartTime < now) {
+                    gameStartTime.setDate(gameStartTime.getDate() + 1);
+                }
+                
+                // Calculate time until game starts
+                const timeDiff = gameStartTime.getTime() - now.getTime();
+                
+                // If game has started or timer is at 0
+                if (timeDiff <= 0) {
+                    // Lock the first game
+                    setFirstGameLocked(true);
+                    setStartedGames(prev => {
+                        const newSet = new Set(prev);
+                        newSet.add(firstGame.id);
+                        return newSet;
+                    });
+                    
+                    // Set time to 0
+                    setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+                } else {
+                    // Calculate remaining time
+                    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+                    
+                    setTimeLeft({
+                        hours,
+                        minutes,
+                        seconds
+                    });
+                }
+            } else {
+                // Default to 4:00 PM PT if no games
+                const gameTime = new Date(now);
+                
+                // Convert Pacific Time (PT) to local time
+                const isPDT = true; // Set to true for PDT, false for PST
+                const ptOffset = isPDT ? -7 : -8;
+                const localOffset = -now.getTimezoneOffset() / 60;
+                const hourDifference = localOffset - ptOffset;
+                
+                // Set to 4:00 PM PT in local time
+                gameTime.setHours(16 + hourDifference, 0, 0, 0);
+                
+                // If it's already past 4 PM PT today, set for tomorrow
+                if (now > gameTime) {
+                    gameTime.setDate(gameTime.getDate() + 1);
+                }
+                
+                // Calculate time difference
+                const diffMs = gameTime.getTime() - now.getTime();
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+                
+                setTimeLeft({
+                    hours,
+                    minutes,
+                    seconds
+                });
             }
-
-            setIsLocked(false);
-            return {
-                hours: Math.floor(diff / (1000 * 60 * 60)),
-                minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-                seconds: Math.floor((diff % (1000 * 60)) / 1000)
-            };
         };
-
-        // Initial calculation
-        const initialTimeLeft = calculateTimeLeft();
-        if (initialTimeLeft) {
-            setTimeLeft(initialTimeLeft);
-        }
-
-        // Update timer every second
-        const timer = setInterval(() => {
-            const timeLeft = calculateTimeLeft();
-            if (timeLeft) {
-                setTimeLeft(timeLeft);
-            }
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [games, router]);
+        
+        // Update immediately
+        updateCountdown();
+        
+        // Set up ONLY ONE interval
+        const timerInterval = setInterval(updateCountdown, 1000);
+        
+        // Setup midnight reset
+        const setupMidnightReset = () => {
+            const now = new Date();
+            const midnight = new Date(now);
+            midnight.setHours(24, 0, 0, 0);
+            
+            const timeUntilMidnight = midnight.getTime() - now.getTime();
+            
+            const midnightTimer = setTimeout(() => {
+                console.log("MIDNIGHT RESET: Picks have been reset for the new day");
+                setFirstGameLocked(false);
+                setIsLocked(false);
+                setStartedGames(new Set());
+                updateCountdown(); // Update timer after reset
+                setupMidnightReset(); // Setup next day's reset
+            }, timeUntilMidnight);
+            
+            return midnightTimer;
+        };
+        
+        const midnightTimer = setupMidnightReset();
+        
+        // Clean up ALL timers
+        return () => {
+            console.log("TIMER CLEANUP: Removing timer instance");
+            clearInterval(timerInterval);
+            clearTimeout(midnightTimer);
+        };
+    }, [games, allGamesEnded]);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
-        if (isLocked) return; // Prevent selections if locked
-
+        console.log(`Attempting to select ${teamType} team for game ${gameId}`);
+        
+        // Always allow selection for testing
         setSelectedPicks(prevPicks => {
             const newPicks = new Set(prevPicks);
             const pickId = `${gameId}-${teamType}`;
             const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
 
             if (newPicks.has(pickId)) {
+                console.log(`Removing pick: ${pickId}`);
                 newPicks.delete(pickId);
             } else {
+                console.log(`Adding pick: ${pickId}, removing opposite: ${oppositePick}`);
                 newPicks.add(pickId);
                 newPicks.delete(oppositePick);
             }
@@ -267,11 +361,8 @@ export default function DailyPicks() {
         });
     };
 
-    const handleGetSpread = (gameId: string) => {
-        const game = games.find(g => g.id === gameId);
-        if (game) {
-            setPreviewGame(game);
-        }
+    const handleGetSpread = (gameId: string, teamType: 'home' | 'away') => {
+        console.log(`Fetching spread for ${gameId} ${teamType} team`);
     };
 
     const handleSubmitPicks = async () => {
@@ -309,9 +400,66 @@ export default function DailyPicks() {
                 }),
             });
 
-            if (!response.ok) {
+            const resData = await response.json();
+
+            if(resData.message === "Picks have already been made for today."){
+                // Picks made already
+                alert('You have already made your picks for today.');
+                router.push('/daily-picks')
+            } else if (response.ok) {
+                /* for testing
+                // Submitted picks, no previous picks from the day:
+
+                // Check if user has leaderboard entry, if not create one
+                const updateEntry = await fetch('api/leaderboard-entries/verifyEntry', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ clerk_id: userId, sport: 'NBA', week: getCurrentWeek() })
+                });
+
+                const data3 = await updateEntry.json();
+
+                if (!updateEntry.ok) {
+                    throw new Error(data3.message || 'Failed to update user entry in leaderboard');
+                }
+
+                // Update Max Points for User
+                const max_points = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
+
+                const updateMaxPoints = await fetch('/api/user/updateMaxPoints', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ clerk_id: userId, max_points: max_points })
+                });
+
+                const data2 = await updateMaxPoints.json();
+
+                if (!updateMaxPoints.ok) {
+                    throw new Error(data2.message || 'Failed to update max points');
+                }
+
+                const updateUserPoints = await fetch('/api/leaderboard-entries/updateEntryPoints', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sport: 'NBA', week: getCurrentWeek() })
+                });
+                
+                const data4 = await updateUserPoints.json();
+
+                if(!updateUserPoints.ok) {
+                    throw new Error(data4.message || 'Failed to update user total & entry points')
+                }
+                    */
+            } else {
+                // error in submitting picks
                 throw new Error('Failed to submit picks');
-            }
+            }   
 
             const percentageResponse = await fetch('/api/userPickPercentage');
             const data = await percentageResponse.json();
@@ -331,41 +479,6 @@ export default function DailyPicks() {
                     });
                 }
             }
-
-            // Update Max Points for User
-            const max_points = MAXPOINTSPERGAME * picksArray.length;
-
-            const updatePoints = await fetch('/api/user/updateMaxPoints', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ clerk_id: userId, max_points: max_points })
-            });
-
-            const data2 = await updatePoints.json();
-
-            if (!updatePoints.ok) {
-                throw new Error(data2.message || 'Failed to update max points');
-            }
-
-            // Adding points to specific leaderboard entry
-            const points = 5;
-
-            const updateEntry = await fetch('api/leaderboard-entries/verifyEntry', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ clerk_id: userId, sport: 'NBA', week: getCurrentWeek(), points: points })
-            });
-
-            const data3 = await updateEntry.json();
-
-            if (!updateEntry.ok) {
-                throw new Error(data3.message || 'Failed to update user entry in leaderboard');
-            }
-
 
             router.push('/myPicks');
         } catch (error) {
@@ -435,13 +548,22 @@ export default function DailyPicks() {
         }
     }, [allGamesEnded, handleAllGamesDone]);
 
+    // Add this function to check if a specific game is locked
+    const isGameLocked = useCallback((gameId: string) => {
+        // If all games are locked, this game is locked
+        if (isLocked) return true;
+        
+        // If this specific game has started, it's locked
+        return startedGames.has(gameId);
+    }, [isLocked, startedGames]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#1a1a1a]">
                 <div className="bg-[#2a2a2a] p-4 sticky top-0 z-10">
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => router.push('/contests')}
+                            onClick={() => router.push('/myPicks')}
                             className="text-white hover:text-gray-300"
                         >
                             <ArrowLeft size={24} />
@@ -513,38 +635,61 @@ export default function DailyPicks() {
                 </div>
             </div>
 
-            {/* Info Bar */}
-            <div className="bg-blue-50 p-2 text-center text-sm text-blue-600">
-                Spread finalized | Picks lock at the start of each game
-            </div>
-
-            {/* Timer/Lock Status */}
-            {!isLocked ? (
+            {/* Conditional display based on game status */}
+            {!isLocked && (
                 <div className="bg-blue-50 p-2 text-center text-sm">
                     <span className="text-blue-600">
-                        Time until first game: {String(timeLeft.hours).padStart(2, '0')}:
+                        Time until games start: {String(timeLeft.hours).padStart(2, '0')}:
                         {String(timeLeft.minutes).padStart(2, '0')}:
                         {String(timeLeft.seconds).padStart(2, '0')}
                     </span>
                 </div>
-            ) : (
+            )}
+            
+            {isLocked && !allGamesEnded && (
                 <div className="bg-red-50 p-2 text-center text-sm">
-                    <span className="text-red-600">
-                        Picks are locked - Games have started
+                    <span className="text-red-600 font-bold">
+                        PICKS ARE LOCKED - GAMES HAVE STARTED
+                    </span>
+                </div>
+            )}
+            
+            {allGamesEnded && (
+                <div className="bg-green-50 p-2 text-center text-sm">
+                    <span className="text-green-600">
+                        Today&apos;s games have ended. Check back tomorrow!
                     </span>
                 </div>
             )}
 
+            {/* Enhanced Status Bar with more prominent lock indication */}
+            <div className="text-center py-2 text-sm">
+                <div className="text-gray-300">
+                    Spread finalized | Picks lock: At the start of each game
+                </div>
+                {isLocked && (
+                    <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
+                        GAMES LOCKED - REFRESH PAGE TO CONTINUE
+                    </div>
+                )}
+                {firstGameLocked && !isLocked && (
+                    <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
+                        FIRST GAME HAS STARTED - SOME PICKS ARE LOCKED
+                    </div>
+                )}
+            </div>
+
             {/* Games Grid */}
-            <div className="p-4 max-w-5xl mx-auto pb-20 ">
+            <div className="p-4 max-w-5xl mx-auto pb-20">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {games.length > 0 ? (
                         games.map((game) => {
+                            const gameIsLocked = isGameLocked(game.id);
                             const awayPercentage = parseFloat(pickPercentages[game.id]?.away) || 0;
                             const homePercentage = parseFloat(pickPercentages[game.id]?.home) || 0;
                             const awayIsHigher = awayPercentage > homePercentage;
                             return (
-                                <div key={game.id} className="bg-white rounded-lg shadow border border-gray-200">
+                                <div key={game.id} className={`bg-white rounded-lg shadow border ${gameIsLocked ? 'border-red-200' : 'border-gray-200'}`}>
                                     <div className="flex justify-between items-center p-3 border-b">
                                         <div className="text-sm text-gray-500">
                                             <span>{game.gameTime} ET</span>
@@ -563,23 +708,28 @@ export default function DailyPicks() {
                                                 })()}
                                             </span>
                                         </div>
-                                        <button
-                                            onClick={() => handleGetSpread(game.id)}
-                                            className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
-                                        >
-                                            Preview
-                                        </button>
+                                        <div className="flex items-center">
+                                            {gameIsLocked && (
+                                                <span className="text-red-500 text-xs mr-2">LOCKED</span>
+                                            )}
+                                            <button
+                                                onClick={() => handleGetSpread(game.id, 'home')}
+                                                className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
+                                            >
+                                                Preview
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="p-4 space-y-3">
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'away')}
-                                            disabled={game.status.toLowerCase() !== 'scheduled'} // Disable when game is in progress or finished
+                                            disabled={gameIsLocked} // Disable when this specific game is locked
                                             className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border 
                                                     ${selectedPicks.has(`${game.id}-away`)
                                                     ? 'bg-blue-50 border-2 border-blue-500'
                                                     : 'border-gray-400 hover:bg-gray-200'
                                                 }
-                                                ${game.status.toLowerCase() !== 'scheduled' ? 'opacity-50 cursor-not-allowed' : ''} // Visually disable
+                                                    ${gameIsLocked ? 'opacity-50 cursor-not-allowed' : ''} // Visually disable
                                             `}
                                         >
                                             <div className="flex items-center gap-3">
@@ -616,7 +766,7 @@ export default function DailyPicks() {
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <button className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2 cursor-pointer">
-                                                            {awayPercentage === homePercentage ? (
+                                                            {awayPercentage === homePercentage && !gameIsLocked ? (
                                                                 <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                             ) : (
                                                                 <>
@@ -626,7 +776,7 @@ export default function DailyPicks() {
                                                                     ${awayIsHigher ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                         style={{ width: `${awayPercentage}%` }}
                                                                     >
-                                                                        {awayIsHigher && (
+                                                                        {awayIsHigher && !gameIsLocked && (
                                                                             <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                                         )}
                                                                     </div>
@@ -636,7 +786,7 @@ export default function DailyPicks() {
                                                                     ${homePercentage > awayPercentage ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                         style={{ width: `${homePercentage}%` }}
                                                                     >
-                                                                        {homePercentage > awayPercentage && (
+                                                                        {homePercentage > awayPercentage && !gameIsLocked && (
                                                                             <div className="absolute top-0 left-0 w-full h-full animate-shimmer-right bg-white opacity-20"></div>
                                                                         )}
                                                                     </div>
@@ -662,7 +812,7 @@ export default function DailyPicks() {
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <div className="relative w-full h-4 bg-gray-300 rounded-lg overflow-hidden my-2 cursor-pointer">
-                                                                {awayPercentage === homePercentage ? (
+                                                                {awayPercentage === homePercentage && !gameIsLocked ? (
                                                                     <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                                 ) : (
                                                                     <>
@@ -672,7 +822,7 @@ export default function DailyPicks() {
                                                                     ${awayIsHigher ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                             style={{ width: `${awayPercentage}%` }}
                                                                         >
-                                                                            {awayIsHigher && (
+                                                                            {awayIsHigher && !gameIsLocked && (
                                                                                 <div className="absolute top-0 left-0 w-full h-full animate-shimmer-left bg-white opacity-20"></div>
                                                                             )}
                                                                         </div>
@@ -682,7 +832,7 @@ export default function DailyPicks() {
                                                                     ${homePercentage > awayPercentage ? 'bg-blue-400' : 'bg-gray-300'}`}
                                                                             style={{ width: `${homePercentage}%` }}
                                                                         >
-                                                                            {homePercentage > awayPercentage && (
+                                                                            {homePercentage > awayPercentage &&  !gameIsLocked && (
                                                                                 <div className="absolute top-0 left-0 w-full h-full animate-shimmer-right bg-white opacity-20"></div>
                                                                             )}
                                                                         </div>
@@ -711,9 +861,9 @@ export default function DailyPicks() {
 
                                         <button
                                             onClick={() => handleTeamSelect(game.id, 'home')}
-                                            disabled={isLocked}
+                                            disabled={gameIsLocked} // Disable when this specific game is locked
                                             className={`w-full flex items-center justify-between p-3 rounded-lg transition-all border 
-                                                ${isLocked ? 'opacity-50 cursor-not-allowed' : ''} 
+                                                ${gameIsLocked ? 'opacity-50 cursor-not-allowed' : ''} 
                                                 ${selectedPicks.has(`${game.id}-home`)
                                                     ? 'bg-blue-50 border-2 border-blue-500'
                                                     : 'border-gray-400 hover:bg-gray-200'
@@ -810,17 +960,6 @@ export default function DailyPicks() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {previewGame && (
-                <OddsPreview
-                    gameId={previewGame.id}
-                    homeTeam={previewGame.homeTeam}
-                    awayTeam={previewGame.awayTeam}
-                    gameTime={previewGame.gameTime}
-                    isOpen={!!previewGame}
-                    onClose={() => setPreviewGame(null)}
-                />
             )}
         </div>
     );
