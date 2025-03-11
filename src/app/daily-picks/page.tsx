@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -38,6 +40,7 @@ interface Game {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Sport = ['NBA']
 const MAXPOINTSPERGAME = 10;
+const BONUSPOINTS = 5;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
@@ -75,6 +78,10 @@ export default function DailyPicks() {
     const [isMobile, setIsMobile] = useState(false);
     const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [isLocked, setIsLocked] = useState(false);
+    const [startedGames, setStartedGames] = useState<Set<string>>(new Set());
+    const [firstGameLocked, setFirstGameLocked] = useState(false);
+    const [allGamesEnded, setAllGamesEnded] = useState(false);
+    const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [previewGame, setPreviewGame] = useState<Game | null>(null);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
@@ -147,6 +154,19 @@ export default function DailyPicks() {
                     console.log(`Game ID: ${game.id}, Status: ${game.status}`);
                 });
                 setGames(data.games);
+
+                const started = new Set<string>();
+                const allEnded = data.games.length > 0 && data.games.every((game: Game) => {
+                    const hasStarted = game.status.toLowerCase() !== 'scheduled';
+                    if (hasStarted) {
+                        started.add(game.id);
+                    }
+                    return game.status.toLowerCase() === 'final';
+                });
+
+                setStartedGames(started);
+                setFirstGameLocked(started.size > 0);
+                setAllGamesEnded(allEnded);
             } catch (error) {
                 console.error('Error fetching games:', error);
                 setError('Failed to load today\'s games');
@@ -355,6 +375,65 @@ export default function DailyPicks() {
             setSubmitting(false);
         }
     };
+
+    const handleAllGamesDone = useCallback(async () => {
+        // Submitted picks, no previous picks from the day:
+        try {
+            // Extract picks from selectedPicks
+            const picksArray = Array.from(selectedPicks).map(pick => {
+                const [gameId, teamType] = pick.split('-');
+                const game = games.find(g => g.id === gameId);
+                return { gameId, teamType, game }; // Return structured pick info
+            });
+    
+            // Check if user has leaderboard entry, if not create one
+            const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clerk_id: userId, sport: 'NBA', week: getCurrentWeek() }),
+            });
+    
+            const updateEntryData = await updateEntryResponse.json();
+            if (!updateEntryResponse.ok) {
+                throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
+            }
+    
+            // Update Max Points for User
+            const maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
+    
+            // Execute max points and leaderboard updates in parallel
+            const [updateMaxPointsResponse, updateUserPointsResponse] = await Promise.all([
+                fetch('/api/user/updateMaxPoints', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clerk_id: userId, max_points: maxPoints }),
+                }),
+                fetch('/api/leaderboard-entries/updateEntryPoints', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sport: 'NBA', week: getCurrentWeek() }),
+                }),
+            ]);
+    
+            const updateMaxPointsData = await updateMaxPointsResponse.json();
+            if (!updateMaxPointsResponse.ok) {
+                throw new Error(updateMaxPointsData.message || 'Failed to update max points');
+            }
+    
+            const updateUserPointsData = await updateUserPointsResponse.json();
+            if (!updateUserPointsResponse.ok) {
+                throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
+            }
+        } catch (error) {
+            console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
+        }
+    }, [userId, selectedPicks, games]);
+
+    useEffect(() => {
+        if (allGamesEnded) {
+            handleAllGamesDone();
+        }
+    }, [allGamesEnded, handleAllGamesDone]);
 
     if (loading) {
         return (
