@@ -1,16 +1,43 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './header.css'
 import Image from 'next/image';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link'
 import { useTheme } from '@/context/ThemeContext';
 import CarouselWithGames from './carouselWithGames';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { isLoaded, isSignedIn, user } = useUser();
+    const [points, setPoints] = useState<number | null>(null);
+    const [error, setError] = useState('');
     const { theme } = useTheme();
+
+    useEffect(() => {
+        const getPoints = async () => {
+            try {
+                if(!isLoaded || !isSignedIn || !user?.id) return;
+
+                // Getting User points
+                const res = await fetch(`/api/user/getPoints?clerk_id=${user.id}`);
+                const points = await res.json();
+    
+                if (res.ok) {
+                    setPoints(points.data);
+                } else {
+                    setError(points.message || "Failed to get user points");
+                }   
+                
+            } catch (error) {
+                setError(`Network error fetching user points: ${error}`);
+            }
+        }   
+        
+        getPoints();
+    }, [isLoaded, isSignedIn, user?.id]);
 
     return (
         <div>
@@ -57,6 +84,8 @@ const Header = () => {
                                 <SignedIn>
                                     <div className='flex justify-end p-3'>
                                         <UserButton userProfileUrl='/profile' />
+                                        {/*show user points*/}
+                                        <div className="hidden md:flex ml-10 space-x-8 font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 px-3 py-2"> Points: {points}</div>
                                     </div>
                                 </SignedIn>
                             </div>
@@ -122,6 +151,8 @@ const Header = () => {
                                 <SignedIn>
                                     <div className='p-3'>
                                         <UserButton userProfileUrl='/profile' />
+                                         {/*show user points*/}
+                                         <div className="font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2"> Points: {points}</div>
                                     </div>
                                 </SignedIn>
                             </div>
