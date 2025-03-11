@@ -1,172 +1,211 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 
-// ESPN CDN URLs for NFL team logos
-const NFL_TEAM_LOGOS: { [key: string]: string } = {
-  'Philadelphia Eagles': 'https://a.espncdn.com/i/teamlogos/nfl/500/phi.png',
-  'Washington Commanders': 'https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png',
-  'Pittsburgh Steelers': 'https://a.espncdn.com/i/teamlogos/nfl/500/pit.png',
-  'Baltimore Ravens': 'https://a.espncdn.com/i/teamlogos/nfl/500/bal.png',
-  'Chicago Bears': 'https://a.espncdn.com/i/teamlogos/nfl/500/chi.png',
-  'Green Bay Packers': 'https://a.espncdn.com/i/teamlogos/nfl/500/gb.png',
-  'New Orleans Saints': 'https://a.espncdn.com/i/teamlogos/nfl/500/no.png',
-  'Cleveland Browns': 'https://a.espncdn.com/i/teamlogos/nfl/500/cle.png',
-  'Detroit Lions': 'https://a.espncdn.com/i/teamlogos/nfl/500/det.png',
-  'Jacksonville Jaguars': 'https://a.espncdn.com/i/teamlogos/nfl/500/jax.png',
-  'New York Jets': 'https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png',
-  'Indianapolis Colts': 'https://a.espncdn.com/i/teamlogos/nfl/500/ind.png',
-  'Miami Dolphins': 'https://a.espncdn.com/i/teamlogos/nfl/500/mia.png',
-  'Las Vegas Raiders': 'https://a.espncdn.com/i/teamlogos/nfl/500/lv.png',
-  'New England Patriots': 'https://a.espncdn.com/i/teamlogos/nfl/500/ne.png',
-  'Los Angeles Rams': 'https://a.espncdn.com/i/teamlogos/nfl/500/lar.png',
-  'Tennessee Titans': 'https://a.espncdn.com/i/teamlogos/nfl/500/ten.png',
-  'Minnesota Vikings': 'https://a.espncdn.com/i/teamlogos/nfl/500/min.png',
-  'Denver Broncos': 'https://a.espncdn.com/i/teamlogos/nfl/500/den.png',
-  'Atlanta Falcons': 'https://a.espncdn.com/i/teamlogos/nfl/500/atl.png',
-  'San Francisco 49ers': 'https://a.espncdn.com/i/teamlogos/nfl/500/sf.png',
-  'Seattle Seahawks': 'https://a.espncdn.com/i/teamlogos/nfl/500/sea.png',
-  'Buffalo Bills': 'https://a.espncdn.com/i/teamlogos/nfl/500/buf.png',
-  'Kansas City Chiefs': 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png',
-  'Arizona Cardinals': 'https://a.espncdn.com/i/teamlogos/nfl/500/ari.png',
-  'Carolina Panthers': 'https://a.espncdn.com/i/teamlogos/nfl/500/car.png',
-  'Cincinnati Bengals': 'https://a.espncdn.com/i/teamlogos/nfl/500/cin.png',
-  'Dallas Cowboys': 'https://a.espncdn.com/i/teamlogos/nfl/500/dal.png',
-  'Houston Texans': 'https://a.espncdn.com/i/teamlogos/nfl/500/hou.png',
-  'Los Angeles Chargers': 'https://a.espncdn.com/i/teamlogos/nfl/500/lac.png',
-  'New York Giants': 'https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png',
-  'Tampa Bay Buccaneers': 'https://a.espncdn.com/i/teamlogos/nfl/500/tb.png'
+// ESPN CDN URLs for NBA team logos
+const NBA_TEAM_LOGOS: { [key: string]: string } = {
+  'Atlanta Hawks': 'https://a.espncdn.com/i/teamlogos/nba/500/atl.png',
+  'Boston Celtics': 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
+  'Brooklyn Nets': 'https://a.espncdn.com/i/teamlogos/nba/500/bkn.png',
+  'Charlotte Hornets': 'https://a.espncdn.com/i/teamlogos/nba/500/cha.png',
+  'Chicago Bulls': 'https://a.espncdn.com/i/teamlogos/nba/500/chi.png',
+  'Cleveland Cavaliers': 'https://a.espncdn.com/i/teamlogos/nba/500/cle.png',
+  'Dallas Mavericks': 'https://a.espncdn.com/i/teamlogos/nba/500/dal.png',
+  'Denver Nuggets': 'https://a.espncdn.com/i/teamlogos/nba/500/den.png',
+  'Detroit Pistons': 'https://a.espncdn.com/i/teamlogos/nba/500/det.png',
+  'Golden State Warriors': 'https://a.espncdn.com/i/teamlogos/nba/500/gs.png',
+  'Houston Rockets': 'https://a.espncdn.com/i/teamlogos/nba/500/hou.png',
+  'Indiana Pacers': 'https://a.espncdn.com/i/teamlogos/nba/500/ind.png',
+  'Los Angeles Clippers': 'https://a.espncdn.com/i/teamlogos/nba/500/lac.png',
+  'Los Angeles Lakers': 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
+  'Memphis Grizzlies': 'https://a.espncdn.com/i/teamlogos/nba/500/mem.png',
+  'Miami Heat': 'https://a.espncdn.com/i/teamlogos/nba/500/mia.png',
+  'Milwaukee Bucks': 'https://a.espncdn.com/i/teamlogos/nba/500/mil.png',
+  'Minnesota Timberwolves': 'https://a.espncdn.com/i/teamlogos/nba/500/min.png',
+  'New Orleans Pelicans': 'https://a.espncdn.com/i/teamlogos/nba/500/no.png',
+  'New York Knicks': 'https://a.espncdn.com/i/teamlogos/nba/500/ny.png',
+  'Oklahoma City Thunder': 'https://a.espncdn.com/i/teamlogos/nba/500/okc.png',
+  'Orlando Magic': 'https://a.espncdn.com/i/teamlogos/nba/500/orl.png',
+  'Philadelphia 76ers': 'https://a.espncdn.com/i/teamlogos/nba/500/phi.png',
+  'Phoenix Suns': 'https://a.espncdn.com/i/teamlogos/nba/500/phx.png',
+  'Portland Trail Blazers': 'https://a.espncdn.com/i/teamlogos/nba/500/por.png',
+  'Sacramento Kings': 'https://a.espncdn.com/i/teamlogos/nba/500/sac.png',
+  'San Antonio Spurs': 'https://a.espncdn.com/i/teamlogos/nba/500/sa.png',
+  'Toronto Raptors': 'https://a.espncdn.com/i/teamlogos/nba/500/tor.png',
+  'Utah Jazz': 'https://a.espncdn.com/i/teamlogos/nba/500/utah.png',
+  'Washington Wizards': 'https://a.espncdn.com/i/teamlogos/nba/500/wsh.png'
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const gameId = searchParams.get('gameId');
+    const requestedHomeTeam = searchParams.get('homeTeam');
+    const requestedAwayTeam = searchParams.get('awayTeam');
+    
+    // Use the API key from your .env file
     const API_KEY = process.env.ODDS_API_KEY;
-    const [oddsResponse, espnResponse] = await Promise.all([
-      fetch(
-        `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?apiKey=${API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`,
-        { cache: 'no-store' }
-      ),
-      fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')
-    ]);
+    
+    // Fetch real odds data from the odds API
+    const oddsResponse = await fetch(
+      `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${API_KEY}&regions=us&markets=spreads,h2h`,
+      { cache: 'no-store' }
+    );
 
     if (!oddsResponse.ok) {
       throw new Error(`Odds API responded with status: ${oddsResponse.status}`);
     }
 
     const rawData = await oddsResponse.json();
-    const espnData = await espnResponse.json();
-
-    // Get current date and filter for upcoming week's games
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // Sunday = 0, Monday = 1, ..., Saturday = 6
-    const daysFromWednesday = (dayOfWeek + 4) % 8; // Days since last Wednesday 
-    const daysUntilTuesday = (8 - dayOfWeek) % 7; // Days until next Tuesday
-
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - daysFromWednesday);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(now);
-    endOfWeek.setDate(now.getDate() + daysUntilTuesday);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    // Calculate week number (NFL week logic could vary)
-    const week = Math.ceil((Number(now) - Number(new Date(startOfWeek.getFullYear(), 8, 1))) / (7 * 24 * 60 * 60 * 1000));
-
-    const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const formatSpread = (spread: number | undefined): string => {
-      if (!spread) return '0';
-      return spread > 0 ? `+${spread}` : spread.toString();
-    };
-
-    const formatGameTime = (dateString: string): string => {
-      const date = new Date(dateString);
+    
+    // Find the matching game - try to match by team names if gameId doesn't match
+    let matchedGame = null;
+    
+    if (gameId) {
+      // First try to find by exact gameId
+      matchedGame = rawData.find((game: any) => game.id === gameId);
+    }
+    
+    // If no match by ID and we have team names, try to match by team names
+    if (!matchedGame && requestedHomeTeam && requestedAwayTeam) {
+      matchedGame = rawData.find((game: any) => {
+        const homeTeamMatches = game.home_team.toLowerCase().includes(requestedHomeTeam.toLowerCase());
+        const awayTeamMatches = game.away_team.toLowerCase().includes(requestedAwayTeam.toLowerCase());
+        return homeTeamMatches && awayTeamMatches;
+      });
+    }
+    
+    // If still no match, just return the first game with odds
+    if (!matchedGame) {
+      matchedGame = rawData.find((game: any) => game.bookmakers && game.bookmakers.length > 0);
+    }
+    
+    // If we found a matching game, process it
+    if (matchedGame) {
+      // Find the best bookmaker (prefer FanDuel)
+      const fanduel = matchedGame.bookmakers.find((b: any) => b.key === 'fanduel');
+      const draftkings = matchedGame.bookmakers.find((b: any) => b.key === 'draftkings');
+      const bookmaker = fanduel || draftkings || matchedGame.bookmakers[0];
       
-      // Format date like "Sun, Nov 19"
-      const dayStr = date.toLocaleDateString('en-US', { 
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      });
-
-      // Format time like "1:00 PM ET"
-      const timeStr = date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/New_York',
-        hour12: true
-      });
-
-      return `${dayStr} · ${timeStr} ET`;
-    };
-
-    const games = rawData
-      .filter((game: any) => {
-        const gameDate = new Date(game.commence_time);
-        return gameDate >= now && gameDate <= oneWeekFromNow;
-      })
-      .map((game: any) => {
-        const homeTeam = game.home_team;
-        const awayTeam = game.away_team;
+      if (bookmaker) {
+        // Extract markets
+        const spreadsMarket = bookmaker.markets.find((market: any) => market.key === 'spreads');
+        const h2hMarket = bookmaker.markets.find((market: any) => market.key === 'h2h');
         
-        // Find matching ESPN game data
-        const espnGame = espnData.events?.find((event: any) => {
-          const competition = event.competitions[0];
-          return (
-            competition.competitors[0].team.displayName === homeTeam ||
-            competition.competitors[1].team.displayName === homeTeam
-          );
-        });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const espnID = espnGame?.id; // Use ESPN's id for the match
-
-        const competition = espnGame?.competitions[0];
-        const venue = competition?.venue;
-        const broadcast = competition?.broadcasts?.[0];
-
-        // Format venue string
-        const venueString = venue 
-          ? `${venue.fullName}${venue.address ? ` - ${venue.address.city}, ${venue.address.state}` : ''}`
-          : "TBD";
-
-        // Format broadcast string
-        const broadcastString = broadcast?.names?.join(', ') || "TBD";
-
-        const bookmaker = game.bookmakers[0];
-        const spreadsMarket = bookmaker?.markets.find((market: any) => market.key === 'spreads');
+        // Find team outcomes
+        const homeTeam = matchedGame.home_team;
+        const awayTeam = matchedGame.away_team;
         
-        const homeOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
-        const awayOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
-
-        return {
-          id: game.id,
-          date: formatGameTime(game.commence_time),
+        const homeSpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
+        const awaySpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
+        const homeH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
+        const awayH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
+        
+        // Format the data
+        const processedGame = {
+          id: matchedGame.id,
+          date: formatGameTime(matchedGame.commence_time),
           team1: {
             name: homeTeam,
-            spread: formatSpread(homeOutcome?.point),
-            logo: NFL_TEAM_LOGOS[homeTeam] || 'https://a.espncdn.com/i/teamlogos/nfl/500/default.png',
-            win: "50.0%"
+            spread: homeSpreadOutcome ? formatSpread(homeSpreadOutcome.point) : 'N/A',
+            price: homeSpreadOutcome ? formatPrice(homeSpreadOutcome.price) : 'N/A',
+            moneyline: homeH2hOutcome ? formatPrice(homeH2hOutcome.price) : 'N/A',
           },
           team2: {
             name: awayTeam,
-            spread: formatSpread(awayOutcome?.point),
-            logo: NFL_TEAM_LOGOS[awayTeam] || 'https://a.espncdn.com/i/teamlogos/nfl/500/default.png',
-            win: "50.0%"
+            spread: awaySpreadOutcome ? formatSpread(awaySpreadOutcome.point) : 'N/A',
+            price: awaySpreadOutcome ? formatPrice(awaySpreadOutcome.price) : 'N/A',
+            moneyline: awayH2hOutcome ? formatPrice(awayH2hOutcome.price) : 'N/A',
           },
-          week: 1,
-          venue: venueString,
-          broadcast: broadcastString,
-          status: "scheduled",
-          isAvailable: new Date(game.commence_time) > now
+          bookmaker: bookmaker.title
         };
-      });
-
-    return NextResponse.json({ games, weekStart: startOfWeek.toISOString(), weekEnd: endOfWeek.toISOString(), week,});
+        
+        return NextResponse.json({ games: [processedGame] });
+      }
+    }
+    
+    // If we couldn't find a matching game or process it, return all games
+    const processedGames = rawData.map((game: any) => {
+      const bookmaker = game.bookmakers && game.bookmakers.length > 0 ? game.bookmakers[0] : null;
+      
+      if (!bookmaker) {
+        return {
+          id: game.id,
+          date: formatGameTime(game.commence_time),
+          team1: { name: game.home_team, spread: 'N/A', moneyline: 'N/A' },
+          team2: { name: game.away_team, spread: 'N/A', moneyline: 'N/A' }
+        };
+      }
+      
+      const spreadsMarket = bookmaker.markets.find((market: any) => market.key === 'spreads');
+      const h2hMarket = bookmaker.markets.find((market: any) => market.key === 'h2h');
+      
+      const homeTeam = game.home_team;
+      const awayTeam = game.away_team;
+      
+      const homeSpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
+      const awaySpreadOutcome = spreadsMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
+      const homeH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === homeTeam);
+      const awayH2hOutcome = h2hMarket?.outcomes.find((outcome: any) => outcome.name === awayTeam);
+      
+      return {
+        id: game.id,
+        date: formatGameTime(game.commence_time),
+        team1: {
+          name: homeTeam,
+          spread: homeSpreadOutcome ? formatSpread(homeSpreadOutcome.point) : 'N/A',
+          price: homeSpreadOutcome ? formatPrice(homeSpreadOutcome.price) : 'N/A',
+          moneyline: homeH2hOutcome ? formatPrice(homeH2hOutcome.price) : 'N/A',
+        },
+        team2: {
+          name: awayTeam,
+          spread: awaySpreadOutcome ? formatSpread(awaySpreadOutcome.point) : 'N/A',
+          price: awaySpreadOutcome ? formatPrice(awaySpreadOutcome.price) : 'N/A',
+          moneyline: awayH2hOutcome ? formatPrice(awayH2hOutcome.price) : 'N/A',
+        },
+        bookmaker: bookmaker.title
+      };
+    });
+    
+    return NextResponse.json({ games: processedGames });
   } catch (error) {
     console.error('Error in odds API:', error);
+    
+    // Return a simple error response
     return NextResponse.json(
-      { error: 'Failed to fetch odds data' },
+      { error: 'Failed to fetch odds data', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
-} 
+}
+
+// Helper functions
+function formatSpread(spread: number | undefined): string {
+  if (spread === undefined) return 'N/A';
+  return spread > 0 ? `+${spread}` : spread.toString();
+}
+
+function formatPrice(price: number | undefined): string {
+  if (price === undefined) return 'N/A';
+  return price > 0 ? `+${price}` : price.toString();
+}
+
+function formatGameTime(dateString: string): string {
+  const date = new Date(dateString);
+  
+  // Format date like "Sun, Nov 19"
+  const dayStr = date.toLocaleDateString('en-US', { 
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  });
+
+  // Format time like "1:00 PM ET"
+  const timeStr = date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/New_York',
+    hour12: true
+  });
+
+  return `${dayStr} · ${timeStr} ET`;
+}
