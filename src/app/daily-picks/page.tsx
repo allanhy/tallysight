@@ -21,7 +21,6 @@ import {
 
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
-import OddsPreview from '../components/OddsPreview';
 
 interface Team {
     name: string;
@@ -82,7 +81,6 @@ export default function DailyPicks() {
     const [firstGameLocked, setFirstGameLocked] = useState(false);
     const [allGamesEnded, setAllGamesEnded] = useState(false);
     const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
-    const [previewGame, setPreviewGame] = useState<Game | null>(null);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -363,12 +361,8 @@ export default function DailyPicks() {
         });
     };
 
-    const handleGetSpread = (gameId: string) => {
-        console.log(`Fetching spread for game ${gameId}`);
-        const game = games.find(g => g.id === gameId);
-        if (game) {
-            setPreviewGame(game);
-        }
+    const handleGetSpread = (gameId: string, teamType: 'home' | 'away') => {
+        console.log(`Fetching spread for ${gameId} ${teamType} team`);
     };
 
     const handleSubmitPicks = async () => {
@@ -719,7 +713,7 @@ export default function DailyPicks() {
                                                 <span className="text-red-500 text-xs mr-2">LOCKED</span>
                                             )}
                                             <button
-                                                onClick={() => handleGetSpread(game.id)}
+                                                onClick={() => handleGetSpread(game.id, 'home')}
                                                 className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
                                             >
                                                 Preview
@@ -966,17 +960,6 @@ export default function DailyPicks() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {previewGame && (
-                <OddsPreview
-                    gameId={previewGame.id}
-                    homeTeam={previewGame.homeTeam}
-                    awayTeam={previewGame.awayTeam}
-                    gameTime={previewGame.gameTime}
-                    isOpen={!!previewGame}
-                    onClose={() => setPreviewGame(null)}
-                />
             )}
         </div>
     );
