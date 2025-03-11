@@ -202,3 +202,38 @@ body {
 .ring-accent {
   --tw-ring-color: var(--accent-color);
 }
+
+/* Override Clerk's user button styles */
+.cl-userButtonBox {
+  background: none !important;
+  border: none !important;
+}
+
+.cl-userButtonTrigger {
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.cl-userButtonBox:hover {
+  background: none !important;
+}
+
+.cl-userButtonTrigger:hover {
+  background: none !important;
+}
+
+/* Make profile picture circular */
+.cl-userButtonAvatarBox {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+
+.cl-userButtonAvatarImage {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
