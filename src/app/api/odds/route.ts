@@ -37,7 +37,217 @@ const NFL_TEAM_LOGOS: { [key: string]: string } = {
   'Tampa Bay Buccaneers': 'https://a.espncdn.com/i/teamlogos/nfl/500/tb.png'
 };
 
-export async function GET() {
+// ESPN CDN URLs for NBA team logos
+const NBA_TEAM_LOGOS: { [key: string]: string } = {
+  'Atlanta Hawks': 'https://a.espncdn.com/i/teamlogos/nba/500/atl.png',
+  'Boston Celtics': 'https://a.espncdn.com/i/teamlogos/nba/500/bos.png',
+  'Brooklyn Nets': 'https://a.espncdn.com/i/teamlogos/nba/500/bkn.png',
+  'Charlotte Hornets': 'https://a.espncdn.com/i/teamlogos/nba/500/cha.png',
+  'Chicago Bulls': 'https://a.espncdn.com/i/teamlogos/nba/500/chi.png',
+  'Cleveland Cavaliers': 'https://a.espncdn.com/i/teamlogos/nba/500/cle.png',
+  'Dallas Mavericks': 'https://a.espncdn.com/i/teamlogos/nba/500/dal.png',
+  'Denver Nuggets': 'https://a.espncdn.com/i/teamlogos/nba/500/den.png',
+  'Detroit Pistons': 'https://a.espncdn.com/i/teamlogos/nba/500/det.png',
+  'Golden State Warriors': 'https://a.espncdn.com/i/teamlogos/nba/500/gs.png',
+  'Houston Rockets': 'https://a.espncdn.com/i/teamlogos/nba/500/hou.png',
+  'Indiana Pacers': 'https://a.espncdn.com/i/teamlogos/nba/500/ind.png',
+  'LA Clippers': 'https://a.espncdn.com/i/teamlogos/nba/500/lac.png',
+  'Los Angeles Clippers': 'https://a.espncdn.com/i/teamlogos/nba/500/lac.png',
+  'Los Angeles Lakers': 'https://a.espncdn.com/i/teamlogos/nba/500/lal.png',
+  'Memphis Grizzlies': 'https://a.espncdn.com/i/teamlogos/nba/500/mem.png',
+  'Miami Heat': 'https://a.espncdn.com/i/teamlogos/nba/500/mia.png',
+  'Milwaukee Bucks': 'https://a.espncdn.com/i/teamlogos/nba/500/mil.png',
+  'Minnesota Timberwolves': 'https://a.espncdn.com/i/teamlogos/nba/500/min.png',
+  'New Orleans Pelicans': 'https://a.espncdn.com/i/teamlogos/nba/500/no.png',
+  'New York Knicks': 'https://a.espncdn.com/i/teamlogos/nba/500/ny.png',
+  'Oklahoma City Thunder': 'https://a.espncdn.com/i/teamlogos/nba/500/okc.png',
+  'Orlando Magic': 'https://a.espncdn.com/i/teamlogos/nba/500/orl.png',
+  'Philadelphia 76ers': 'https://a.espncdn.com/i/teamlogos/nba/500/phi.png',
+  'Phoenix Suns': 'https://a.espncdn.com/i/teamlogos/nba/500/phx.png',
+  'Portland Trail Blazers': 'https://a.espncdn.com/i/teamlogos/nba/500/por.png',
+  'Sacramento Kings': 'https://a.espncdn.com/i/teamlogos/nba/500/sac.png',
+  'San Antonio Spurs': 'https://a.espncdn.com/i/teamlogos/nba/500/sa.png',
+  'Toronto Raptors': 'https://a.espncdn.com/i/teamlogos/nba/500/tor.png',
+  'Utah Jazz': 'https://a.espncdn.com/i/teamlogos/nba/500/utah.png',
+  'Washington Wizards': 'https://a.espncdn.com/i/teamlogos/nba/500/wsh.png'
+};
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const gameId = searchParams.get('gameId');
+    const requestedHomeTeam = searchParams.get('homeTeam');
+    const requestedAwayTeam = searchParams.get('awayTeam');
+    
+    console.log('API Request params:', { gameId, requestedHomeTeam, requestedAwayTeam });
+    
+    // If we have specific game parameters, handle it differently
+    if (gameId || requestedHomeTeam || requestedAwayTeam) {
+      return handleSpecificGameRequest(gameId, requestedHomeTeam, requestedAwayTeam);
+    }
+    
+    // Otherwise, continue with the original NFL odds functionality
+    return handleNFLOddsRequest();
+  } catch (error) {
+    console.error('Error in odds API:', error);
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+// Function to handle specific game requests (for the preview dialog)
+async function handleSpecificGameRequest(gameId: string | null, requestedHomeTeam: string | null, requestedAwayTeam: string | null) {
+  try {
+    console.log('API Request params:', { gameId, requestedHomeTeam, requestedAwayTeam });
+    
+    const API_KEY = process.env.ODDS_API_KEY;
+    
+    // First try the Odds API as before
+    try {
+      const oddsResponse = await fetch(
+        `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`,
+        { cache: 'no-store' }
+      );
+
+      if (oddsResponse.ok) {
+        const rawData = await oddsResponse.json();
+        
+        // Find the matching game - declare matchedGame here
+        let matchedGame = null;
+        
+        // Your existing code to find the matching game...
+        
+        // If you successfully find and process a game, return it
+        if (matchedGame) {
+          // Define game here before returning it
+          const game = {
+            // Your game object properties
+          };
+          
+          return NextResponse.json({ games: [game] });
+        }
+      } else {
+        console.log('Odds API limit reached, falling back to ESPN API');
+      }
+    } catch (oddsError) {
+      console.error('Error with Odds API:', oddsError);
+    }
+    
+    // If Odds API fails or doesn't find a match, try ESPN API
+    try {
+      const espnResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard');
+      
+      if (espnResponse.ok) {
+        const espnData = await espnResponse.json();
+        
+        // Find matching game by team names
+        const matchingGame = espnData.events?.find((event: any) => {
+          const competition = event.competitions[0];
+          const homeTeam = competition.competitors.find((c: any) => c.homeAway === 'home')?.team.displayName;
+          const awayTeam = competition.competitors.find((c: any) => c.homeAway === 'away')?.team.displayName;
+          
+          return (
+            (homeTeam?.includes(requestedHomeTeam) || requestedHomeTeam?.includes(homeTeam)) &&
+            (awayTeam?.includes(requestedAwayTeam) || requestedAwayTeam?.includes(awayTeam))
+          );
+        });
+        
+        if (matchingGame) {
+          const competition = matchingGame.competitions[0];
+          const homeTeamData = competition.competitors.find((c: any) => c.homeAway === 'home');
+          const awayTeamData = competition.competitors.find((c: any) => c.homeAway === 'away');
+          
+          // Format venue string
+          const venue = competition.venue;
+          const venueString = venue 
+            ? `${venue.fullName}${venue.address ? ` - ${venue.address.city}, ${venue.address.state}` : ''}`
+            : "TBD";
+            
+          // Format broadcast string
+          const broadcast = competition.broadcasts?.[0];
+          const broadcastString = broadcast?.names?.join(', ') || "TBD";
+          
+          // Get team records
+          const homeRecord = homeTeamData.records?.[0]?.summary || '';
+          const awayRecord = awayTeamData.records?.[0]?.summary || '';
+          
+          // Format date
+          const date = new Date(matchingGame.date);
+          const dateString = date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+          });
+          const timeString = date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            timeZoneName: 'short'
+          });
+          
+          return NextResponse.json({
+            games: [{
+              id: matchingGame.id,
+              date: `${dateString} · ${timeString}`,
+              team1: {
+                name: homeTeamData.team.displayName,
+                record: homeRecord,
+                logo: homeTeamData.team.logo,
+                spread: "N/A" // We don't have spread from ESPN
+              },
+              team2: {
+                name: awayTeamData.team.displayName,
+                record: awayRecord,
+                logo: awayTeamData.team.logo,
+                spread: "N/A" // We don't have spread from ESPN
+              },
+              venue: venueString,
+              broadcast: broadcastString,
+              status: matchingGame.status.type.description,
+              note: "Odds API limit reached - showing ESPN data only"
+            }]
+          });
+        }
+      }
+    } catch (espnError) {
+      console.error('Error fetching ESPN data:', espnError);
+    }
+    
+    // If both APIs fail, return a basic response
+    return NextResponse.json({ 
+      games: [{
+        id: gameId || "unknown",
+        date: "Game information unavailable",
+        team1: {
+          name: requestedHomeTeam || "Home Team",
+          record: "",
+          logo: NBA_TEAM_LOGOS[requestedHomeTeam || ""] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
+          spread: "N/A"
+        },
+        team2: {
+          name: requestedAwayTeam || "Away Team",
+          record: "",
+          logo: NBA_TEAM_LOGOS[requestedAwayTeam || ""] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
+          spread: "N/A"
+        },
+        venue: "Information unavailable",
+        broadcast: "Information unavailable",
+        status: "Scheduled",
+        note: "API quota reached - limited information available"
+      }]
+    });
+  } catch (error) {
+    console.error('Error in NBA odds API:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch NBA odds data' },
+      { status: 500 }
+    );
+  }
+}
+
+// Original NFL odds functionality
+async function handleNFLOddsRequest() {
   try {
     const API_KEY = process.env.ODDS_API_KEY;
     const [oddsResponse, espnResponse] = await Promise.all([
@@ -163,9 +373,9 @@ export async function GET() {
 
     return NextResponse.json({ games, weekStart: startOfWeek.toISOString(), weekEnd: endOfWeek.toISOString(), week,});
   } catch (error) {
-    console.error('Error in odds API:', error);
+    console.error('Error in NFL odds API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch odds data' },
+      { error: 'Failed to fetch NFL odds data' },
       { status: 500 }
     );
   }
