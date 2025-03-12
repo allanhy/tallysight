@@ -207,7 +207,7 @@ export default function DailyPicks() {
             const now = new Date();
             
             // If we have games, check if they've started
-            if (games.length > 0 && !allGamesEnded) {
+            if (games.length > 0) {
                 // Sort games by start time
                 const sortedGames = [...games].sort((a, b) => {
                     const timeA = new Date(`${new Date().toDateString()} ${a.gameTime}`);
@@ -218,6 +218,25 @@ export default function DailyPicks() {
                 // Get the first game
                 const firstGame = sortedGames[0];
                 
+                // Check if any games have a status indicating they've started
+                const anyGameStarted = games.some(game => 
+                    game.status === "IN_PROGRESS" || 
+                    game.status === "LIVE" || 
+                    game.status === "STARTED" ||
+                    game.status === "ACTIVE"
+                );
+                
+                // If any game has started, force lock all games
+                if (anyGameStarted) {
+                    console.log("GAMES IN PROGRESS: Forcing lock on all games");
+                    setFirstGameLocked(true);
+                    setIsLocked(true);
+                    setStartedGames(new Set(games.map(game => game.id)));
+                    setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+                    return;
+                }
+                
+                // Continue with normal timer logic for games that haven't started yet
                 // Parse the game time (which is in ET)
                 const [timeStr, period] = firstGame.gameTime.split(' ');
                 const [hourStr, minuteStr] = timeStr.split(':');
@@ -231,8 +250,6 @@ export default function DailyPicks() {
                 const gameStartTime = new Date();
                 
                 // Account for timezone difference between ET and local time
-                // ET is UTC-4 or UTC-5 depending on daylight saving
-                const now = new Date();
                 const etOffset = -4; // Assuming ET is UTC-4 (EDT)
                 const localOffset = -now.getTimezoneOffset() / 60;
                 const hourDifference = localOffset - etOffset;
@@ -273,28 +290,14 @@ export default function DailyPicks() {
                     });
                 }
             } else {
-                // Default to 4:00 PM PT if no games
-                const gameTime = new Date(now);
+                // Default to midnight reset if no games
+                const midnight = new Date(now);
+                midnight.setHours(24, 0, 0, 0);
                 
-                // Convert Pacific Time (PT) to local time
-                const isPDT = true; // Set to true for PDT, false for PST
-                const ptOffset = isPDT ? -7 : -8;
-                const localOffset = -now.getTimezoneOffset() / 60;
-                const hourDifference = localOffset - ptOffset;
-                
-                // Set to 4:00 PM PT in local time
-                gameTime.setHours(16 + hourDifference, 0, 0, 0);
-                
-                // If it's already past 4 PM PT today, set for tomorrow
-                if (now > gameTime) {
-                    gameTime.setDate(gameTime.getDate() + 1);
-                }
-                
-                // Calculate time difference
-                const diffMs = gameTime.getTime() - now.getTime();
-                const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+                const timeUntilMidnight = midnight.getTime() - now.getTime();
+                const hours = Math.floor(timeUntilMidnight / (1000 * 60 * 60));
+                const minutes = Math.floor((timeUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeUntilMidnight % (1000 * 60)) / 1000);
                 
                 setTimeLeft({
                     hours,
@@ -307,38 +310,14 @@ export default function DailyPicks() {
         // Update immediately
         updateCountdown();
         
-        // Set up ONLY ONE interval
+        // Set up interval
         const timerInterval = setInterval(updateCountdown, 1000);
         
-        // Setup midnight reset
-        const setupMidnightReset = () => {
-            const now = new Date();
-            const midnight = new Date(now);
-            midnight.setHours(24, 0, 0, 0);
-            
-            const timeUntilMidnight = midnight.getTime() - now.getTime();
-            
-            const midnightTimer = setTimeout(() => {
-                console.log("MIDNIGHT RESET: Picks have been reset for the new day");
-                setFirstGameLocked(false);
-                setIsLocked(false);
-                setStartedGames(new Set());
-                updateCountdown(); // Update timer after reset
-                setupMidnightReset(); // Setup next day's reset
-            }, timeUntilMidnight);
-            
-            return midnightTimer;
-        };
-        
-        const midnightTimer = setupMidnightReset();
-        
-        // Clean up ALL timers
+        // Clean up
         return () => {
-            console.log("TIMER CLEANUP: Removing timer instance");
             clearInterval(timerInterval);
-            clearTimeout(midnightTimer);
         };
-    }, [games, allGamesEnded]);
+    }, [games]);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
         console.log(`Attempting to select ${teamType} team for game ${gameId}`);
@@ -556,6 +535,71 @@ export default function DailyPicks() {
         // If this specific game has started, it's locked
         return startedGames.has(gameId);
     }, [isLocked, startedGames]);
+
+    // This function checks if a specific game should be locked based on its start time
+    const shouldGameBeLocked = useCallback((gameTime: string) => {
+        const now = new Date();
+        
+        // Parse the game time (in ET)
+        const [timeStr, period] = gameTime.split(' ');
+        const [hourStr, minuteStr] = timeStr.split(':');
+        let etHours = parseInt(hourStr);
+        
+        // Convert to 24-hour format
+        if (period === 'PM' && etHours !== 12) etHours += 12;
+        if (period === 'AM' && etHours === 12) etHours = 0;
+        
+        // Create game time in user's local timezone
+        const etOffset = -4; // ET is UTC-4 (EDT)
+        const localOffset = -now.getTimezoneOffset() / 60;
+        const hourDifference = localOffset - etOffset;
+        
+        const gameStartTime = new Date();
+        gameStartTime.setHours(etHours + hourDifference, parseInt(minuteStr), 0, 0);
+        
+        // If game time is in the past for today, it has started
+        return now >= gameStartTime;
+    }, []);
+
+    // Check game status on component mount and every minute
+    useEffect(() => {
+        // Function to check all games and lock as needed
+        const checkGamesStatus = () => {
+            if (games.length === 0) return;
+            
+            // Check each game
+            let anyGameStarted = false;
+            const newStartedGames = new Set<string>();
+            
+            games.forEach(game => {
+                // Check if game has started based on time
+                if (shouldGameBeLocked(game.gameTime)) {
+                    anyGameStarted = true;
+                    newStartedGames.add(game.id);
+                }
+            });
+            
+            // Update state based on checks
+            if (anyGameStarted) {
+                console.log("GAMES STARTED: Locking games", Array.from(newStartedGames));
+                setFirstGameLocked(true);
+                setIsLocked(true);
+                setStartedGames(newStartedGames);
+                setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+            }
+        };
+        
+        // Call the function immediately on mount
+        checkGamesStatus();
+        
+        // Set up interval to check every minute
+        const intervalId = setInterval(checkGamesStatus, 60000);
+        
+        // Clean up on component unmount
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [games]);
 
     if (loading) {
         return (
