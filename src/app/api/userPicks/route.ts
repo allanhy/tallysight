@@ -149,6 +149,12 @@ export async function GET(req: NextRequest) {
                 }
             }
             
+            console.log('Raw gameDate from DB:', row.gameDate);
+            console.log('Parsed as Date object:', new Date(row.gameDate));
+            console.log('Formatted in ET:', new Date(row.gameDate).toLocaleString('en-US', {
+                timeZone: 'America/New_York'
+            }));
+            
             return {
                 id: row.pick_id,
                 userId: row.userId,
