@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { sql } from '@vercel/postgres';
+import { toZonedTime, format } from 'date-fns-tz';
 
 export async function GET(req: NextRequest) {
     try {
@@ -38,8 +39,8 @@ export async function GET(req: NextRequest) {
                     FROM "Pick" p
                     JOIN "Game" g ON p."gameId" = g.id
                     WHERE p."userId" = ${userId}
-                    AND g."gameDate" >= ${date.toISOString()}::date
-                    AND g."gameDate" < (${date.toISOString()}::date + interval '1 day')
+                    AND g."gameDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' >= ${date.toISOString()}::date
+                    AND g."gameDate" AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' < (${date.toISOString()}::date + interval '1 day')
                     ORDER BY g."gameDate" ASC
                 `;
             } else {
@@ -149,6 +150,14 @@ export async function GET(req: NextRequest) {
                 }
             }
             
+            console.log('Raw gameDate from DB:', row.gameDate);
+            console.log('Parsed as Date object:', new Date(row.gameDate));
+            console.log('Formatted in ET:', new Date(row.gameDate).toLocaleString('en-US', {
+                timeZone: 'America/New_York'
+            }));
+            console.log('Server local time:', now.toString());
+            console.log('Server UTC time:', now.toISOString());
+            
             return {
                 id: row.pick_id,
                 userId: row.userId,
@@ -191,3 +200,42 @@ export async function GET(req: NextRequest) {
         );
     }
 }
+
+// Add this helper function
+function parseInEasternTime(dateString: string) {
+    // Parse the date in Eastern Time
+    return new Date(new Date(dateString).toLocaleString('en-US', {
+        timeZone: 'America/New_York'
+    }));
+}
+// Use it when comparing dates
+const gameDate = parseInEasternTime(new Date().toISOString());
+const now = parseInEasternTime(new Date().toISOString());
+
+const isGameToday = 
+    gameDate.getDate() === now.getDate() &&
+    gameDate.getMonth() === now.getMonth() &&
+    gameDate.getFullYear() === now.getFullYear();
+
+// Convert a UTC date to Eastern Time
+const easternTime = toZonedTime(new Date(), 'America/New_York');
+
+// Format in Eastern Time
+const formatted = format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz', { 
+    timeZone: 'America/New_York' 
+});
+
+// Helper function to get a date in Eastern Time
+function getEasternTime(date = new Date()) {
+    return new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+}
+// Use it for comparisons
+const currentEasternTime = getEasternTime();
+const easternGameDate = getEasternTime(new Date(gameDate));
+
+const isTodayGame = 
+    easternGameDate.getDate() === currentEasternTime.getDate() &&
+    easternGameDate.getMonth() === currentEasternTime.getMonth() &&
+    easternGameDate.getFullYear() === currentEasternTime.getFullYear();
+    gameDate.getMonth() === now.getMonth() &&
+    gameDate.getFullYear() === now.getFullYear();
