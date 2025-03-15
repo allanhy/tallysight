@@ -192,29 +192,33 @@ export default function TomorrowPicks() {
         setSubmitError(null);
 
         try {
-            // Get tomorrow's date once
+            // Use a more reliable approach to get tomorrow's date in Eastern Time
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/New_York',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            
+            // Get current date in Eastern Time
             const now = new Date();
-
-            // Convert UTC time to EST (UTC-5)
-            // EST is UTC-5 for non daylight saving, -4 for during daylight saving (CHANGE savePicks Route too)
-            const estOffset =
-                new Intl.DateTimeFormat("en-US", {
-                    timeZone: "America/New_York",
-                    timeZoneName: "short",
-                })
-                    .formatToParts(now)
-                    .find((part) => part.type === "timeZoneName")?.value === "EST"
-                    ? -5
-                    : -4;
-
-            const today = new Date(now.getTime() + estOffset * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0];
-
-            // Calculate tomorrow based on today
-            const tomorrow = new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0];
+            const todayFormatted = formatter.format(now);
+            console.log('Today in ET:', todayFormatted);
+            
+            // Parse the formatted date back into a Date object
+            const [month, day, year] = todayFormatted.split('/').map(Number);
+            
+            // Create a Date object for today in ET
+            const todayET = new Date(Date.UTC(year, month - 1, day));
+            
+            // Create tomorrow by adding 1 day
+            const tomorrowET = new Date(todayET);
+            tomorrowET.setDate(tomorrowET.getDate() + 1);
+            
+            // Format as ISO string for API
+            const tomorrowISO = tomorrowET.toISOString().split('T')[0];
+            
+            console.log('Tomorrow in ET:', tomorrowISO);
 
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
@@ -224,8 +228,8 @@ export default function TomorrowPicks() {
                 const [time, period] = game?.gameTime.split(' ') || ['', ''];
                 const [hours, minutes] = time.split(':').map(Number);
 
-                // Create a new date object for the game time
-                const gameDate = new Date(tomorrow);
+                // Create a new date object for the game time using tomorrow's date
+                const gameDate = new Date(`${tomorrowISO}T00:00:00Z`);
                 let gameHours = hours;
                 if (period === 'PM' && hours !== 12) gameHours += 12;
                 if (period === 'AM' && hours === 12) gameHours = 0;
@@ -247,7 +251,7 @@ export default function TomorrowPicks() {
                 },
                 body: JSON.stringify({
                     picks: picksArray,
-                    pickDate: tomorrow
+                    pickDate: tomorrowISO
                 }),
             });
 
