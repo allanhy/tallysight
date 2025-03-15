@@ -7,6 +7,7 @@ import '../styles/myPicks.css';
 
 
 //TODO: Add a history button to the picks page
+//FIX: Add a history button to the picks page
 // Define TypeScript interfaces for data structures
 interface Pick {
     id: string;
