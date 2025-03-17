@@ -408,21 +408,12 @@ export default function MyPicksPage() {
 
     // Get sorted dates with proper date parsing
     const sortedDates = Object.keys(groupedPicks).sort((a, b) => {
-        // Create Date objects from the formatted date strings
-        const datePartsA = a.split(', ')[1].split(' ');
-        const monthA = datePartsA[0];
-        const dayA = parseInt(datePartsA[1]);
-        const yearA = parseInt(datePartsA[2]);
+        // Parse the dates for comparison
+        const dateA = new Date(a.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
+        const dateB = new Date(b.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
         
-        const datePartsB = b.split(', ')[1].split(' ');
-        const monthB = datePartsB[0];
-        const dayB = parseInt(datePartsB[1]);
-        const yearB = parseInt(datePartsB[2]);
-        
-        const dateA = new Date(`${monthA} ${dayA}, ${yearA}`);
-        const dateB = new Date(`${monthB} ${dayB}, ${yearB}`);
-        
-        return dateA.getTime() - dateB.getTime();
+        // Sort in descending order (newest first)
+        return dateB.getTime() - dateA.getTime();
     });
 
     // Update the parseGameDate function to be more robust
