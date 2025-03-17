@@ -21,6 +21,8 @@ interface Pick {
   gameTime: string;
   status: string;
   pickDate?: string;
+  estDate?: string;
+  fullDate?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -51,7 +53,11 @@ export async function POST(req: NextRequest) {
       `;
 
       if (gameExists.rowCount === 0) {
-        // Create game with exact column names from schema
+        // Use the estDate field if available, or convert from fullDate as fallback
+        const gameDate = pick.estDate 
+          ? pick.estDate.split('/').reverse().join('-') // Convert MM/DD/YYYY to YYYY-MM-DD
+          : (pick.fullDate ? convertToEST(pick.fullDate) : convertToEST(pickDate));
+        
         await sql`
           INSERT INTO "Game" (
             id,
@@ -66,7 +72,7 @@ export async function POST(req: NextRequest) {
             ${pick.awayTeam.name},
             ${pick.homeTeam.logo || ''},
             ${pick.awayTeam.logo || ''},
-            ${convertToEST(pickDate)}
+            ${gameDate}
           )
         `;
       }

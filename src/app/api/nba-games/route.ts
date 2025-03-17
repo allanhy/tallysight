@@ -102,6 +102,28 @@ export async function GET(request: Request) {
                     const competition = game.competitions[0];
                     const homeTeam = competition.competitors.find((t: any) => t.homeAway === 'home')?.team;
                     const awayTeam = competition.competitors.find((t: any) => t.homeAway === 'away')?.team;
+                    
+                    // Get the full date string in ISO format
+                    const gameDate = game.date;
+                    
+                    // Convert UTC date to EST for display and date determination
+                    const utcDate = new Date(gameDate);
+                    
+                    // Format the time for display in EST
+                    const displayTime = utcDate.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true,
+                        timeZone: 'America/New_York'
+                    });
+                    
+                    // Get the EST date string (YYYY-MM-DD) for proper date grouping
+                    const estDateString = utcDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        timeZone: 'America/New_York'
+                    });
 
                     return {
                         id: game.id,
@@ -117,12 +139,8 @@ export async function GET(request: Request) {
                             spread: 'TBD',
                             logo: getTeamLogo(awayTeam?.name)
                         },
-                        gameTime: new Date(game.date).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true,
-                            timeZone: 'America/New_York'
-                        }),
+                        gameTime: displayTime,
+                        fullDate: gameDate, // Add the full ISO date string
                         status: 'scheduled'
                     };
                 } catch (e) {
