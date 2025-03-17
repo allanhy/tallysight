@@ -85,14 +85,17 @@ export async function GET(req: NextRequest) {
 
         // Transform the data with correct IDs and handle potential null values
         const formattedPicks = picks.rows.map(row => {
-            // Get current time
+            // Get current time in ET timezone
             const now = new Date();
+            const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
             
-            // Parse game date and create estimated start/end times
+            // Parse game date in ET timezone
             const gameDate = new Date(row.gameDate || new Date());
+            const etGameDate = new Date(gameDate.toLocaleString('en-US', { timeZone: 'America/New_York' }));
             
             // Log the game date for debugging
-            console.log(`Game ID: ${row.game_id}, Date: ${gameDate.toISOString()}, Now: ${now.toISOString()}`);
+            console.log(`Game ID: ${row.game_id}, Raw Date: ${row.gameDate}`);
+            console.log(`Game ID: ${row.game_id}, ET Date: ${etGameDate.toLocaleString('en-US', { timeZone: 'America/New_York' })}`);
             
             // Determine game status
             let status;
@@ -102,21 +105,21 @@ export async function GET(req: NextRequest) {
                 status = 'STATUS_FINAL'; // Game is complete
                 console.log(`Game has explicit winner: ${row.game_id}, winner: ${row.winner}`);
             } else {
-                // Check if the game is today
+                // Check if the game is today in ET
                 const isGameToday = 
-                    gameDate.getDate() === now.getDate() &&
-                    gameDate.getMonth() === now.getMonth() &&
-                    gameDate.getFullYear() === now.getFullYear();
+                    etGameDate.getDate() === etNow.getDate() &&
+                    etGameDate.getMonth() === etNow.getMonth() &&
+                    etGameDate.getFullYear() === etNow.getFullYear();
                 
                 // Check if the game is in the future
-                const isGameInFuture = gameDate > now;
+                const isGameInFuture = etGameDate > etNow;
                 
                 console.log(`Game ${row.game_id}: Is today? ${isGameToday}, Is in future? ${isGameInFuture}`);
                 
                 if (isGameToday) {
                     // Game is today - check if it has started based on the time
-                    const gameTime = gameDate.getHours() * 60 + gameDate.getMinutes(); // Convert to minutes
-                    const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes
+                    const gameTime = etGameDate.getHours() * 60 + etGameDate.getMinutes(); // Convert to minutes
+                    const currentTime = etNow.getHours() * 60 + etNow.getMinutes(); // Convert to minutes
                     
                     console.log(`Game ${row.game_id} time check: Game time: ${gameTime} minutes, Current time: ${currentTime} minutes`);
                     

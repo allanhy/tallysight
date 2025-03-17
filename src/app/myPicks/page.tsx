@@ -630,7 +630,7 @@ export default function MyPicksPage() {
                                                         <div className="game-status ml-4">
                                                             {(() => {
                                                                 try {
-                                                                    // Parse the game date
+                                                                    // Parse the game date directly from the database value
                                                                     const gameDate = new Date(pick.Game.gameDate);
                                                                     const now = new Date();
                                                                     
@@ -722,10 +722,10 @@ export default function MyPicksPage() {
                                                                         }
                                                                     }
                                                                 } catch (error) {
-                                                                    console.error("Error rendering game status:", error);
+                                                                    console.error("Error rendering game status:", error, "for game date:", pick.Game.gameDate);
                                                                     return (
                                                                         <div className="pick-result upcoming">
-                                                                            Scheduled
+                                                                            Scheduled (Error)
                                                                         </div>
                                                                     );
                                                                 }
