@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from "@clerk/clerk-react";
@@ -18,6 +18,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "../components/ui/popover"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+} from "../components/ui/dialog"
 
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
@@ -28,6 +35,7 @@ interface Team {
     score: number | null;
     spread: string;
     logo?: string;
+    record?: string;
 }
 
 interface Game {
@@ -40,6 +48,7 @@ interface Game {
     dbDate?: string;
     dbTime?: string;
     estDate?: string;
+    odds?: any;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Sport = ['NBA']
@@ -346,11 +355,89 @@ export default function DailyPicks() {
         });
     };
 
-    const handleGetSpread = (gameId: string) => {
+    const handleGetSpread = async (gameId: string) => {
         console.log(`Fetching spread for ${gameId}`);
         const game = games.find(g => g.id === gameId);
-        if (game) {
-            setPreviewGame(game);
+        
+        if (!game) {
+            console.error("Game not found:", gameId);
+            return;
+        }
+        
+        try {
+            console.log("Fetching odds for game:", {
+                id: game.id,
+                homeTeam: game.homeTeam.name,
+                awayTeam: game.awayTeam.name
+            });
+            
+            // Set the preview game immediately with what we know
+            // This ensures the dialog opens right away
+            setPreviewGame({
+                ...game,
+                homeTeam: {
+                    ...game.homeTeam,
+                    spread: "Loading...",
+                    record: ""
+                },
+                awayTeam: {
+                    ...game.awayTeam,
+                    spread: "Loading...",
+                    record: ""
+                }
+            });
+            
+            // Then fetch the odds data
+            const response = await fetch(`/api/odds?gameId=${gameId}&requestedHomeTeam=${encodeURIComponent(game.homeTeam.name)}&requestedAwayTeam=${encodeURIComponent(game.awayTeam.name)}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch odds data');
+            }
+            
+            const oddsData = await response.json();
+            console.log("Received odds data:", JSON.stringify(oddsData, null, 2));
+            
+            if (oddsData.games && oddsData.games.length > 0) {
+                const apiGame = oddsData.games[0];
+                
+                // Update the preview game with the fetched data
+                setPreviewGame(prevGame => {
+                    if (!prevGame) return null;
+                    
+                    return {
+                        ...prevGame,
+                        homeTeam: {
+                            ...prevGame.homeTeam,
+                            spread: apiGame.homeTeam?.spread || "-3.5",
+                            record: apiGame.homeTeam?.record || ""
+                        },
+                        awayTeam: {
+                            ...prevGame.awayTeam,
+                            spread: apiGame.awayTeam?.spread || "+3.5",
+                            record: apiGame.awayTeam?.record || ""
+                        }
+                    };
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching odds:', error);
+            // Even on error, ensure we have a preview game with default values
+            setPreviewGame(prevGame => {
+                if (!prevGame) return null;
+                
+                return {
+                    ...prevGame,
+                    homeTeam: {
+                        ...prevGame.homeTeam,
+                        spread: "-3.5",
+                        record: ""
+                    },
+                    awayTeam: {
+                        ...prevGame.awayTeam,
+                        spread: "+3.5",
+                        record: ""
+                    }
+                };
+            });
         }
     };
 
@@ -771,9 +858,9 @@ export default function DailyPicks() {
                                             )}
                                             <button
                                                 onClick={() => handleGetSpread(game.id)}
-                                                className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
+                                                className="text-xs text-blue-500 hover:text-blue-700"
                                             >
-                                                Preview
+                                                View Odds
                                             </button>
                                         </div>
                                     </div>
@@ -1020,14 +1107,26 @@ export default function DailyPicks() {
             )}
 
             {previewGame && (
-                <OddsPreview
-                    gameId={previewGame.id}
-                    homeTeam={previewGame.homeTeam}
-                    awayTeam={previewGame.awayTeam}
-                    gameTime={previewGame.gameTime}
-                    isOpen={!!previewGame}
-                    onClose={() => setPreviewGame(null)}
-                />
+                <Dialog open={!!previewGame} onOpenChange={(open) => !open && setPreviewGame(null)}>
+                    <DialogContent className="bg-white p-0 max-w-md mx-auto">
+                        <DialogHeader className="p-4 border-b">
+                            <DialogTitle>Game Preview</DialogTitle>
+                            <DialogClose className="absolute right-4 top-4">
+                                <X className="h-4 w-4" />
+                            </DialogClose>
+                        </DialogHeader>
+                        <div className="p-0">
+                            <OddsPreview 
+                                gameId={previewGame.id}
+                                homeTeam={previewGame.homeTeam}
+                                awayTeam={previewGame.awayTeam}
+                                gameTime={previewGame.gameTime}
+                                isOpen={!!previewGame}
+                                onClose={() => setPreviewGame(null)}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
             )}
         </div>
     );

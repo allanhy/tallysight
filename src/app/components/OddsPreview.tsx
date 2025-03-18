@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -15,6 +15,8 @@ import { X } from 'lucide-react';
 interface Team {
   name: string;
   logo?: string;
+  spread?: string;
+  record?: string;
 }
 
 interface OddsPreviewProps {
@@ -34,208 +36,205 @@ export default function OddsPreview({
   isOpen,
   onClose
 }: OddsPreviewProps) {
+  const [gameData, setGameData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [odds, setOdds] = useState<{
-    homeSpread?: string;
-    awaySpread?: string;
-    homeRecord?: string;
-    awayRecord?: string;
-    venue?: string;
-    broadcast?: string;
-    status?: string;
-    date?: string;
-  }>({});
-  
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchOdds = async () => {
-      if (!isOpen) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Pass team names to help with matching
-        const response = await fetch(`/api/odds?gameId=${gameId}&homeTeam=${encodeURIComponent(homeTeam.name)}&awayTeam=${encodeURIComponent(awayTeam.name)}`);
-        
-        if (!response.ok) {
-          console.log(`API responded with status: ${response.status}`);
-          
-          // Simply use the gameTime string directly without trying to parse it
-          setOdds({
-            date: gameTime, // Use the gameTime string as-is
-            status: "Scheduled",
-            // Other fields remain undefined
-            homeSpread: undefined,
-            awaySpread: undefined,
-            homeRecord: undefined,
-            awayRecord: undefined,
-            venue: undefined,
-            broadcast: undefined
-          });
-          setLoading(false);
-          return;
-        }
-        
-        const data = await response.json();
-        console.log('API response:', data);
-        
-        if (data.games && data.games.length > 0) {
-          const game = data.games[0];
-          setOdds({
-            homeSpread: game.team1.spread,
-            awaySpread: game.team2.spread,
-            homeRecord: game.team1.record,
-            awayRecord: game.team2.record,
-            venue: game.venue,
-            broadcast: game.broadcast,
-            status: game.status,
-            date: game.date
-          });
-        } else {
-          setError("No odds data available for this game");
-        }
-      } catch (error) {
-        console.error('Error fetching odds:', error);
-        setError("Failed to load odds data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (isOpen) {
+      const fetchOdds = async () => {
+        try {
+          setLoading(true);
+          console.log("Fetching odds for:", {
+            gameId,
+            homeTeam: homeTeam.name,
+            awayTeam: awayTeam.name
+          });
+          
+          const response = await fetch(`/api/odds?gameId=${gameId}&requestedHomeTeam=${encodeURIComponent(homeTeam.name)}&requestedAwayTeam=${encodeURIComponent(awayTeam.name)}`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch odds data');
+          }
+          
+          const data = await response.json();
+          console.log('API Response data:', data);
+          
+          if (data.games && data.games.length > 0) {
+            setGameData(data.games[0]);
+          } else {
+            throw new Error('No game data found');
+          }
+        } catch (err) {
+          console.error('Error fetching odds:', err);
+          setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
+          setLoading(false);
+        }
+      };
+      
       fetchOdds();
     }
-  }, [gameId, isOpen, homeTeam.name, awayTeam.name]);
+  }, [gameId, homeTeam.name, awayTeam.name, isOpen]);
+
+  // Determine favorite and underdog
+  const getFavoriteAndUnderdog = () => {
+    if (!gameData) return { favorite: null, underdog: null };
+    
+    const homeSpreadValue = parseFloat(gameData.homeTeam.spread);
+    const awaySpreadValue = parseFloat(gameData.awayTeam.spread);
+    
+    if (homeSpreadValue < awaySpreadValue) {
+      return {
+        favorite: gameData.homeTeam.name,
+        underdog: gameData.awayTeam.name,
+        favoriteSpread: gameData.homeTeam.spread,
+        underdogSpread: gameData.awayTeam.spread
+      };
+    } else {
+      return {
+        favorite: gameData.awayTeam.name,
+        underdog: gameData.homeTeam.name,
+        favoriteSpread: gameData.awayTeam.spread,
+        underdogSpread: gameData.homeTeam.spread
+      };
+    }
+  };
+
+  const { favorite, underdog, favoriteSpread, underdogSpread } = gameData ? getFavoriteAndUnderdog() : { favorite: null, underdog: null, favoriteSpread: null, underdogSpread: null };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-[#1a1a2e] text-white border-0 p-0">
-        <DialogHeader className="p-4 pb-0">
-          <DialogTitle className="text-xl font-bold text-white">Game Preview</DialogTitle>
-          <DialogClose className="absolute right-4 top-4 text-gray-400 hover:text-white">
-            <X size={20} />
-          </DialogClose>
-        </DialogHeader>
-        
-        <div className="p-6">
-          {error ? (
-            <div className="text-center text-red-400 py-8">
-              {error}
-              <div className="mt-2 text-sm text-gray-400">
-                Check back later for updated odds
+    <div className="p-4">
+      {loading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-8 w-3/4 mx-auto" />
+        </div>
+      ) : error ? (
+        <div className="text-red-500 text-center p-4">{error}</div>
+      ) : gameData ? (
+        <div>
+          <div className="flex flex-col items-center mb-6">
+            {/* Only show game time if it's valid */}
+            {gameData.gameTime && gameData.gameTime !== "Invalid Date ET" && (
+              <div className="text-sm text-gray-500 mb-2">{gameData.gameTime}</div>
+            )}
+            
+            <div className="grid grid-cols-3 w-full items-center gap-2 mb-4">
+              {/* Away Team */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-16 h-16 mb-2">
+                  <Image
+                    src={gameData.awayTeam.logo || '/placeholder.png'}
+                    alt={gameData.awayTeam.name}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div className="text-center">
+                  <div className="font-medium">{gameData.awayTeam.name}</div>
+                  {gameData.awayTeam.record && (
+                    <div className="text-xs text-gray-500">{gameData.awayTeam.record}</div>
+                  )}
+                </div>
+              </div>
+              
+              {/* VS */}
+              <div className="flex flex-col items-center justify-center">
+                <div className="text-xl font-bold text-gray-400">VS</div>
+                <div className="mt-2 px-3 py-1 bg-blue-100 rounded-full">
+                  <span className="text-xs font-medium text-blue-800">
+                    {gameData.status || "Scheduled"}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Home Team */}
+              <div className="flex flex-col items-center">
+                <div className="relative w-16 h-16 mb-2">
+                  <Image
+                    src={gameData.homeTeam.logo || '/placeholder.png'}
+                    alt={gameData.homeTeam.name}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div className="text-center">
+                  <div className="font-medium">{gameData.homeTeam.name}</div>
+                  {gameData.homeTeam.record && (
+                    <div className="text-xs text-gray-500">{gameData.homeTeam.record}</div>
+                  )}
+                </div>
               </div>
             </div>
-          ) : (
-            <>
-              <div className="flex justify-between items-center mb-8">
-                {/* Away Team */}
-                <div className="flex flex-col items-center">
-                  <div className="relative w-24 h-24 mb-2">
-                    {awayTeam.logo ? (
-                      <Image
-                        src={awayTeam.logo}
-                        alt={`${awayTeam.name} logo`}
-                        fill
-                        className="object-contain"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-700 rounded-full" />
-                    )}
-                  </div>
-                  <h3 className="text-lg font-bold text-white">{awayTeam.name}</h3>
+            
+            {/* Spread Information */}
+            <div className="w-full bg-gray-100 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-sm text-gray-500">Spread</div>
+                  <div className="font-bold text-blue-600">{gameData.awayTeam.spread}</div>
                 </div>
-                
-                <div className="text-xl font-bold text-gray-400">vs</div>
-                
-                {/* Home Team */}
-                <div className="flex flex-col items-center">
-                  <div className="relative w-24 h-24 mb-2">
-                    {homeTeam.logo ? (
-                      <Image
-                        src={homeTeam.logo}
-                        alt={`${homeTeam.name} logo`}
-                        fill
-                        className="object-contain"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-700 rounded-full" />
-                    )}
+                <div>
+                  <div className="text-sm text-gray-500">Prediction</div>
+                  <div className="font-bold text-gray-800">
+                    {parseFloat(gameData.awayTeam.spread) < parseFloat(gameData.homeTeam.spread) 
+                      ? gameData.awayTeam.name 
+                      : gameData.homeTeam.name}
                   </div>
-                  <h3 className="text-lg font-bold text-white">{homeTeam.name}</h3>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">Spread</div>
+                  <div className="font-bold text-blue-600">{gameData.homeTeam.spread}</div>
                 </div>
               </div>
-              
-              {/* Odds Section */}
-              <div className="flex justify-between items-center mb-8">
-                {/* Away Team Spread */}
-                <div className="text-center">
-                  {loading ? (
-                    <Skeleton className="h-8 w-16 bg-gray-700" />
-                  ) : (
-                    <div className="text-2xl font-bold text-blue-500">{odds.awaySpread || 'N/A'}</div>
-                  )}
-                </div>
-                
-                <div className="text-gray-400 text-sm uppercase">SPREAD</div>
-                
-                {/* Home Team Spread */}
-                <div className="text-center">
-                  {loading ? (
-                    <Skeleton className="h-8 w-16 bg-gray-700" />
-                  ) : (
-                    <div className="text-2xl font-bold text-red-500">{odds.homeSpread || 'N/A'}</div>
-                  )}
+            </div>
+            
+            {/* Favorite and Underdog Information */}
+            {favorite && underdog && (
+              <div className="w-full bg-blue-50 rounded-lg p-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-sm text-gray-500">Favorite</div>
+                    <div className="font-bold text-blue-600">{favorite}</div>
+                    <div className="text-xs text-gray-500">{favoriteSpread}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Underdog</div>
+                    <div className="font-bold text-green-600">{underdog}</div>
+                    <div className="text-xs text-gray-500">{underdogSpread}</div>
+                  </div>
                 </div>
               </div>
-              
-              {/* Records Section */}
-              {(odds.homeRecord || odds.awayRecord) && (
-                <div className="flex justify-between items-center mb-8">
-                  {/* Away Team Record */}
-                  <div className="text-center">
-                    <div className="text-lg text-gray-300">{odds.awayRecord || 'N/A'}</div>
-                  </div>
-                  
-                  <div className="text-gray-400 text-sm uppercase">W-L</div>
-                  
-                  {/* Home Team Record */}
-                  <div className="text-center">
-                    <div className="text-lg text-gray-300">{odds.homeRecord || 'N/A'}</div>
-                  </div>
+            )}
+            
+            {/* Venue and Broadcast Information */}
+            <div className="w-full text-sm text-gray-600 space-y-2">
+              {gameData.venue && (
+                <div className="flex items-center justify-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{gameData.venue}</span>
                 </div>
               )}
               
-              {/* Game Details */}
-              <div className="space-y-2 text-sm">
-                <div className="flex">
-                  <span className="font-bold w-24 text-gray-400">Date:</span>
-                  <span className="text-white">{odds.date || gameTime}</span>
+              {gameData.broadcast && (
+                <div className="flex items-center justify-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>{gameData.broadcast}</span>
                 </div>
-                {odds.venue && (
-                  <div className="flex">
-                    <span className="font-bold w-24 text-gray-400">Venue:</span>
-                    <span className="text-white">{odds.venue}</span>
-                  </div>
-                )}
-                {odds.broadcast && (
-                  <div className="flex">
-                    <span className="font-bold w-24 text-gray-400">Broadcast:</span>
-                    <span className="text-white">{odds.broadcast}</span>
-                  </div>
-                )}
-                {odds.status && (
-                  <div className="flex">
-                    <span className="font-bold w-24 text-gray-400">Status:</span>
-                    <span className="text-white">{odds.status}</span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+              )}
+            </div>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      ) : (
+        <div className="text-center text-gray-500">No game data available</div>
+      )}
+    </div>
   );
 } 
