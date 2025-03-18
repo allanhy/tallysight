@@ -85,6 +85,9 @@ export default function MyPicksPage() {
     const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
     const [userTimeZone, setUserTimeZone] = useState<string>('America/New_York'); // Default timezone
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [groupedPicks, setGroupedPicks] = useState<GroupedPicks>({});
 
     // Hooks for authentication and navigation
     const { isSignedIn } = useUser();
@@ -98,21 +101,42 @@ export default function MyPicksPage() {
     // Fetch user's picks when signed in
     useEffect(() => {
         const fetchUserPicks = async () => {
+            setLoading(true);
             try {
-                console.log('Fetching picks...'); // Debug log
-                const response = await axios.get('/api/userPicks');
-                console.log('Response:', response.data); // Debug log
-
-                // Sort picks by gameDate in descending order (newest first)
-                const sortedPicks = response.data.sort((a: Pick, b: Pick) => {
-                    const dateA = new Date(a.Game.gameDate);
-                    const dateB = new Date(b.Game.gameDate);
-                    return dateB.getTime() - dateA.getTime(); // Changed to show newest first
-                });
-
-                setUserPicks(sortedPicks);
+                const response = await fetch('/api/userPicks');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch picks');
+                }
+                const data = await response.json();
+                
+                console.log('Received picks from API:', data.length);
+                
+                // Make sure we have valid data
+                if (!Array.isArray(data)) {
+                    console.error('Expected array but got:', typeof data, data);
+                    setUserPicks([]);
+                    setLoading(false);
+                    return;
+                }
+                
+                // Log the first few picks for debugging
+                if (data.length > 0) {
+                    console.log('First pick:', data[0]);
+                    if (data.length > 1) console.log('Second pick:', data[1]);
+                }
+                
+                // No need to sort again if already sorted on the server
+                setUserPicks(data);
+                
+                // Group the picks by date for display
+                const groupedPicks = groupPicksByDate(data);
+                setGroupedPicks(groupedPicks);
+                
             } catch (error) {
-                console.error('Client Error:', error);
+                console.error('Error fetching picks:', error);
+                setError('Failed to load picks. Please try again later.');
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -210,7 +234,9 @@ export default function MyPicksPage() {
     // Format dates with user's timezone
     const formatDateWithTimezone = (date: Date, formatStr: string = 'EEEE, MMM d, h:mm a'): string => {
         try {
-            return format(date, formatStr);
+            // Convert to user's timezone
+            const zonedDate = toZonedTime(date, userTimeZone);
+            return format(zonedDate, formatStr);
         } catch (error) {
             console.error(`Error formatting date: ${date}`, error);
             return 'Invalid date';
@@ -232,25 +258,25 @@ export default function MyPicksPage() {
     const groupPicksByDate = (picks: Pick[]): GroupedPicks => {
         if (!picks || picks.length === 0) return {};
         
-        // Log the first few picks for debugging
-        console.log("Sample picks for grouping:", 
-            picks.slice(0, 3).map(p => ({ 
-                id: p.id, 
-                gameDate: p.Game?.gameDate,
-                team1: p.Game?.team1Name,
-                team2: p.Game?.team2Name
-            }))
-        );
-        
-        // Group by formatted date string
+        // Group by formatted date string (ignoring time)
         const grouped: GroupedPicks = {};
         
         for (const pick of picks) {
             if (!pick.Game?.gameDate) continue;
             
-            // Use a simple date key format
-            const dateKey = formatDateWithTimezone(parseConsistentDate(pick.Game.gameDate));
-            console.log(`Game date: ${pick.Game.gameDate} -> Formatted: ${dateKey}`);
+            // Parse the date - it's likely in UTC
+            const utcDate = new Date(pick.Game.gameDate);
+            
+            // Convert to local timezone for display
+            // This explicitly handles the timezone conversion
+            const localDate = new Date(utcDate.getTime() - (utcDate.getTimezoneOffset() * 60000));
+            
+            // Format just the date part (no time) to group by day
+            const dateKey = localDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric'
+            });
             
             if (!grouped[dateKey]) {
                 grouped[dateKey] = [];
@@ -457,8 +483,7 @@ export default function MyPicksPage() {
         });
     };
 
-    // Get grouped picks
-    const groupedPicks = groupPicksByDate(weekFilteredPicks);
+
 
     // Update the sortedDates logic to be more resilient
     const sortedDates = Object.keys(groupedPicks).sort((a, b) => {
