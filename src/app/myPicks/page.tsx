@@ -4,9 +4,9 @@ import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import '../styles/myPicks.css';
-import { format, parseISO, compareDesc } from 'date-fns';
+import { format, parseISO, compareDesc, formatDistanceToNow, isAfter } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { isTomorrow } from 'date-fns';
+import { isTomorrow, isToday } from 'date-fns';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -84,6 +84,7 @@ export default function MyPicksPage() {
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
     const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const [userTimeZone, setUserTimeZone] = useState<string>('America/New_York'); // Default timezone
 
     // Hooks for authentication and navigation
     const { isSignedIn } = useUser();
@@ -142,6 +143,14 @@ export default function MyPicksPage() {
         setSelectedWeek(week);
     }, []);
 
+    // Add this useEffect to detect the user's timezone
+    useEffect(() => {
+        // Get the user's timezone using Intl API
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setUserTimeZone(timezone);
+        console.log("User timezone detected:", timezone);
+    }, []);
+
     // Helper function to get team details from game data
     const getTeamDetails = (gameId: string, teamIndex: number): TeamDetails | null => {
         const game = gamesData.find((g) => g.id === gameId);
@@ -177,63 +186,45 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Update the ensureConsistentDate function to NOT convert to Eastern Time
-    const ensureConsistentDate = (dateInput: string | Date | null) => {
+    // Replace ensureConsistentDate with a date-fns approach
+    const parseConsistentDate = (dateInput: string | Date | null): Date => {
         try {
-            // First, ensure we have a valid date input
-            if (!dateInput) return new Date();
+            if (!dateInput) return new Date(); // Still need a fallback
             
-            let parsedDate;
-            
-            // Handle different input types
             if (dateInput instanceof Date) {
-                parsedDate = dateInput;
-            } else if (typeof dateInput === 'string') {
-                parsedDate = parseISO(dateInput);
-            } else {
-                console.error(`Unexpected date type: ${typeof dateInput}`);
-                parsedDate = new Date(dateInput);
+                return parseISO(format(dateInput, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'')); 
             }
             
-            // Validate the parsed date
-            if (isNaN(parsedDate.getTime())) {
-                console.error(`Invalid date: ${dateInput}`);
-                return new Date();
+            if (typeof dateInput === 'string') {
+                return parseISO(dateInput);
             }
             
-            // Return the date without timezone conversion
-            return parsedDate;
+            console.error(`Unexpected date type: ${typeof dateInput}`);
+            return parseISO(new Date().toISOString());
         } catch (error) {
-            console.error(`Error processing date: ${dateInput}`, error);
-            return new Date();
+            console.error(`Error parsing date: ${dateInput}`, error);
+            return parseISO(new Date().toISOString());
         }
     };
 
-    // Update the formatGameDate function
-    const formatGameDate = (dateInput: string | Date | null) => {
-        if (!dateInput) return '';
-        
+    // Format dates with user's timezone
+    const formatDateWithTimezone = (date: Date, formatStr: string = 'EEEE, MMM d, h:mm a'): string => {
         try {
-            const zonedDate = ensureConsistentDate(dateInput);
-            // Use a simple format that's less likely to cause issues
-            return format(zonedDate, 'EEEE, MMM d');
+            return format(date, formatStr);
         } catch (error) {
-            console.error("Error formatting date:", error, dateInput);
-            return 'Date unavailable';
-        }
-    };
-
-    // Update the formatDateFromISO function to use local timezone
-    const formatDateFromISO = (dateInput: string | Date | null, formatPattern: string = 'EEEE, MMM d, h:mm a') => {
-        if (!dateInput) return 'No date';
-        
-        try {
-            const parsedDate = ensureConsistentDate(dateInput);
-            // Format with date and time pattern without timezone conversion
-            return format(parsedDate, formatPattern);
-        } catch (error) {
-            console.error(`Error formatting date: ${dateInput}`, error);
+            console.error(`Error formatting date: ${date}`, error);
             return 'Invalid date';
+        }
+    };
+
+    // Add a function for relative time
+    const getRelativeTime = (date: Date): string => {
+        try {
+            const now = new Date();
+            return formatDistanceToNow(date, { addSuffix: true });
+        } catch (error) {
+            console.error(`Error getting relative time: ${date}`, error);
+            return 'Unknown time';
         }
     };
 
@@ -258,7 +249,7 @@ export default function MyPicksPage() {
             if (!pick.Game?.gameDate) continue;
             
             // Use a simple date key format
-            const dateKey = formatDateFromISO(pick.Game.gameDate);
+            const dateKey = formatDateWithTimezone(parseConsistentDate(pick.Game.gameDate));
             console.log(`Game date: ${pick.Game.gameDate} -> Formatted: ${dateKey}`);
             
             if (!grouped[dateKey]) {
@@ -545,21 +536,21 @@ export default function MyPicksPage() {
         return false;  // User's pick was incorrect
     }
 
-    // Update the renderGameStatus function to not use timezone conversion
+    // Update the renderGameStatus function to use date-fns consistently
     const renderGameStatus = (pick: Pick) => {
         try {
-            // Parse the game date directly without timezone conversion
-            const gameDate = ensureConsistentDate(pick.Game.gameDate);
+            const gameDate = parseConsistentDate(pick.Game.gameDate);
             const now = new Date();
             
-            // Check game status conditions without timezone conversion
+            // Use date-fns functions for comparisons
             const gameIsToday = isToday(gameDate);
             const gameIsTomorrow = isTomorrow(gameDate);
-            const gameInFuture = gameDate > now;
-            const gameStarted = now > gameDate;
+            const gameInFuture = isAfter(gameDate, now);
+            const gameStarted = isAfter(now, gameDate);
             
             // Format the game time
-            const gameTime = format(gameDate, 'h:mm a');
+            const gameTime = formatDateWithTimezone(gameDate, 'h:mm a');
+            const relativeTime = getRelativeTime(gameDate);
             
             if (gameInFuture) {
                 if (gameIsToday) {
@@ -577,7 +568,7 @@ export default function MyPicksPage() {
                 } else {
                     return (
                         <div className="pick-result upcoming">
-                            {format(gameDate, 'EEE, MMM d')} at {gameTime}
+                            {formatDateWithTimezone(gameDate, 'EEE, MMM d')} at {gameTime}
                         </div>
                     );
                 }
@@ -590,7 +581,7 @@ export default function MyPicksPage() {
                     
                     return (
                         <div className={`pick-result ${userWon ? 'win' : 'loss'}`}>
-                            {userWon ? 'Won' : 'Lost'}
+                            {userWon ? 'Won' : 'Lost'} ({relativeTime})
                             {pick.Game.final_score && (
                                 <span className="ml-1">({pick.Game.final_score})</span>
                             )}
@@ -599,7 +590,7 @@ export default function MyPicksPage() {
                 } else if (gameStarted) {
                     return (
                         <div className="pick-result in-progress">
-                            In Progress
+                            In Progress ({relativeTime})
                         </div>
                     );
                 } else {
