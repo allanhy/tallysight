@@ -204,44 +204,69 @@ export default function MyPicksPage() {
         }
     };
 
-    // Update the groupPicksByDate function
-    const groupPicksByDate = (picks: Pick[]) => {
-        console.log("Starting to group picks, count:", picks.length);
+    // Add this function to directly format dates from ISO strings
+    const formatDateFromISO = (isoString: string, formatPattern: string = 'EEEE, MMM d') => {
+        if (!isoString) return 'No date';
         
-        // First remove duplicates based on gameId
-        const uniquePicks = picks.reduce((acc: Pick[], current) => {
-            const exists = acc.find(pick => pick.gameId === current.gameId);
-            if (!exists) {
-                acc.push(current);
-            }
-            return acc;
-        }, []);
-
-        // Then group by date using our consistent date formatter
-        const grouped = uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
-            if (!pick.Game || !pick.Game.gameDate) return groups;
+        try {
+            // Parse the date
+            const date = new Date(isoString);
             
-            // Use the consistent date formatter
-            const dateKey = formatGameDate(pick.Game.gameDate);
+            // Convert to Eastern Time using toZonedTime
+            const timeZone = 'America/New_York';
+            const zonedDate = toZonedTime(date, timeZone);
             
-            if (!groups[dateKey]) {
-                groups[dateKey] = [];
-            }
-            groups[dateKey].push(pick);
-            return groups;
-        }, {});
+            // Format without timezone option
+            return format(zonedDate, formatPattern);
+        } catch (error) {
+            console.error(`Error formatting date: ${isoString}`, error);
+            return 'Invalid date';
+        }
+    };
 
-        // Sort picks within each group by game time
-        Object.keys(grouped).forEach(date => {
-            grouped[date].sort((a, b) => {
+    // Completely replace the groupPicksByDate function
+    const groupPicksByDate = (picks: Pick[]): GroupedPicks => {
+        if (!picks || picks.length === 0) return {};
+        
+        // Log the first few picks for debugging
+        console.log("Sample picks for grouping:", 
+            picks.slice(0, 3).map(p => ({ 
+                id: p.id, 
+                gameDate: p.Game?.gameDate,
+                team1: p.Game?.team1Name,
+                team2: p.Game?.team2Name
+            }))
+        );
+        
+        // Group by formatted date string
+        const grouped: GroupedPicks = {};
+        
+        for (const pick of picks) {
+            if (!pick.Game?.gameDate) continue;
+            
+            // Use a simple date key format
+            const dateKey = formatDateFromISO(pick.Game.gameDate);
+            console.log(`Game date: ${pick.Game.gameDate} -> Formatted: ${dateKey}`);
+            
+            if (!grouped[dateKey]) {
+                grouped[dateKey] = [];
+            }
+            
+            grouped[dateKey].push(pick);
+        }
+        
+        // Sort each group by time
+        Object.keys(grouped).forEach(dateKey => {
+            grouped[dateKey].sort((a, b) => {
                 if (!a.Game?.gameDate || !b.Game?.gameDate) return 0;
                 
-                const timeA = ensureConsistentDate(a.Game.gameDate).getTime();
-                const timeB = ensureConsistentDate(b.Game.gameDate).getTime();
-                return timeA - timeB;
+                const dateA = new Date(a.Game.gameDate);
+                const dateB = new Date(b.Game.gameDate);
+                
+                return dateA.getTime() - dateB.getTime();
             });
         });
-
+        
         return grouped;
     };
 
@@ -340,7 +365,7 @@ export default function MyPicksPage() {
             console.log("Sample Game property:", userPicks[0].Game);
             
             // Check if grouping works
-            const grouped = groupPicksByGameDate(userPicks);
+            const grouped = groupPicksByDate(userPicks);
             console.log("Grouped picks:", grouped);
             console.log("Grouped keys:", Object.keys(grouped));
         }
