@@ -38,12 +38,23 @@ export async function POST(req: NextRequest) {
     if (!picks || !Array.isArray(picks) || !pickDate) {
       return NextResponse.json({ message: 'Invalid picks format or missing date' }, { status: 400 });
     }
+    
     function convertToEST(dateStr: string): string {
       const date = new Date(dateStr);
       const estDate = new Date(date.toLocaleString("en-US", { timeZone: "America/New_York" }));
       return estDate.toISOString().split("T")[0]; // Returns YYYY-MM-DD
-  }
-  
+    }
+    
+    function extractTimeFromISO(isoString: string): string {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString('en-US', { 
+        timeZone: 'America/New_York',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
 
     // First ensure all games exist
     for (const pick of picks) {
@@ -53,20 +64,39 @@ export async function POST(req: NextRequest) {
       `;
 
       if (gameExists.rowCount === 0) {
-        // Use the estDate field if available, or convert from fullDate as fallback
-        const gameDate = pick.estDate 
-          ? pick.estDate.split('/').reverse().join('-') // Convert MM/DD/YYYY to YYYY-MM-DD
-          : (pick.fullDate ? convertToEST(pick.fullDate) : convertToEST(pickDate));
+        // Parse team names from the game data
+        let team1Name = '';
+        let team2Name = '';
         
-        // Extract time from fullDate if available, otherwise use default time
-        let gameTime = '19:00:00'; // Default to 7:00 PM
-        if (pick.fullDate) {
-          const date = new Date(pick.fullDate);
-          gameTime = date.toLocaleTimeString('en-US', { 
-            timeZone: 'America/New_York',
-            hour12: false 
-          });
+        if (pick.name && typeof pick.name === 'string') {
+          // Parse from format like "Memphis Grizzlies at Portland Trail Blazers"
+          const parts = pick.name.split(' at ');
+          if (parts.length === 2) {
+            team1Name = parts[0].trim();
+            team2Name = parts[1].trim();
+          }
+        } else {
+          // Use homeTeam and awayTeam if available
+          team1Name = pick.homeTeam?.name || '';
+          team2Name = pick.awayTeam?.name || '';
         }
+        
+        // Extract date and time from ISO date string
+        let gameDate = convertToEST(pickDate);
+        let gameTime = '19:00:00'; // Default
+        
+        // Always prioritize the date field from ESPN format if available
+        if (pick.date && typeof pick.date === 'string') {
+          gameDate = convertToEST(pick.date);
+          gameTime = extractTimeFromISO(pick.date);
+          console.log(`Converted date ${pick.date} to ${gameDate} and time ${gameTime}`);
+        } else if (pick.fullDate) {
+          gameDate = convertToEST(pick.fullDate);
+          gameTime = extractTimeFromISO(pick.fullDate);
+        }
+        
+        // Always set sport to NBA
+        const sport = 'NBA';
         
         await sql`
           INSERT INTO "Game" (
@@ -80,15 +110,17 @@ export async function POST(req: NextRequest) {
             "sport"
           ) VALUES (
             ${pick.gameId},
-            ${pick.homeTeam.name},
-            ${pick.awayTeam.name},
-            ${pick.homeTeam.logo || ''},
-            ${pick.awayTeam.logo || ''},
+            ${team1Name},
+            ${team2Name},
+            ${pick.homeTeam?.logo || ''},
+            ${pick.awayTeam?.logo || ''},
             ${gameDate}::date,
             ${gameTime}::time,
-            ${'NFL'} -- Default sport, adjust as needed
+            ${sport}
           )
         `;
+        
+        console.log(`Saved game ${pick.gameId} with sport ${sport} and time ${gameTime}`);
       }
     }
 
