@@ -4,6 +4,8 @@ import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import '../styles/myPicks.css';
+import { format, parseISO, compareDesc } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 
 //TODO: Add a history button to the picks page
@@ -163,25 +165,27 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Add this helper function to format dates consistently
+    // Update the formatGameDate function to use date-fns
     const formatGameDate = (dateString: string) => {
-        // Ensure we're working with a valid date string
         if (!dateString) return '';
         
-        // Create a date object in the correct timezone
-        const date = new Date(dateString);
-        
-        // Format the date consistently for display and comparison
-        return date.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-            timeZone: 'America/New_York'  // Use ET timezone consistently
-        });
+        try {
+            // Parse the ISO date string
+            const date = parseISO(dateString);
+            
+            // Convert to Eastern Time
+            const timeZone = 'America/New_York';
+            const zonedDate = toZonedTime(date, timeZone);
+            
+            // Format the date consistently - remove the timeZone option
+            return format(zonedDate, 'EEEE, MMM d');
+        } catch (error) {
+            console.error("Error formatting date:", error, dateString);
+            return dateString;
+        }
     };
 
-    // Update the groupPicksByDate function to use the consistent formatter
+    // Update the groupPicksByDate function
     const groupPicksByDate = (picks: Pick[]) => {
         console.log("Starting to group picks, count:", picks.length);
         
@@ -194,7 +198,7 @@ export default function MyPicksPage() {
             return acc;
         }, []);
 
-        // Then group by date using the consistent formatter
+        // Then group by date using date-fns
         const grouped = uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
             if (!pick.Game || !pick.Game.gameDate) return groups;
             
@@ -211,8 +215,8 @@ export default function MyPicksPage() {
         // Sort picks within each group by game time
         Object.keys(grouped).forEach(date => {
             grouped[date].sort((a, b) => {
-                const timeA = new Date(a.Game.gameDate).getTime();
-                const timeB = new Date(b.Game.gameDate).getTime();
+                const timeA = parseISO(a.Game.gameDate).getTime();
+                const timeB = parseISO(b.Game.gameDate).getTime();
                 return timeA - timeB;
             });
         });
@@ -408,12 +412,12 @@ export default function MyPicksPage() {
 
     // Get sorted dates with proper date parsing
     const sortedDates = Object.keys(groupedPicks).sort((a, b) => {
-        // Parse the dates for comparison
-        const dateA = new Date(a.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
-        const dateB = new Date(b.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
+        // Parse dates using date-fns for more reliable sorting
+        const dateA = parseISO(a.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
+        const dateB = parseISO(b.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
         
         // Sort in descending order (newest first)
-        return dateB.getTime() - dateA.getTime();
+        return compareDesc(dateA, dateB);
     });
 
     // Update the parseGameDate function to be more robust
