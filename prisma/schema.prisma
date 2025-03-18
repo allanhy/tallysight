@@ -13,8 +13,10 @@ model Pick {
   gameId    String
   teamIndex Int
   createdAt DateTime @default(now()) @db.Timestamp(6)
+  sport     String
   Game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade, map: "pick_gameid_fkey")
 
+  @@unique([userId, gameId], map: "user_entry_into_game_once")
   @@index([gameId], map: "pick_gameid_idx")
 }
 
@@ -28,6 +30,8 @@ model Game {
   final_score String?
   winner      Boolean?
   gameDate    DateTime? @db.Date
+  sport       String
+  gameTime    DateTime? @db.Time(6)
   Pick        Pick[]
 }
 
@@ -62,26 +66,28 @@ model influencers {
 }
 
 model leaderboard_entries {
-  entry_id       Int       @id @default(autoincrement())
+  entry_id       Int          @id @default(autoincrement())
   user_id        Int
   leaderboard_id Int
-  rank           Int
-  points         Int
-  start_date     DateTime? @default(now()) @db.Timestamp(6)
-  users          users     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "user_fkey")
+  rank           Int?
+  points         Int?         @default(0)
+  start_date     DateTime?    @default(now()) @db.Timestamp(6)
+  leaderboards   leaderboards @relation(fields: [leaderboard_id], references: [leaderboard_id], onDelete: NoAction, onUpdate: NoAction, map: "leaderboard_id_entry")
+  users          users        @relation(fields: [user_id], references: [user_id], onDelete: Cascade, map: "user_fkey")
 
   @@unique([user_id, leaderboard_id], map: "single_user_per_leaderboard")
   @@index([rank], map: "idx_entries_by_rank")
 }
 
 model leaderboards {
-  leaderboard_id Int      @id @default(autoincrement())
-  start_date     DateTime @default(now()) @db.Timestamp(6)
-  name           String   @db.VarChar(100)
-  sport          String   @db.VarChar(50)
-  week           Int
-  description    String   @default("")
-  year           Int      @default(dbgenerated("(EXTRACT(year FROM start_date))::integer"))
+  leaderboard_id      Int                   @id @default(autoincrement())
+  start_date          DateTime              @default(now()) @db.Timestamp(6)
+  name                String                @db.VarChar(100)
+  sport               String                @db.VarChar(50)
+  week                Int
+  description         String                @default("")
+  year                Int                   @default(dbgenerated("(EXTRACT(year FROM start_date))::integer"))
+  leaderboard_entries leaderboard_entries[]
 
   @@unique([sport, week], map: "1_leaderboard_per_sport&week")
 }
@@ -90,16 +96,17 @@ model users {
   user_id             Int                   @id @default(autoincrement())
   username            String                @unique @db.VarChar(50)
   email               String                @unique @db.VarChar(100)
-  role                Int
+  role                Int                   @default(1)
   points              Int?                  @default(0)
   rank                Int?
   start_date          DateTime              @default(now()) @db.Date
   max_points          Int                   @default(0)
-  performance         Decimal               @default(0) @db.Decimal(5, 3)
+  performance         Decimal               @default(0) @db.Decimal(6, 3)
   clerk_id            String                @unique @default("-1")
   password            String?               @db.VarChar(160)
   bio                 String?
   fav_team            String?
+  fav_team_logo       String?
   influencers         influencers?
   leaderboard_entries leaderboard_entries[]
   picks               picks[]

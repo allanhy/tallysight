@@ -58,6 +58,16 @@ export async function POST(req: NextRequest) {
           ? pick.estDate.split('/').reverse().join('-') // Convert MM/DD/YYYY to YYYY-MM-DD
           : (pick.fullDate ? convertToEST(pick.fullDate) : convertToEST(pickDate));
         
+        // Extract time from fullDate if available, otherwise use default time
+        let gameTime = '19:00:00'; // Default to 7:00 PM
+        if (pick.fullDate) {
+          const date = new Date(pick.fullDate);
+          gameTime = date.toLocaleTimeString('en-US', { 
+            timeZone: 'America/New_York',
+            hour12: false 
+          });
+        }
+        
         await sql`
           INSERT INTO "Game" (
             id,
@@ -65,14 +75,18 @@ export async function POST(req: NextRequest) {
             "team2Name",
             "team1Logo",
             "team2Logo",
-            "gameDate"
+            "gameDate",
+            "gameTime",
+            "sport"
           ) VALUES (
             ${pick.gameId},
             ${pick.homeTeam.name},
             ${pick.awayTeam.name},
             ${pick.homeTeam.logo || ''},
             ${pick.awayTeam.logo || ''},
-            ${gameDate}
+            ${gameDate}::date,
+            ${gameTime}::time,
+            ${'NFL'} -- Default sport, adjust as needed
           )
         `;
       }

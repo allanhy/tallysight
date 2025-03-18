@@ -7,6 +7,8 @@ import '../styles/myPicks.css';
 import { format, parseISO, compareDesc } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { isTomorrow } from 'date-fns';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 
 //TODO: Add a history button to the picks page
@@ -57,6 +59,15 @@ interface WeekOption {
 // Add this interface for grouped picks
 interface GroupedPicks {
     [date: string]: Pick[];
+}
+
+// 2. In your UI, you might add a form to update game times
+// This could be in an admin component
+interface GameEditorProps {
+    game: {
+        id: string;
+        gameDate: string;
+    }
 }
 
 export default function MyPicksPage() {
@@ -204,8 +215,8 @@ export default function MyPicksPage() {
         }
     };
 
-    // Add this function to directly format dates from ISO strings
-    const formatDateFromISO = (isoString: string, formatPattern: string = 'EEEE, MMM d') => {
+    // Update the formatDateFromISO function to include time
+    const formatDateFromISO = (isoString: string, formatPattern: string = 'EEEE, MMM d, h:mm a') => {
         if (!isoString) return 'No date';
         
         try {
@@ -216,7 +227,7 @@ export default function MyPicksPage() {
             const timeZone = 'America/New_York';
             const zonedDate = toZonedTime(date, timeZone);
             
-            // Format without timezone option
+            // Format with date and time pattern
             return format(zonedDate, formatPattern);
         } catch (error) {
             console.error(`Error formatting date: ${isoString}`, error);
@@ -608,6 +619,75 @@ export default function MyPicksPage() {
             );
         }
     };
+
+    // 1. First, update your API endpoint that creates or updates games
+    // This would be in a separate file like src/app/api/games/route.ts
+    async function updateGameWithTime(gameId: string, gameDate: string, gameTime: string) {
+        try {
+            // Combine date and time into a single ISO string
+            const [year, month, day] = gameDate.split('-').map(Number);
+            const [hours, minutes] = gameTime.split(':').map(Number);
+            
+            // Create a Date object in UTC
+            const gameDateTime = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+            
+            // Update the game in your database
+            await prisma.game.update({
+                where: { id: gameId },
+                data: { 
+                    gameDate: gameDateTime.toISOString() 
+                }
+            });
+            
+            return { success: true };
+        } catch (error) {
+            console.error("Error updating game time:", error);
+            return { success: false, error };
+        }
+    }
+
+    // 2. In your UI, you might add a form to update game times
+    // This could be in an admin component
+    function GameTimeEditor({ game }: GameEditorProps) {
+        const [date, setDate] = useState(game.gameDate.split('T')[0]);
+        const [time, setTime] = useState('19:00'); // Default to 7:00 PM
+        
+        const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
+            const response = await fetch('/api/games/updateTime', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    gameId: game.id,
+                    gameDate: date,
+                    gameTime: time 
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert('Game time updated successfully!');
+            } else {
+                alert('Failed to update game time');
+            }
+        };
+        
+        return (
+            <form onSubmit={handleSubmit}>
+                <input 
+                    type="date" 
+                    value={date} 
+                    onChange={(e) => setDate(e.target.value)} 
+                />
+                <input 
+                    type="time" 
+                    value={time} 
+                    onChange={(e) => setTime(e.target.value)} 
+                />
+                <button type="submit">Update Game Time</button>
+            </form>
+        );
+    }
 
     return (
         <div className="picks-page">
