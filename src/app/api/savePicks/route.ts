@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { sql } from '@vercel/postgres';
 import crypto from 'crypto';
+import { db } from '@vercel/postgres';
 
 interface Pick {
   gameId: string;
@@ -25,6 +26,7 @@ interface Pick {
   fullDate?: string;
   dbDate?: string;
   dbTime?: string;
+  gameDate?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -167,18 +169,46 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if picks have already been made for today
-    const today = convertToEST(pickDate);
+    const today = new Date(pickDate);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     const existingPicks = await sql`
       SELECT * FROM "Pick"
-      WHERE "userId" = ${userId} AND "createdAt"::date = ${today}
+      WHERE "userId" = ${userId} AND "createdAt"::date = ${today.toISOString().split('T')[0]}
     `;
 
     if (existingPicks.rows.length > 0) {
       return NextResponse.json({ message: 'Picks have already been made for today.', }, { status: 409 }); // Conflict status code
     }
 
-    // Create picks, conflict if user already made picks for that game
+    // Save each pick with the correct date/time
     for (const pick of picks) {
+      // Ensure we're using the properly formatted gameDate from the client
+      // or calculate it here if needed
+      const gameDate = pick.gameDate || (() => {
+        // Parse the game time (which is in ET)
+        const [timeStr, period] = pick.gameTime.split(' ');
+        const [hourStr, minuteStr] = timeStr.split(':');
+        let etHours = parseInt(hourStr);
+        
+        // Convert to 24-hour format
+        if (period === 'PM' && etHours !== 12) etHours += 12;
+        if (period === 'AM' && etHours === 12) etHours = 0;
+        
+        // Create a Date object for today with the game time
+        const gameDate = new Date(today);
+        
+        // Set the time in ET
+        gameDate.setHours(etHours, parseInt(minuteStr), 0, 0);
+        
+        // Convert from ET to UTC for storage
+        // ET is UTC-4 or UTC-5 depending on daylight saving
+        const etOffsetHours = 4; // 4 hours during EDT, 5 during EST
+        const utcGameDate = new Date(gameDate.getTime() + (etOffsetHours * 60 * 60 * 1000));
+        
+        return utcGameDate.toISOString();
+      })();
+
       await sql`
         INSERT INTO "Pick" (
           id,
@@ -186,6 +216,7 @@ export async function POST(req: NextRequest) {
           "gameId",
           "teamIndex",
           "createdAt",
+          "gameDate",
           "sport"
         ) VALUES (
           ${crypto.randomUUID()},
@@ -193,6 +224,7 @@ export async function POST(req: NextRequest) {
           ${pick.gameId},
           ${pick.teamIndex},
           NOW() AT TIME ZONE 'America/New_York',
+          ${gameDate},
           ${'NBA'}
         )
         ON CONFLICT ("userId", "gameId") DO NOTHING
