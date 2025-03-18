@@ -361,36 +361,12 @@ export default function DailyPicks() {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
 
-                // Parse the game time (which is in ET)
-                const [timeStr, period] = game?.gameTime.split(' ') || ['12:00', 'AM'];
-                const [hourStr, minuteStr] = timeStr.split(':');
-                let etHours = parseInt(hourStr);
-                
-                // Convert to 24-hour format
-                if (period === 'PM' && etHours !== 12) etHours += 12;
-                if (period === 'AM' && etHours === 12) etHours = 0;
-                
-                // Create a Date object for today with the game time
-                const gameDate = new Date();
-                
-                // Set the time in ET
-                gameDate.setHours(etHours, parseInt(minuteStr), 0, 0);
-                
-                // Convert from ET to UTC for storage
-                // ET is UTC-4 or UTC-5 depending on daylight saving
-                const etOffsetHours = 4; // 4 hours during EDT, 5 during EST
-                const utcGameDate = new Date(gameDate.getTime() + (etOffsetHours * 60 * 60 * 1000));
-                
-                // Format as ISO string for storage
-                const isoGameDate = utcGameDate.toISOString();
-
                 return {
                     gameId,
                     teamIndex: teamType === 'home' ? 0 : 1,
                     homeTeam: game?.homeTeam,
                     awayTeam: game?.awayTeam,
-                    gameTime: game?.gameTime,
-                    gameDate: isoGameDate // Add the properly formatted game date
+                    gameTime: game?.gameTime
                 };
             });
 
