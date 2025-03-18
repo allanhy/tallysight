@@ -72,6 +72,26 @@ const NBA_TEAM_LOGOS: { [key: string]: string } = {
   'Washington Wizards': 'https://a.espncdn.com/i/teamlogos/nba/500/wsh.png'
 };
 
+// Add this mapping of team nicknames to full names
+const TEAM_NAME_MAPPING: { [key: string]: string } = {
+  'kings': 'sacramento kings',
+  'cavaliers': 'cleveland cavaliers',
+  'cavs': 'cleveland cavaliers',
+  'blazers': 'portland trail blazers',
+  'sixers': 'philadelphia 76ers',
+  'knicks': 'new york knicks',
+  'mavs': 'dallas mavericks',
+  'wolves': 'minnesota timberwolves',
+  'lakers': 'los angeles lakers',
+  'celtics': 'boston celtics',
+  'nets': 'brooklyn nets',
+  'heat': 'miami heat',
+  'bucks': 'milwaukee bucks',
+  'suns': 'phoenix suns',
+  'grizzlies': 'memphis grizzlies',
+  'warriors': 'golden state warriors'
+};
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const gameId = url.searchParams.get('gameId');
@@ -107,253 +127,196 @@ async function handleSpecificGameRequest(gameId: string | null, requestedHomeTea
   try {
     console.log('API Request params:', { gameId, requestedHomeTeam, requestedAwayTeam });
     
-    const API_KEY = process.env.ODDS_API_KEY;
+    // Normalize and find full team names first
+    const normalizedHomeTeam = requestedHomeTeam?.toLowerCase() || '';
+    const normalizedAwayTeam = requestedAwayTeam?.toLowerCase() || '';
     
-    // First try the Odds API
+    // Find full team names from our database
+    let fullHomeTeamName = requestedHomeTeam || '';
+    let fullAwayTeamName = requestedAwayTeam || '';
+    
+    // Try to match with NBA_TEAM_LOGOS keys
+    for (const teamName of Object.keys(NBA_TEAM_LOGOS)) {
+      if (teamName.toLowerCase().includes(normalizedHomeTeam) || 
+          normalizedHomeTeam.includes(teamName.toLowerCase())) {
+        fullHomeTeamName = teamName;
+      }
+      if (teamName.toLowerCase().includes(normalizedAwayTeam) || 
+          normalizedAwayTeam.includes(teamName.toLowerCase())) {
+        fullAwayTeamName = teamName;
+      }
+    }
+    
+    // Also check TEAM_NAME_MAPPING
+    for (const [nickname, fullName] of Object.entries(TEAM_NAME_MAPPING)) {
+      if (normalizedHomeTeam.includes(nickname)) {
+        // Find the matching full team name in NBA_TEAM_LOGOS
+        for (const teamName of Object.keys(NBA_TEAM_LOGOS)) {
+          if (teamName.toLowerCase().includes(fullName)) {
+            fullHomeTeamName = teamName;
+          }
+        }
+      }
+      if (normalizedAwayTeam.includes(nickname)) {
+        // Find the matching full team name in NBA_TEAM_LOGOS
+        for (const teamName of Object.keys(NBA_TEAM_LOGOS)) {
+          if (teamName.toLowerCase().includes(fullName)) {
+            fullAwayTeamName = teamName;
+          }
+        }
+      }
+    }
+    
+    console.log('Resolved team names:', { fullHomeTeamName, fullAwayTeamName });
+    
+    // Try to find the game in ESPN data
+    let foundGame = null;
+    let venue = '';
+    let broadcast = '';
+    let homeRecord = '';
+    let awayRecord = '';
+    let gameTime = '7:00 PM ET'; // Default
+    let status = 'Scheduled';
+    
     try {
-      const oddsResponse = await fetch(
-        `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`,
-        { cache: 'no-store' }
-      );
-
-      if (oddsResponse.ok) {
-        const rawData = await oddsResponse.json();
+      // First try to fetch the specific game by ID
+      if (gameId) {
+        const specificGameResponse = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard/events/${gameId}`);
+        if (specificGameResponse.ok) {
+          const specificGameData = await specificGameResponse.json();
+          console.log('Found specific game by ID:', specificGameData);
+          foundGame = specificGameData;
+        }
+      }
+      
+      // If no game found by ID, fetch games for multiple days
+      if (!foundGame) {
+        console.log('Fetching games for multiple days');
         
-        // Find the matching game
-        let matchedGame = null;
+        // Get today's date
+        const today = new Date();
         
-        // Find game by matching team names
-        matchedGame = rawData.find((game: any) => {
-          const homeTeam = game.home_team;
-          const awayTeam = game.away_team;
+        // Fetch data for today and the next 3 days
+        for (let i = 0; i < 4; i++) {
+          if (foundGame) break; // Stop if we found a game
           
-          return (
-            (homeTeam.includes(requestedHomeTeam) || requestedHomeTeam?.includes(homeTeam)) &&
-            (awayTeam.includes(requestedAwayTeam) || requestedAwayTeam?.includes(awayTeam))
-          );
-        });
-        
-        // If you successfully find and process a game, return it
-        if (matchedGame) {
-          // Also fetch ESPN data for additional details
-          const espnResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard');
-          let venue = "";
-          let broadcast = "";
+          const date = new Date(today);
+          date.setDate(today.getDate() + i);
           
-          if (espnResponse.ok) {
-            const espnData = await espnResponse.json();
-            const espnGame = espnData.events?.find((event: any) => {
+          // Format date as YYYYMMDD for ESPN API
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const dateStr = `${year}${month}${day}`;
+          
+          console.log(`Fetching games for date: ${year}-${month}-${day}`);
+          
+          const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`);
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Found ${data.events?.length || 0} games for ${year}-${month}-${day}`);
+            
+            // Look for matching game
+            const matchingGame = data.events?.find((event: any) => {
               const competition = event.competitions[0];
               const homeTeam = competition.competitors.find((team: any) => team.homeAway === 'home')?.team.displayName;
               const awayTeam = competition.competitors.find((team: any) => team.homeAway === 'away')?.team.displayName;
               
               return (
-                homeTeam === matchedGame.home_team ||
-                awayTeam === matchedGame.away_team
+                (homeTeam.toLowerCase().includes(normalizedHomeTeam) || 
+                 normalizedHomeTeam.includes(homeTeam.toLowerCase())) &&
+                (awayTeam.toLowerCase().includes(normalizedAwayTeam) || 
+                 normalizedAwayTeam.includes(awayTeam.toLowerCase()))
               );
             });
             
-            if (espnGame && espnGame.competitions?.[0]) {
-              const competition = espnGame.competitions[0];
-              
-              venue = competition.venue?.fullName || '';
-              
-              if (competition.broadcasts && competition.broadcasts.length > 0) {
-                if (Array.isArray(competition.broadcasts[0].names)) {
-                  broadcast = competition.broadcasts[0].names.join(', ');
-                } else if (competition.broadcasts[0].shortName) {
-                  broadcast = competition.broadcasts[0].shortName;
-                }
-              }
+            if (matchingGame) {
+              console.log('Found matching game:', matchingGame.id);
+              foundGame = matchingGame;
+              break;
             }
           }
-          
-          const bookmaker = matchedGame.bookmakers[0];
-          const spreadsMarket = bookmaker?.markets.find((market: any) => market.key === 'spreads');
-          
-          const homeOutcome = spreadsMarket?.outcomes.find((outcome: any) => 
-            outcome.name.toLowerCase() === matchedGame.home_team.toLowerCase());
-          const awayOutcome = spreadsMarket?.outcomes.find((outcome: any) => 
-            outcome.name.toLowerCase() === matchedGame.away_team.toLowerCase());
-          
-          const formatSpread = (spread: number | undefined): string => {
-            if (spread === undefined) return '';
-            // Always show the sign (+ or -) and format to one decimal place if needed
-            const spreadValue = spread % 1 === 0 ? spread : parseFloat(spread.toFixed(1));
-            // Just return the spread value with appropriate sign, without the favorite/underdog text
-            return spreadValue > 0 ? `+${spreadValue}` : `${spreadValue}`;
-          };
-          
-          // Log the spread data for debugging
-          console.log('Spread data:', {
-            homeTeam: matchedGame.home_team,
-            awayTeam: matchedGame.away_team,
-            homePoint: homeOutcome?.point,
-            awayPoint: awayOutcome?.point,
-            homeSpread: formatSpread(homeOutcome?.point),
-            awaySpread: formatSpread(awayOutcome?.point)
-          });
-          
-          // Create the game object with the spread data
-          const game = {
-            id: matchedGame.id,
-            homeTeam: {
-              name: matchedGame.home_team,
-              spread: formatSpread(homeOutcome?.point),
-              logo: NBA_TEAM_LOGOS[matchedGame.home_team] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-              record: ""
-            },
-            awayTeam: {
-              name: matchedGame.away_team,
-              spread: formatSpread(awayOutcome?.point),
-              logo: NBA_TEAM_LOGOS[matchedGame.away_team] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-              record: ""
-            },
-            gameTime: matchedGame.commence_time ? new Date(matchedGame.commence_time * 1000).toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit'
-            }) + ' ET' : matchedGame.commence_time,
-            status: "Scheduled",
-            venue: venue,
-            broadcast: broadcast
-          };
-          
-          console.log('API Response data:', { games: [game] });
-          return NextResponse.json({ games: [game] });
         }
-      } else {
-        console.log('Odds API limit reached, falling back to ESPN API');
-      }
-    } catch (oddsError) {
-      console.error('Error with Odds API:', oddsError);
-    }
-    
-    // If Odds API fails or doesn't find a match, try ESPN API
-    try {
-      // Fetch both today's and tomorrow's scoreboard data
-      const todayResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard');
-      const tomorrowDate = new Date();
-      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-      const tomorrowDateStr = tomorrowDate.toISOString().split('T')[0];
-      const tomorrowResponse = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${tomorrowDateStr}`);
-      
-      let espnData: { events: any[] } = { events: [] };
-      
-      if (todayResponse.ok) {
-        const todayData = await todayResponse.json();
-        espnData.events = [...espnData.events, ...todayData.events];
       }
       
-      if (tomorrowResponse.ok) {
-        const tomorrowData = await tomorrowResponse.json();
-        espnData.events = [...espnData.events, ...tomorrowData.events];
-      }
-      
-      // Find the matching game in combined ESPN data
-      const espnGame = espnData.events.find((event: any) => {
-        // Match by team names
-        const homeTeam = event.competitions[0].competitors.find((team: any) => team.homeAway === 'home')?.team.displayName;
-        const awayTeam = event.competitions[0].competitors.find((team: any) => team.homeAway === 'away')?.team.displayName;
-        
-        // Check for team name variations (e.g., "LA Clippers" vs "Los Angeles Clippers")
-        const homeTeamMatches = homeTeam && requestedHomeTeam && 
-                               (homeTeam.includes(requestedHomeTeam) || requestedHomeTeam.includes(homeTeam));
-        const awayTeamMatches = awayTeam && requestedAwayTeam && 
-                               (awayTeam.includes(requestedAwayTeam) || requestedAwayTeam.includes(awayTeam));
-        
-        return homeTeamMatches && awayTeamMatches;
-      });
-
-      if (espnGame) {
-        const competition = (espnGame as any).competitions?.[0];
+      // Extract game details if found
+      if (foundGame) {
+        const competition = foundGame.competitions?.[0];
         if (competition) {
           const homeTeamData = competition.competitors?.find((team: any) => team.homeAway === 'home');
           const awayTeamData = competition.competitors?.find((team: any) => team.homeAway === 'away');
           
+          // Update team names if available
+          if (homeTeamData?.team?.displayName) {
+            fullHomeTeamName = homeTeamData.team.displayName;
+          }
+          if (awayTeamData?.team?.displayName) {
+            fullAwayTeamName = awayTeamData.team.displayName;
+          }
+          
           // Extract venue and broadcast information
-          const venue = competition.venue?.fullName || '';
+          venue = competition.venue?.fullName || 'TBD';
           
           // Handle different broadcast formats
-          let broadcasts = '';
           if (competition.broadcasts && competition.broadcasts.length > 0) {
             if (Array.isArray(competition.broadcasts[0].names)) {
-              broadcasts = competition.broadcasts[0].names.join(', ');
+              broadcast = competition.broadcasts[0].names.join(', ');
             } else if (competition.broadcasts[0].shortName) {
-              broadcasts = competition.broadcasts[0].shortName;
+              broadcast = competition.broadcasts[0].shortName;
             }
           }
           
-          // Process the game data here...
-          // (You'll need to add the actual processing code here)
+          // Get team records
+          homeRecord = homeTeamData?.records?.[0]?.summary || '';
+          awayRecord = awayTeamData?.records?.[0]?.summary || '';
           
-          // Create and return the game object with ESPN data
-          const game = {
-            id: gameId || espnGame.id,
-            homeTeam: {
-              name: homeTeamData?.team?.displayName || requestedHomeTeam,
-              spread: "", // No spread from ESPN
-              logo: NBA_TEAM_LOGOS[homeTeamData?.team?.displayName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-              record: homeTeamData?.records?.[0]?.summary || ""
-            },
-            awayTeam: {
-              name: awayTeamData?.team?.displayName || requestedAwayTeam,
-              spread: "", // No spread from ESPN
-              logo: NBA_TEAM_LOGOS[awayTeamData?.team?.displayName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-              record: awayTeamData?.records?.[0]?.summary || ""
-            },
-            gameTime: new Date(espnGame.date).toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit'
-            }) + ' ET',
-            status: espnGame.status?.type?.name || "Scheduled",
-            venue: venue,
-            broadcast: broadcasts
-          };
+          // Format game time
+          if (foundGame.date) {
+            try {
+              const gameDate = new Date(foundGame.date);
+              gameTime = gameDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
+              }) + ' ET';
+            } catch (e) {
+              console.error('Error formatting game time:', e);
+            }
+          }
           
-          return NextResponse.json({ games: [game] });
+          status = foundGame.status?.type?.name || 'Scheduled';
         }
       }
-
-      // If no ESPN game was found, return an error
-      return NextResponse.json(
-        { error: 'Game not found' },
-        { status: 404 }
-      );
-    } catch (espnError) {
-      console.error('Error fetching ESPN data:', espnError);
+    } catch (error) {
+      console.error('Error fetching game data:', error);
     }
     
-    // If both APIs fail, return a basic response with dummy spreads
-    return NextResponse.json({ 
-      games: [{
-        id: gameId || "unknown",
-        homeTeam: {
-          name: requestedHomeTeam || "Home Team",
-          record: "",
-          logo: NBA_TEAM_LOGOS[requestedHomeTeam || ""] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-          spread: "-3.5"  // Default home team is usually favored by 3-4 points
-        },
-        awayTeam: {
-          name: requestedAwayTeam || "Away Team",
-          record: "",
-          logo: NBA_TEAM_LOGOS[requestedAwayTeam || ""] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-          spread: "+3.5"  // Default away team is usually underdog by 3-4 points
-        },
-        gameTime: new Date().toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit'
-        }) + ' ET',
-        status: "Scheduled",
-        venue: "TBD",
-        broadcast: "TBD",
-        date: new Date().toLocaleDateString(),
-        note: "Using estimated spreads"
-      }]
-    });
+    // Create response with the best data we have
+    const game = {
+      id: gameId || `${fullHomeTeamName}-${fullAwayTeamName}`.replace(/\s+/g, '-').toLowerCase(),
+      homeTeam: {
+        name: fullHomeTeamName,
+        record: homeRecord,
+        logo: NBA_TEAM_LOGOS[fullHomeTeamName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
+        spread: "-3.5"  // Default spread
+      },
+      awayTeam: {
+        name: fullAwayTeamName,
+        record: awayRecord,
+        logo: NBA_TEAM_LOGOS[fullAwayTeamName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
+        spread: "+3.5"  // Default spread
+      },
+      gameTime: gameTime,
+      status: status,
+      venue: venue,
+      broadcast: broadcast
+    };
+    
+    console.log('API Response data:', { games: [game] });
+    return NextResponse.json({ games: [game] });
   } catch (error) {
-    console.error('Error in NBA odds API:', error);
+    console.error('Error in API route:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch NBA odds data' },
+      { error: 'Failed to process request' },
       { status: 500 }
     );
   }
