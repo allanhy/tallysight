@@ -166,23 +166,41 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Update the formatGameDate function to be more consistent
+    // Add this helper function at the top of your component
+    const ensureConsistentDate = (dateString: string) => {
+        try {
+            // First, ensure we have a valid date string
+            if (!dateString) return new Date();
+            
+            // Parse the ISO date string
+            const parsedDate = parseISO(dateString);
+            
+            // Validate the parsed date
+            if (isNaN(parsedDate.getTime())) {
+                console.error(`Invalid date string: ${dateString}`);
+                return new Date();
+            }
+            
+            // Always convert to Eastern Time for consistency
+            const timeZone = 'America/New_York';
+            return toZonedTime(parsedDate, timeZone);
+        } catch (error) {
+            console.error(`Error processing date: ${dateString}`, error);
+            return new Date();
+        }
+    };
+
+    // Update the formatGameDate function
     const formatGameDate = (dateString: string) => {
         if (!dateString) return '';
         
         try {
-            // Parse the ISO date string
-            const date = parseISO(dateString);
-            
-            // Always use Eastern Time for consistency
-            const timeZone = 'America/New_York';
-            const zonedDate = toZonedTime(date, timeZone);
-            
-            // Format the date with explicit timezone
+            const zonedDate = ensureConsistentDate(dateString);
+            // Use a simple format that's less likely to cause issues
             return format(zonedDate, 'EEEE, MMM d');
         } catch (error) {
             console.error("Error formatting date:", error, dateString);
-            return dateString;
+            return 'Date unavailable';
         }
     };
 
@@ -199,7 +217,7 @@ export default function MyPicksPage() {
             return acc;
         }, []);
 
-        // Then group by date using date-fns
+        // Then group by date using our consistent date formatter
         const grouped = uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
             if (!pick.Game || !pick.Game.gameDate) return groups;
             
@@ -216,8 +234,10 @@ export default function MyPicksPage() {
         // Sort picks within each group by game time
         Object.keys(grouped).forEach(date => {
             grouped[date].sort((a, b) => {
-                const timeA = parseISO(a.Game.gameDate).getTime();
-                const timeB = parseISO(b.Game.gameDate).getTime();
+                if (!a.Game?.gameDate || !b.Game?.gameDate) return 0;
+                
+                const timeA = ensureConsistentDate(a.Game.gameDate).getTime();
+                const timeB = ensureConsistentDate(b.Game.gameDate).getTime();
                 return timeA - timeB;
             });
         });
