@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
+import { toZonedTime, format } from 'date-fns-tz';
 
 const BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
@@ -43,6 +44,30 @@ function getTeamLogo(teamName: string | undefined): string {
 
   const abbreviation = teamAbbreviations[teamName] || teamName.toLowerCase();
   return `https://a.espncdn.com/combiner/i?img=/i/teamlogos/nba/500/${abbreviation}.png`;
+}
+
+// Add this function to convert UTC dates to Eastern Time
+function convertToEasternTime(utcDate: Date) {
+  const timeZone = 'America/New_York';
+  return toZonedTime(utcDate, timeZone);
+}
+
+// Define an interface for the game object
+interface Game {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  date: Date;
+  time: string;
+  status: string;
+  homeTeamLogo: string;
+  awayTeamLogo: string;
+  venue: string;
+  broadcast: string;
+  homeScore: string;
+  awayScore: string;
+  period: number;
+  clock: string;
 }
 
 export async function GET() {
@@ -126,9 +151,23 @@ export async function GET() {
       });
     }
 
+    // Process each game to include proper time information
+    const processedGames = games.map((game: Game) => {
+      // Convert UTC date to Eastern Time
+      const etDate = convertToEasternTime(new Date(game.date));
+      
+      return {
+        ...game,
+        date: game.date,
+        formattedDate: format(etDate, 'yyyy-MM-dd'),
+        formattedTime: format(etDate, 'h:mm a z'), // e.g. "7:30 PM EDT"
+        timeZone: 'ET'
+      };
+    });
+
     return NextResponse.json({
-      games,
-      gameDay: games[0].date,
+      games: processedGames,
+      gameDay: processedGames[0].date,
       message: `Next available games`
     });
 

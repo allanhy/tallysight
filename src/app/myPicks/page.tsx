@@ -177,60 +177,62 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Add this helper function at the top of your component
-    const ensureConsistentDate = (dateString: string) => {
+    // Update the ensureConsistentDate function to NOT convert to Eastern Time
+    const ensureConsistentDate = (dateInput: string | Date | null) => {
         try {
-            // First, ensure we have a valid date string
-            if (!dateString) return new Date();
+            // First, ensure we have a valid date input
+            if (!dateInput) return new Date();
             
-            // Parse the ISO date string
-            const parsedDate = parseISO(dateString);
+            let parsedDate;
+            
+            // Handle different input types
+            if (dateInput instanceof Date) {
+                parsedDate = dateInput;
+            } else if (typeof dateInput === 'string') {
+                parsedDate = parseISO(dateInput);
+            } else {
+                console.error(`Unexpected date type: ${typeof dateInput}`);
+                parsedDate = new Date(dateInput);
+            }
             
             // Validate the parsed date
             if (isNaN(parsedDate.getTime())) {
-                console.error(`Invalid date string: ${dateString}`);
+                console.error(`Invalid date: ${dateInput}`);
                 return new Date();
             }
             
-            // Always convert to Eastern Time for consistency
-            const timeZone = 'America/New_York';
-            return toZonedTime(parsedDate, timeZone);
+            // Return the date without timezone conversion
+            return parsedDate;
         } catch (error) {
-            console.error(`Error processing date: ${dateString}`, error);
+            console.error(`Error processing date: ${dateInput}`, error);
             return new Date();
         }
     };
 
     // Update the formatGameDate function
-    const formatGameDate = (dateString: string) => {
-        if (!dateString) return '';
+    const formatGameDate = (dateInput: string | Date | null) => {
+        if (!dateInput) return '';
         
         try {
-            const zonedDate = ensureConsistentDate(dateString);
+            const zonedDate = ensureConsistentDate(dateInput);
             // Use a simple format that's less likely to cause issues
             return format(zonedDate, 'EEEE, MMM d');
         } catch (error) {
-            console.error("Error formatting date:", error, dateString);
+            console.error("Error formatting date:", error, dateInput);
             return 'Date unavailable';
         }
     };
 
-    // Update the formatDateFromISO function to include time
-    const formatDateFromISO = (isoString: string, formatPattern: string = 'EEEE, MMM d, h:mm a') => {
-        if (!isoString) return 'No date';
+    // Update the formatDateFromISO function to use local timezone
+    const formatDateFromISO = (dateInput: string | Date | null, formatPattern: string = 'EEEE, MMM d, h:mm a') => {
+        if (!dateInput) return 'No date';
         
         try {
-            // Parse the date
-            const date = new Date(isoString);
-            
-            // Convert to Eastern Time using toZonedTime
-            const timeZone = 'America/New_York';
-            const zonedDate = toZonedTime(date, timeZone);
-            
-            // Format with date and time pattern
-            return format(zonedDate, formatPattern);
+            const parsedDate = ensureConsistentDate(dateInput);
+            // Format with date and time pattern without timezone conversion
+            return format(parsedDate, formatPattern);
         } catch (error) {
-            console.error(`Error formatting date: ${isoString}`, error);
+            console.error(`Error formatting date: ${dateInput}`, error);
             return 'Invalid date';
         }
     };
@@ -543,41 +545,39 @@ export default function MyPicksPage() {
         return false;  // User's pick was incorrect
     }
 
-    // Update the renderGameStatus function to use consistent date handling
+    // Update the renderGameStatus function to not use timezone conversion
     const renderGameStatus = (pick: Pick) => {
         try {
-            // Parse the game date directly from the database value
-            const gameDate = parseISO(pick.Game.gameDate);
+            // Parse the game date directly without timezone conversion
+            const gameDate = ensureConsistentDate(pick.Game.gameDate);
             const now = new Date();
             
-            // Convert to Eastern Time for consistent comparison
-            const timeZone = 'America/New_York';
-            const zonedGameDate = toZonedTime(gameDate, timeZone);
-            const zonedNow = toZonedTime(now, timeZone);
+            // Check game status conditions without timezone conversion
+            const gameIsToday = isToday(gameDate);
+            const gameIsTomorrow = isTomorrow(gameDate);
+            const gameInFuture = gameDate > now;
+            const gameStarted = now > gameDate;
             
-            // Check game status conditions
-            const gameIsToday = isToday(zonedGameDate);
-            const gameIsTomorrow = isTomorrow(zonedGameDate);
-            const gameInFuture = zonedGameDate > zonedNow;
-            const gameStarted = zonedNow > zonedGameDate;
+            // Format the game time
+            const gameTime = format(gameDate, 'h:mm a');
             
             if (gameInFuture) {
                 if (gameIsToday) {
                     return (
                         <div className="pick-result upcoming">
-                            Today at {format(zonedGameDate, 'h:mm a')}
+                            Today at {gameTime}
                         </div>
                     );
                 } else if (gameIsTomorrow) {
                     return (
                         <div className="pick-result upcoming">
-                            Tomorrow at {format(zonedGameDate, 'h:mm a')}
+                            Tomorrow at {gameTime}
                         </div>
                     );
                 } else {
                     return (
                         <div className="pick-result upcoming">
-                            {format(zonedGameDate, 'EEE, MMM d, h:mm a')}
+                            {format(gameDate, 'EEE, MMM d')} at {gameTime}
                         </div>
                     );
                 }
