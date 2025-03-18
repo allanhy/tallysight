@@ -36,6 +36,10 @@ interface Game {
     awayTeam: Team;
     gameTime: string;
     status: string;
+    fullDate?: string;
+    dbDate?: string;
+    dbTime?: string;
+    estDate?: string;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type Sport = ['NBA']
@@ -361,18 +365,21 @@ export default function DailyPicks() {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
 
+                // Use the full date information from the game object, matching tomorrow-picks
                 return {
                     gameId,
                     teamIndex: teamType === 'home' ? 0 : 1,
                     homeTeam: game?.homeTeam,
                     awayTeam: game?.awayTeam,
-                    gameTime: game?.gameTime
+                    // Pass all date-related fields
+                    fullDate: game?.fullDate,
+                    dbDate: game?.dbDate,
+                    dbTime: game?.dbTime,
+                    estDate: game?.estDate,
+                    gameTime: game?.gameTime,
+                    status: game?.status
                 };
             });
-
-            // Get today's date
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
 
             const response = await fetch('/api/savePicks', {
                 method: 'POST',
@@ -381,7 +388,7 @@ export default function DailyPicks() {
                 },
                 body: JSON.stringify({
                     picks: picksArray,
-                    pickDate: today.toISOString()
+                    pickDate: new Date().toISOString().split('T')[0] // Today's date for tracking purposes, matching tomorrow-picks
                 }),
             });
 
