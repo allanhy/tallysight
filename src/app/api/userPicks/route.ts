@@ -104,40 +104,45 @@ export async function GET(req: NextRequest) {
 
         // Transform the data with correct IDs and handle potential null values
         const formattedPicks = picks.rows.map((row: any) => {
-            // Parse game date consistently using date-fns
+            // Log raw date from database for debugging
+            console.log('Raw gameDate from DB:', row.gameDate, typeof row.gameDate);
+            
+            // Parse game date consistently
             let gameDate;
             if (row.gameDate) {
                 if (row.gameDate instanceof Date) {
-                    // Convert to ISO string and parse to ensure consistency
-                    gameDate = parseISO(format(row.gameDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
+                    gameDate = row.gameDate;
                 } else if (typeof row.gameDate === 'string') {
                     gameDate = parseISO(row.gameDate);
                 } else {
                     console.log(`Unexpected gameDate type: ${typeof row.gameDate}`, row.gameDate);
-                    gameDate = parseISO(new Date().toISOString());
+                    gameDate = new Date();
                 }
             } else {
-                gameDate = parseISO(new Date().toISOString());
+                gameDate = new Date();
             }
             
-            // Get current time using date-fns
-            const now = parseISO(new Date().toISOString());
+            // Get current time
+            const now = new Date();
             
             // Determine game status
             let status;
             
             // IMPORTANT: First check if the game has a winner already
             if (row.winner !== null) {
-                status = 'STATUS_FINAL'; // Game is complete
-                console.log(`Game has explicit winner: ${row.game_id}, winner: ${row.winner}`);
+                status = 'STATUS_FINAL';
             } else {
-                // Check if the game is today
-                const isGameToday = isToday(gameDate);
+                // Check if the game is today - use the date part only for comparison
+                const today = new Date();
+                const isGameToday = 
+                    gameDate.getFullYear() === today.getFullYear() &&
+                    gameDate.getMonth() === today.getMonth() &&
+                    gameDate.getDate() === today.getDate();
                 
                 // Check if the game is in the future
-                const isGameInFuture = isAfter(gameDate, now);
+                const isGameInFuture = gameDate > now;
                 
-                console.log(`Game ${row.game_id}: Is today? ${isGameToday}, Is in future? ${isGameInFuture}`);
+                console.log(`Game ${row.game_id}: Date: ${gameDate.toISOString()}, Is today? ${isGameToday}, Is in future? ${isGameInFuture}`);
                 
                 if (isGameToday) {
                     // Game is today - check if it has started based on the time
@@ -170,10 +175,8 @@ export async function GET(req: NextRequest) {
                 }
             }
             
-            // Log date information for debugging
-            console.log('Raw gameDate from DB:', row.gameDate);
-            console.log('Parsed as Date object:', gameDate);
-            console.log('Formatted:', format(gameDate, 'yyyy-MM-dd HH:mm:ss'));
+            // Preserve the exact date from the database
+            const isoGameDate = gameDate.toISOString();
             
             return {
                 id: row.pick_id,
@@ -187,10 +190,9 @@ export async function GET(req: NextRequest) {
                     team2Name: row.team2Name,
                     team1Logo: row.team1Logo,
                     team2Logo: row.team2Logo,
-                    // Only include winner if the game is actually final
                     winner: status === 'STATUS_FINAL' ? row.winner : null,
                     final_score: status === 'STATUS_FINAL' ? row.final_score : null,
-                    gameDate: format(gameDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), // ISO string format
+                    gameDate: isoGameDate, // Preserve the exact date
                     status: status,
                     gameDay: format(gameDate, 'EEEE'),
                     formattedGameDate: format(gameDate, 'MMM d, yyyy h:mm a')
