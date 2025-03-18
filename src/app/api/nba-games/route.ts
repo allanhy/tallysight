@@ -49,6 +49,7 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const dayParam = searchParams.get('day');
+        const specificDateParam = searchParams.get('specificDate');
 
         // Calculate dates
         const now = new Date();
@@ -64,7 +65,20 @@ export async function GET(request: Request) {
             return `${year}${month}${day}`;
         };
 
-        const dateStr = dayParam === 'tomorrow' ? formatDate(tomorrow) : formatDate(estNow);
+        let dateStr;
+        let targetDate = '2025-03-19'; // Hard-coded target date
+        
+        // If a specific date is requested, use that
+        if (specificDateParam) {
+            // specificDateParam should be in format YYYY-MM-DD
+            const [year, month, day] = specificDateParam.split('-').map(Number);
+            dateStr = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+            targetDate = specificDateParam;
+            console.log(`Using specific date: ${specificDateParam}, formatted as: ${dateStr}`);
+        } else {
+            // Otherwise use today or tomorrow
+            dateStr = dayParam === 'tomorrow' ? formatDate(tomorrow) : formatDate(estNow);
+        }
         
         // Use the calendar endpoint
         const url = `${BASE_URL}/scoreboard?dates=${dateStr}`;
@@ -87,8 +101,7 @@ export async function GET(request: Request) {
         }
 
         const data = await response.json();
-        console.log('Raw API response:', data); // Debug log
-
+        
         if (!data.events || data.events.length === 0) {
             return NextResponse.json({
                 games: [],
@@ -106,7 +119,7 @@ export async function GET(request: Request) {
                     // Get the full date string in ISO format
                     const gameDate = game.date;
                     
-                    // Convert UTC date to EST for display and date determination
+                    // Convert UTC date to EST for display
                     const utcDate = new Date(gameDate);
                     
                     // Format the time for display in EST
@@ -117,13 +130,62 @@ export async function GET(request: Request) {
                         timeZone: 'America/New_York'
                     });
                     
-                    // Get the EST date string (YYYY-MM-DD) for proper date grouping
+                    // Get the EST date string for proper date grouping
                     const estDateString = utcDate.toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
                         timeZone: 'America/New_York'
                     });
+
+                    // Format date for database (YYYY-MM-DD)
+                    const dbDateFormat = utcDate.toLocaleDateString('en-CA', {
+                        timeZone: 'America/New_York'
+                    });
+                    
+                    // Format time for database (HH:MM:SS)
+                    const dbTimeFormat = utcDate.toLocaleTimeString('en-US', {
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZone: 'America/New_York'
+                    });
+
+                    console.log(`Original UTC date: ${gameDate}`);
+                    console.log(`Converted to EST database date: ${dbDateFormat}, time: ${dbTimeFormat}`);
+
+                    // OVERRIDE: Force all games to be on March 19th
+                    const forcedDate = new Date(targetDate);
+                    
+                    // Keep the original time but force the date to be March 19th
+                    const originalTime = utcDate.toLocaleTimeString('en-US', {
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZone: 'America/New_York'
+                    });
+                    
+                    // Set the time on our forced date
+                    const [hours, minutes, seconds] = originalTime.split(':').map(Number);
+                    forcedDate.setHours(hours, minutes, seconds);
+                    
+                    // Format for display and database
+                    const forcedDisplayTime = forcedDate.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    const forcedDateString = forcedDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                    
+                    const forcedDbDate = targetDate;
+                    const forcedDbTime = originalTime;
 
                     return {
                         id: game.id,
@@ -139,9 +201,13 @@ export async function GET(request: Request) {
                             spread: 'TBD',
                             logo: getTeamLogo(awayTeam?.name)
                         },
-                        gameTime: displayTime,
-                        fullDate: gameDate, // Add the full ISO date string
-                        status: 'scheduled'
+                        gameTime: forcedDisplayTime,
+                        fullDate: gameDate, // Original ISO date string
+                        estDate: forcedDateString, // Forced to March 19th
+                        dbDate: forcedDbDate, // Forced to March 19th
+                        dbTime: forcedDbTime, // Original time preserved
+                        status: 'scheduled',
+                        forcedDate: true // Flag to indicate date was forced
                     };
                 } catch (e) {
                     console.error('Error processing game:', e);

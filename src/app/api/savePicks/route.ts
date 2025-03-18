@@ -23,6 +23,8 @@ interface Pick {
   pickDate?: string;
   estDate?: string;
   fullDate?: string;
+  dbDate?: string;
+  dbTime?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -56,6 +58,46 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Store the original UTC date string from ESPN
+    function getGameDateUTC(dateStr: string): string {
+      try {
+        // Parse the date string properly
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+          console.error(`Invalid date string: ${dateStr}`);
+          return new Date().toISOString().split('T')[0]; // Default to today
+        }
+        
+        // Format as YYYY-MM-DD in UTC
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        
+        const formattedDate = `${year}-${month}-${day}`;
+        console.log(`Parsed UTC date from ${dateStr} to ${formattedDate}`);
+        return formattedDate;
+      } catch (error) {
+        console.error(`Error parsing date: ${dateStr}`, error);
+        return new Date().toISOString().split('T')[0]; // Default to today
+      }
+    }
+
+    // Store the original UTC time from ESPN
+    function getGameTimeUTC(dateStr: string): string {
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+          return '19:00:00'; // Default
+        }
+        
+        // Format as HH:MM:SS in UTC
+        return date.toISOString().split('T')[1].split('.')[0];
+      } catch (error) {
+        console.error(`Error extracting UTC time:`, error);
+        return '19:00:00';
+      }
+    }
+
     // First ensure all games exist
     for (const pick of picks) {
       // Check if game exists
@@ -64,39 +106,41 @@ export async function POST(req: NextRequest) {
       `;
 
       if (gameExists.rowCount === 0) {
-        // Parse team names from the game data
-        let team1Name = '';
-        let team2Name = '';
+        let gameDate, gameTime;
         
-        if (pick.name && typeof pick.name === 'string') {
-          // Parse from format like "Memphis Grizzlies at Portland Trail Blazers"
-          const parts = pick.name.split(' at ');
-          if (parts.length === 2) {
-            team1Name = parts[0].trim();
-            team2Name = parts[1].trim();
-          }
-        } else {
-          // Use homeTeam and awayTeam if available
-          team1Name = pick.homeTeam?.name || '';
-          team2Name = pick.awayTeam?.name || '';
+        // Use the dbDate and dbTime fields if they exist (these are already in EST)
+        if (pick.dbDate && pick.dbTime) {
+          gameDate = pick.dbDate;
+          gameTime = pick.dbTime;
+          console.log(`Using pre-formatted database date: ${gameDate} and time: ${gameTime}`);
         }
-        
-        // Extract date and time from ISO date string
-        let gameDate = convertToEST(pickDate);
-        let gameTime = '19:00:00'; // Default
-        
-        // Always prioritize the date field from ESPN format if available
-        if (pick.date && typeof pick.date === 'string') {
-          gameDate = convertToEST(pick.date);
-          gameTime = extractTimeFromISO(pick.date);
-          console.log(`Converted date ${pick.date} to ${gameDate} and time ${gameTime}`);
-        } else if (pick.fullDate) {
-          gameDate = convertToEST(pick.fullDate);
-          gameTime = extractTimeFromISO(pick.fullDate);
+        // Otherwise use the fullDate field and convert it
+        else if (pick.fullDate) {
+          const utcDate = new Date(pick.fullDate);
+          
+          // Convert to EST for the date
+          const estDate = new Date(utcDate.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+          
+          // Format date as YYYY-MM-DD
+          const year = estDate.getFullYear();
+          const month = String(estDate.getMonth() + 1).padStart(2, '0');
+          const day = String(estDate.getDate()).padStart(2, '0');
+          gameDate = `${year}-${month}-${day}`;
+          
+          // Format time as HH:MM:SS
+          const hours = String(estDate.getHours()).padStart(2, '0');
+          const minutes = String(estDate.getMinutes()).padStart(2, '0');
+          const seconds = String(estDate.getSeconds()).padStart(2, '0');
+          gameTime = `${hours}:${minutes}:${seconds}`;
+          
+          console.log(`Converted fullDate ${pick.fullDate} to EST date: ${gameDate} and time: ${gameTime}`);
         }
-        
-        // Always set sport to NBA
-        const sport = 'NBA';
+        // Fallback to defaults
+        else {
+          gameDate = new Date().toISOString().split('T')[0];
+          gameTime = '19:00:00';
+          console.log(`No date information found, using defaults: ${gameDate} and time: ${gameTime}`);
+        }
         
         await sql`
           INSERT INTO "Game" (
@@ -110,17 +154,15 @@ export async function POST(req: NextRequest) {
             "sport"
           ) VALUES (
             ${pick.gameId},
-            ${team1Name},
-            ${team2Name},
-            ${pick.homeTeam?.logo || ''},
-            ${pick.awayTeam?.logo || ''},
+            ${pick.homeTeam.name},
+            ${pick.awayTeam.name},
+            ${pick.homeTeam.logo || ''},
+            ${pick.awayTeam.logo || ''},
             ${gameDate}::date,
             ${gameTime}::time,
-            ${sport}
+            ${'NBA'}
           )
         `;
-        
-        console.log(`Saved game ${pick.gameId} with sport ${sport} and time ${gameTime}`);
       }
     }
 
@@ -143,13 +185,15 @@ export async function POST(req: NextRequest) {
           "userId",
           "gameId",
           "teamIndex",
-          "createdAt"
+          "createdAt",
+          "sport"
         ) VALUES (
           ${crypto.randomUUID()},
           ${userId},
           ${pick.gameId},
           ${pick.teamIndex},
-          NOW() AT TIME ZONE 'America/New_York'
+          NOW() AT TIME ZONE 'America/New_York',
+          ${'NBA'}
         )
         ON CONFLICT ("userId", "gameId") DO NOTHING
       `;
