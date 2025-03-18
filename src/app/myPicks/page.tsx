@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import '../styles/myPicks.css';
 import { format, parseISO, compareDesc } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { isTomorrow } from 'date-fns';
 
 
 //TODO: Add a history button to the picks page
@@ -410,14 +411,24 @@ export default function MyPicksPage() {
     // Get grouped picks
     const groupedPicks = groupPicksByDate(weekFilteredPicks);
 
-    // Get sorted dates with proper date parsing
+    // Update the sortedDates logic to be more resilient
     const sortedDates = Object.keys(groupedPicks).sort((a, b) => {
-        // Parse dates using date-fns for more reliable sorting
-        const dateA = parseISO(a.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
-        const dateB = parseISO(b.replace(/(\w+), (\w+) (\d+)/, "$2 $3, 2025"));
-        
-        // Sort in descending order (newest first)
-        return compareDesc(dateA, dateB);
+        try {
+            // More robust date parsing for the formatted strings
+            // Add the current year to make parsing more reliable
+            const currentYear = new Date().getFullYear();
+            const dateAString = a.replace(/(\w+), (\w+) (\d+)/, `$2 $3, ${currentYear}`);
+            const dateBString = b.replace(/(\w+), (\w+) (\d+)/, `$2 $3, ${currentYear}`);
+            
+            const dateA = parseISO(dateAString);
+            const dateB = parseISO(dateBString);
+            
+            // Sort in descending order (newest first)
+            return compareDesc(dateA, dateB);
+        } catch (error) {
+            console.error("Error sorting dates:", error, a, b);
+            return 0; // Return 0 if comparison fails
+        }
     });
 
     // Update the parseGameDate function to be more robust
@@ -475,6 +486,83 @@ export default function MyPicksPage() {
         
         return false;  // User's pick was incorrect
     }
+
+    // Update the renderGameStatus function to use consistent date handling
+    const renderGameStatus = (pick: Pick) => {
+        try {
+            // Parse the game date directly from the database value
+            const gameDate = parseISO(pick.Game.gameDate);
+            const now = new Date();
+            
+            // Convert to Eastern Time for consistent comparison
+            const timeZone = 'America/New_York';
+            const zonedGameDate = toZonedTime(gameDate, timeZone);
+            const zonedNow = toZonedTime(now, timeZone);
+            
+            // Check game status conditions
+            const gameIsToday = isToday(zonedGameDate);
+            const gameIsTomorrow = isTomorrow(zonedGameDate);
+            const gameInFuture = zonedGameDate > zonedNow;
+            const gameStarted = zonedNow > zonedGameDate;
+            
+            if (gameInFuture) {
+                if (gameIsToday) {
+                    return (
+                        <div className="pick-result upcoming">
+                            Today at {format(zonedGameDate, 'h:mm a')}
+                        </div>
+                    );
+                } else if (gameIsTomorrow) {
+                    return (
+                        <div className="pick-result upcoming">
+                            Tomorrow at {format(zonedGameDate, 'h:mm a')}
+                        </div>
+                    );
+                } else {
+                    return (
+                        <div className="pick-result upcoming">
+                            {format(zonedGameDate, 'EEE, MMM d, h:mm a')}
+                        </div>
+                    );
+                }
+            } else {
+                // Game is in the past or today and has started
+                if (pick.Game.winner !== null) {
+                    // Game has a winner
+                    const userWon = (pick.teamIndex === 0 && pick.Game.winner === false) || 
+                                    (pick.teamIndex === 1 && pick.Game.winner === true);
+                    
+                    return (
+                        <div className={`pick-result ${userWon ? 'win' : 'loss'}`}>
+                            {userWon ? 'Won' : 'Lost'}
+                            {pick.Game.final_score && (
+                                <span className="ml-1">({pick.Game.final_score})</span>
+                            )}
+                        </div>
+                    );
+                } else if (gameStarted) {
+                    return (
+                        <div className="pick-result in-progress">
+                            In Progress
+                        </div>
+                    );
+                } else {
+                    return (
+                        <div className="pick-result upcoming">
+                            Scheduled
+                        </div>
+                    );
+                }
+            }
+        } catch (error) {
+            console.error("Error rendering game status:", error);
+            return (
+                <div className="pick-result upcoming">
+                    Scheduled (Error)
+                </div>
+            );
+        }
+    };
 
     return (
         <div className="picks-page">
@@ -623,108 +711,7 @@ export default function MyPicksPage() {
 
                                                         {/* Game Status */}
                                                         <div className="game-status ml-4">
-                                                            {(() => {
-                                                                try {
-                                                                    // Parse the game date directly from the database value
-                                                                    const gameDate = new Date(pick.Game.gameDate);
-                                                                    const now = new Date();
-                                                                    
-                                                                    // Get today's date (without time)
-                                                                    const today = new Date();
-                                                                    today.setHours(0, 0, 0, 0);
-                                                                    
-                                                                    // Get tomorrow's date (without time)
-                                                                    const tomorrow = new Date(today);
-                                                                    tomorrow.setDate(tomorrow.getDate() + 1);
-                                                                    
-                                                                    // Get game date without time for comparison
-                                                                    const gameDateOnly = new Date(gameDate);
-                                                                    gameDateOnly.setHours(0, 0, 0, 0);
-                                                                    
-                                                                    // Check if game is today or in the future
-                                                                    const isGameToday = gameDateOnly.getTime() === today.getTime();
-                                                                    const isGameTomorrow = gameDateOnly.getTime() === tomorrow.getTime();
-                                                                    const isGameInFuture = gameDateOnly > today;
-                                                                    
-                                                                    // Check if game has started (current time is past game time)
-                                                                    const hasGameStarted = now > gameDate;
-                                                                    
-                                                                    // Game status logic
-                                                                    if (isGameInFuture) {
-                                                                        if (isGameToday) {
-                                                                            // Game is today but hasn't started yet
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    Today at {gameDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                                                </div>
-                                                                            );
-                                                                        } else if (isGameTomorrow) {
-                                                                            // Game is tomorrow
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    Tomorrow at {gameDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                                                </div>
-                                                                            );
-                                                                        } else {
-                                                                            // Game is in the future (not today or tomorrow)
-                                                                            const options: Intl.DateTimeFormatOptions = { 
-                                                                                weekday: 'short', 
-                                                                                month: 'short', 
-                                                                                day: 'numeric',
-                                                                                hour: '2-digit',
-                                                                                minute: '2-digit',
-                                                                                timeZone: 'America/New_York'  // Specify timezone explicitly
-                                                                            };
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    {gameDate.toLocaleDateString('en-US', options)}
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                    } else {
-                                                                        // Game is in the past or today and has started
-                                                                        if (pick.Game.winner !== null) {
-                                                                            // Game has a winner
-                                                                            
-                                                                            // Determine if user won based on their pick and the game result
-                                                                            // If user picked team1 (teamIndex === 0), they win if winner is false
-                                                                            // If user picked team2 (teamIndex === 1), they win if winner is true
-                                                                            const userWon = (pick.teamIndex === 0 && pick.Game.winner === false) || 
-                                                                                            (pick.teamIndex === 1 && pick.Game.winner === true);
-                                                                            
-                                                                            return (
-                                                                                <div className={`pick-result ${userWon ? 'win' : 'loss'}`}>
-                                                                                    {userWon ? 'Won' : 'Lost'}
-                                                                                    {pick.Game.final_score && (
-                                                                                        <span className="ml-1">({pick.Game.final_score})</span>
-                                                                                    )}
-                                                                                </div>
-                                                                            );
-                                                                        } else if (hasGameStarted) {
-                                                                            // Game has started but no winner yet
-                                                                            return (
-                                                                                <div className="pick-result in-progress">
-                                                                                    In Progress
-                                                                                </div>
-                                                                            );
-                                                                        } else {
-                                                                            // Fallback for edge cases
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    Scheduled
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                    }
-                                                                } catch (error) {
-                                                                    console.error("Error rendering game status:", error, "for game date:", pick.Game.gameDate);
-                                                                    return (
-                                                                        <div className="pick-result upcoming">
-                                                                            Scheduled (Error)
-                                                                        </div>
-                                                                    );
-                                                                }
-                                                            })()}
+                                                            {renderGameStatus(pick)}
                                                         </div>
                                                     </div>
                                                 </div>
