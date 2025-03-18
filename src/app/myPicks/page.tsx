@@ -166,7 +166,7 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Update the formatGameDate function to use date-fns
+    // Update the formatGameDate function to be more consistent
     const formatGameDate = (dateString: string) => {
         if (!dateString) return '';
         
@@ -174,11 +174,11 @@ export default function MyPicksPage() {
             // Parse the ISO date string
             const date = parseISO(dateString);
             
-            // Convert to Eastern Time
+            // Always use Eastern Time for consistency
             const timeZone = 'America/New_York';
             const zonedDate = toZonedTime(date, timeZone);
             
-            // Format the date consistently - remove the timeZone option
+            // Format the date with explicit timezone
             return format(zonedDate, 'EEEE, MMM d');
         } catch (error) {
             console.error("Error formatting date:", error, dateString);
