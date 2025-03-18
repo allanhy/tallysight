@@ -65,8 +65,9 @@ export async function GET(request: Request) {
             return `${year}${month}${day}`;
         };
 
-        let dateStr;
-        let targetDate = '2025-03-19'; // Hard-coded target date
+        // Declare variables before using them
+        let dateStr: string;
+        let targetDate: string;
         
         // If a specific date is requested, use that
         if (specificDateParam) {
@@ -78,6 +79,9 @@ export async function GET(request: Request) {
         } else {
             // Otherwise use today or tomorrow
             dateStr = dayParam === 'tomorrow' ? formatDate(tomorrow) : formatDate(estNow);
+            targetDate = dayParam === 'tomorrow' 
+                ? tomorrow.toLocaleDateString('en-CA') 
+                : estNow.toLocaleDateString('en-CA');
         }
         
         // Use the calendar endpoint
@@ -122,6 +126,9 @@ export async function GET(request: Request) {
                     // Convert UTC date to EST for display
                     const utcDate = new Date(gameDate);
                     
+                    // Add debug logging to see the original times
+                    console.log(`Game ${homeTeam?.name} vs ${awayTeam?.name} - Original UTC time: ${utcDate.toISOString()}`);
+                    
                     // Format the time for display in EST
                     const displayTime = utcDate.toLocaleTimeString('en-US', {
                         hour: 'numeric',
@@ -129,6 +136,8 @@ export async function GET(request: Request) {
                         hour12: true,
                         timeZone: 'America/New_York'
                     });
+                    
+                    console.log(`Converted to EST display time: ${displayTime}`);
                     
                     // Get the EST date string for proper date grouping
                     const estDateString = utcDate.toLocaleDateString('en-US', {
@@ -152,31 +161,24 @@ export async function GET(request: Request) {
                         timeZone: 'America/New_York'
                     });
 
-                    console.log(`Original UTC date: ${gameDate}`);
-                    console.log(`Converted to EST database date: ${dbDateFormat}, time: ${dbTimeFormat}`);
-
-                    // OVERRIDE: Force all games to be on March 19th
+                    // OVERRIDE: Force all games to be on target date but keep original times
                     const forcedDate = new Date(targetDate);
                     
-                    // Keep the original time but force the date to be March 19th
-                    const originalTime = utcDate.toLocaleTimeString('en-US', {
-                        hour12: false,
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        timeZone: 'America/New_York'
-                    });
+                    // Extract the original time components
+                    const originalTime = dbTimeFormat;
+                    const [hours, minutes, seconds] = originalTime.split(':').map(Number);
                     
                     // Set the time on our forced date
-                    const [hours, minutes, seconds] = originalTime.split(':').map(Number);
                     forcedDate.setHours(hours, minutes, seconds);
                     
-                    // Format for display and database
+                    // Format for display with the original time
                     const forcedDisplayTime = forcedDate.toLocaleTimeString('en-US', {
                         hour: 'numeric',
                         minute: '2-digit',
                         hour12: true
                     });
+                    
+                    console.log(`Forced date with original time: ${forcedDate.toISOString()}, display time: ${forcedDisplayTime}`);
                     
                     const forcedDateString = forcedDate.toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -186,6 +188,9 @@ export async function GET(request: Request) {
                     
                     const forcedDbDate = targetDate;
                     const forcedDbTime = originalTime;
+
+                    // Add debug logging to see what's being saved
+                    console.log(`Game ${homeTeam?.name} vs ${awayTeam?.name} - Saving with dbTime: ${forcedDbTime}`);
 
                     return {
                         id: game.id,
@@ -201,10 +206,10 @@ export async function GET(request: Request) {
                             spread: 'TBD',
                             logo: getTeamLogo(awayTeam?.name)
                         },
-                        gameTime: forcedDisplayTime,
+                        gameTime: forcedDisplayTime, // This should now have the correct original time
                         fullDate: gameDate, // Original ISO date string
-                        estDate: forcedDateString, // Forced to March 19th
-                        dbDate: forcedDbDate, // Forced to March 19th
+                        estDate: forcedDateString, // Forced to target date
+                        dbDate: forcedDbDate, // Forced to target date
                         dbTime: forcedDbTime, // Original time preserved
                         status: 'scheduled',
                         forcedDate: true // Flag to indicate date was forced
