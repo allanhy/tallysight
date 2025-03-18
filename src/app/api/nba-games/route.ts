@@ -49,6 +49,7 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const dayParam = searchParams.get('day');
+        const specificDateParam = searchParams.get('specificDate');
 
         // Calculate dates
         const now = new Date();
@@ -64,7 +65,24 @@ export async function GET(request: Request) {
             return `${year}${month}${day}`;
         };
 
-        const dateStr = dayParam === 'tomorrow' ? formatDate(tomorrow) : formatDate(estNow);
+        // Declare variables before using them
+        let dateStr: string;
+        let targetDate: string;
+        
+        // If a specific date is requested, use that
+        if (specificDateParam) {
+            // specificDateParam should be in format YYYY-MM-DD
+            const [year, month, day] = specificDateParam.split('-').map(Number);
+            dateStr = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+            targetDate = specificDateParam;
+            console.log(`Using specific date: ${specificDateParam}, formatted as: ${dateStr}`);
+        } else {
+            // Otherwise use today or tomorrow
+            dateStr = dayParam === 'tomorrow' ? formatDate(tomorrow) : formatDate(estNow);
+            targetDate = dayParam === 'tomorrow' 
+                ? tomorrow.toLocaleDateString('en-CA') 
+                : estNow.toLocaleDateString('en-CA');
+        }
         
         // Use the calendar endpoint
         const url = `${BASE_URL}/scoreboard?dates=${dateStr}`;
@@ -87,8 +105,7 @@ export async function GET(request: Request) {
         }
 
         const data = await response.json();
-        console.log('Raw API response:', data); // Debug log
-
+        
         if (!data.events || data.events.length === 0) {
             return NextResponse.json({
                 games: [],
@@ -102,6 +119,78 @@ export async function GET(request: Request) {
                     const competition = game.competitions[0];
                     const homeTeam = competition.competitors.find((t: any) => t.homeAway === 'home')?.team;
                     const awayTeam = competition.competitors.find((t: any) => t.homeAway === 'away')?.team;
+                    
+                    // Get the full date string in ISO format
+                    const gameDate = game.date;
+                    
+                    // Convert UTC date to EST for display
+                    const utcDate = new Date(gameDate);
+                    
+                    // Add debug logging to see the original times
+                    console.log(`Game ${homeTeam?.name} vs ${awayTeam?.name} - Original UTC time: ${utcDate.toISOString()}`);
+                    
+                    // Format the time for display in EST
+                    const displayTime = utcDate.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true,
+                        timeZone: 'America/New_York'
+                    });
+                    
+                    console.log(`Converted to EST display time: ${displayTime}`);
+                    
+                    // Get the EST date string for proper date grouping
+                    const estDateString = utcDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        timeZone: 'America/New_York'
+                    });
+
+                    // Format date for database (YYYY-MM-DD)
+                    const dbDateFormat = utcDate.toLocaleDateString('en-CA', {
+                        timeZone: 'America/New_York'
+                    });
+                    
+                    // Format time for database (HH:MM:SS)
+                    const dbTimeFormat = utcDate.toLocaleTimeString('en-US', {
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZone: 'America/New_York'
+                    });
+
+                    // OVERRIDE: Force all games to be on target date but keep original times
+                    const forcedDate = new Date(targetDate);
+                    
+                    // Extract the original time components
+                    const originalTime = dbTimeFormat;
+                    const [hours, minutes, seconds] = originalTime.split(':').map(Number);
+                    
+                    // Set the time on our forced date
+                    forcedDate.setHours(hours, minutes, seconds);
+                    
+                    // Format for display with the original time
+                    const forcedDisplayTime = forcedDate.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                    
+                    console.log(`Forced date with original time: ${forcedDate.toISOString()}, display time: ${forcedDisplayTime}`);
+                    
+                    const forcedDateString = forcedDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                    
+                    const forcedDbDate = targetDate;
+                    const forcedDbTime = originalTime;
+
+                    // Add debug logging to see what's being saved
+                    console.log(`Game ${homeTeam?.name} vs ${awayTeam?.name} - Saving with dbTime: ${forcedDbTime}`);
 
                     return {
                         id: game.id,
@@ -117,13 +206,13 @@ export async function GET(request: Request) {
                             spread: 'TBD',
                             logo: getTeamLogo(awayTeam?.name)
                         },
-                        gameTime: new Date(game.date).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true,
-                            timeZone: 'America/New_York'
-                        }),
-                        status: 'scheduled'
+                        gameTime: forcedDisplayTime, // This should now have the correct original time
+                        fullDate: gameDate, // Original ISO date string
+                        estDate: forcedDateString, // Forced to target date
+                        dbDate: forcedDbDate, // Forced to target date
+                        dbTime: forcedDbTime, // Original time preserved
+                        status: 'scheduled',
+                        forcedDate: true // Flag to indicate date was forced
                     };
                 } catch (e) {
                     console.error('Error processing game:', e);

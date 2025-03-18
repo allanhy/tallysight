@@ -4,6 +4,11 @@ import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import '../styles/myPicks.css';
+import { format, parseISO, compareDesc, formatDistanceToNow, isAfter } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
+import { isTomorrow, isToday } from 'date-fns';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 
 //TODO: Add a history button to the picks page
@@ -56,6 +61,15 @@ interface GroupedPicks {
     [date: string]: Pick[];
 }
 
+// 2. In your UI, you might add a form to update game times
+// This could be in an admin component
+interface GameEditorProps {
+    game: {
+        id: string;
+        gameDate: string;
+    }
+}
+
 export default function MyPicksPage() {
     // State management for UI controls
     const [isHistoryActive, setIsHistoryActive] = useState(false);
@@ -70,6 +84,10 @@ export default function MyPicksPage() {
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
     const [weekOptions, setWeekOptions] = useState<WeekOption[]>([]);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const [userTimeZone, setUserTimeZone] = useState<string>('America/New_York'); // Default timezone
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [groupedPicks, setGroupedPicks] = useState<GroupedPicks>({});
 
     // Hooks for authentication and navigation
     const { isSignedIn } = useUser();
@@ -83,21 +101,42 @@ export default function MyPicksPage() {
     // Fetch user's picks when signed in
     useEffect(() => {
         const fetchUserPicks = async () => {
+            setLoading(true);
             try {
-                console.log('Fetching picks...'); // Debug log
-                const response = await axios.get('/api/userPicks');
-                console.log('Response:', response.data); // Debug log
-
-                // Sort picks by gameDate in descending order (newest first)
-                const sortedPicks = response.data.sort((a: Pick, b: Pick) => {
-                    const dateA = new Date(a.Game.gameDate);
-                    const dateB = new Date(b.Game.gameDate);
-                    return dateB.getTime() - dateA.getTime(); // Changed to show newest first
-                });
-
-                setUserPicks(sortedPicks);
+                const response = await fetch('/api/userPicks');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch picks');
+                }
+                const data = await response.json();
+                
+                console.log('Received picks from API:', data.length);
+                
+                // Make sure we have valid data
+                if (!Array.isArray(data)) {
+                    console.error('Expected array but got:', typeof data, data);
+                    setUserPicks([]);
+                    setLoading(false);
+                    return;
+                }
+                
+                // Log the first few picks for debugging
+                if (data.length > 0) {
+                    console.log('First pick:', data[0]);
+                    if (data.length > 1) console.log('Second pick:', data[1]);
+                }
+                
+                // No need to sort again if already sorted on the server
+                setUserPicks(data);
+                
+                // Group the picks by date for display
+                const groupedPicks = groupPicksByDate(data);
+                setGroupedPicks(groupedPicks);
+                
             } catch (error) {
-                console.error('Client Error:', error);
+                console.error('Error fetching picks:', error);
+                setError('Failed to load picks. Please try again later.');
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -126,6 +165,14 @@ export default function MyPicksPage() {
         const week = getCurrentWeek();
         setCurrentWeek(week);
         setSelectedWeek(week);
+    }, []);
+
+    // Add this useEffect to detect the user's timezone
+    useEffect(() => {
+        // Get the user's timezone using Intl API
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        setUserTimeZone(timezone);
+        console.log("User timezone detected:", timezone);
     }, []);
 
     // Helper function to get team details from game data
@@ -163,60 +210,93 @@ export default function MyPicksPage() {
         return Math.ceil((days + 1) / 7);
     };
 
-    // Add this helper function to format dates consistently
-    const formatGameDate = (dateString: string) => {
-        // Ensure we're working with a valid date string
-        if (!dateString) return '';
-        
-        // Create a date object in the correct timezone
-        const date = new Date(dateString);
-        
-        // Format the date consistently for display and comparison
-        return date.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-            timeZone: 'America/New_York'  // Use ET timezone consistently
-        });
+    // Replace ensureConsistentDate with a date-fns approach
+    const parseConsistentDate = (dateInput: string | Date | null): Date => {
+        try {
+            if (!dateInput) return new Date(); // Still need a fallback
+            
+            if (dateInput instanceof Date) {
+                return parseISO(format(dateInput, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'')); 
+            }
+            
+            if (typeof dateInput === 'string') {
+                return parseISO(dateInput);
+            }
+            
+            console.error(`Unexpected date type: ${typeof dateInput}`);
+            return parseISO(new Date().toISOString());
+        } catch (error) {
+            console.error(`Error parsing date: ${dateInput}`, error);
+            return parseISO(new Date().toISOString());
+        }
     };
 
-    // Update the groupPicksByDate function to use the consistent formatter
-    const groupPicksByDate = (picks: Pick[]) => {
-        console.log("Starting to group picks, count:", picks.length);
+    // Format dates with user's timezone
+    const formatDateWithTimezone = (date: Date, formatStr: string = 'EEEE, MMM d, h:mm a'): string => {
+        try {
+            // Convert to user's timezone
+            const zonedDate = toZonedTime(date, userTimeZone);
+            return format(zonedDate, formatStr);
+        } catch (error) {
+            console.error(`Error formatting date: ${date}`, error);
+            return 'Invalid date';
+        }
+    };
+
+    // Add a function for relative time
+    const getRelativeTime = (date: Date): string => {
+        try {
+            const now = new Date();
+            return formatDistanceToNow(date, { addSuffix: true });
+        } catch (error) {
+            console.error(`Error getting relative time: ${date}`, error);
+            return 'Unknown time';
+        }
+    };
+
+    // Completely replace the groupPicksByDate function
+    const groupPicksByDate = (picks: Pick[]): GroupedPicks => {
+        if (!picks || picks.length === 0) return {};
         
-        // First remove duplicates based on gameId
-        const uniquePicks = picks.reduce((acc: Pick[], current) => {
-            const exists = acc.find(pick => pick.gameId === current.gameId);
-            if (!exists) {
-                acc.push(current);
-            }
-            return acc;
-        }, []);
-
-        // Then group by date using the consistent formatter
-        const grouped = uniquePicks.reduce((groups: { [key: string]: Pick[] }, pick) => {
-            if (!pick.Game || !pick.Game.gameDate) return groups;
+        // Group by formatted date string (ignoring time)
+        const grouped: GroupedPicks = {};
+        
+        for (const pick of picks) {
+            if (!pick.Game?.gameDate) continue;
             
-            // Use the consistent date formatter
-            const dateKey = formatGameDate(pick.Game.gameDate);
+            // Parse the date - it's likely in UTC
+            const utcDate = new Date(pick.Game.gameDate);
             
-            if (!groups[dateKey]) {
-                groups[dateKey] = [];
+            // Convert to local timezone for display
+            // This explicitly handles the timezone conversion
+            const localDate = new Date(utcDate.getTime() - (utcDate.getTimezoneOffset() * 60000));
+            
+            // Format just the date part (no time) to group by day
+            const dateKey = localDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            if (!grouped[dateKey]) {
+                grouped[dateKey] = [];
             }
-            groups[dateKey].push(pick);
-            return groups;
-        }, {});
-
-        // Sort picks within each group by game time
-        Object.keys(grouped).forEach(date => {
-            grouped[date].sort((a, b) => {
-                const timeA = new Date(a.Game.gameDate).getTime();
-                const timeB = new Date(b.Game.gameDate).getTime();
-                return timeA - timeB;
+            
+            grouped[dateKey].push(pick);
+        }
+        
+        // Sort each group by time
+        Object.keys(grouped).forEach(dateKey => {
+            grouped[dateKey].sort((a, b) => {
+                if (!a.Game?.gameDate || !b.Game?.gameDate) return 0;
+                
+                const dateA = new Date(a.Game.gameDate);
+                const dateB = new Date(b.Game.gameDate);
+                
+                return dateA.getTime() - dateB.getTime();
             });
         });
-
+        
         return grouped;
     };
 
@@ -315,7 +395,7 @@ export default function MyPicksPage() {
             console.log("Sample Game property:", userPicks[0].Game);
             
             // Check if grouping works
-            const grouped = groupPicksByGameDate(userPicks);
+            const grouped = groupPicksByDate(userPicks);
             console.log("Grouped picks:", grouped);
             console.log("Grouped keys:", Object.keys(grouped));
         }
@@ -403,26 +483,26 @@ export default function MyPicksPage() {
         });
     };
 
-    // Get grouped picks
-    const groupedPicks = groupPicksByDate(weekFilteredPicks);
 
-    // Get sorted dates with proper date parsing
+
+    // Update the sortedDates logic to be more resilient
     const sortedDates = Object.keys(groupedPicks).sort((a, b) => {
-        // Create Date objects from the formatted date strings
-        const datePartsA = a.split(', ')[1].split(' ');
-        const monthA = datePartsA[0];
-        const dayA = parseInt(datePartsA[1]);
-        const yearA = parseInt(datePartsA[2]);
-        
-        const datePartsB = b.split(', ')[1].split(' ');
-        const monthB = datePartsB[0];
-        const dayB = parseInt(datePartsB[1]);
-        const yearB = parseInt(datePartsB[2]);
-        
-        const dateA = new Date(`${monthA} ${dayA}, ${yearA}`);
-        const dateB = new Date(`${monthB} ${dayB}, ${yearB}`);
-        
-        return dateA.getTime() - dateB.getTime();
+        try {
+            // More robust date parsing for the formatted strings
+            // Add the current year to make parsing more reliable
+            const currentYear = new Date().getFullYear();
+            const dateAString = a.replace(/(\w+), (\w+) (\d+)/, `$2 $3, ${currentYear}`);
+            const dateBString = b.replace(/(\w+), (\w+) (\d+)/, `$2 $3, ${currentYear}`);
+            
+            const dateA = parseISO(dateAString);
+            const dateB = parseISO(dateBString);
+            
+            // Sort in descending order (newest first)
+            return compareDesc(dateA, dateB);
+        } catch (error) {
+            console.error("Error sorting dates:", error, a, b);
+            return 0; // Return 0 if comparison fails
+        }
     });
 
     // Update the parseGameDate function to be more robust
@@ -479,6 +559,150 @@ export default function MyPicksPage() {
         }
         
         return false;  // User's pick was incorrect
+    }
+
+    // Update the renderGameStatus function to use date-fns consistently
+    const renderGameStatus = (pick: Pick) => {
+        try {
+            const gameDate = parseConsistentDate(pick.Game.gameDate);
+            const now = new Date();
+            
+            // Use date-fns functions for comparisons
+            const gameIsToday = isToday(gameDate);
+            const gameIsTomorrow = isTomorrow(gameDate);
+            const gameInFuture = isAfter(gameDate, now);
+            const gameStarted = isAfter(now, gameDate);
+            
+            // Format the game time
+            const gameTime = formatDateWithTimezone(gameDate, 'h:mm a');
+            const relativeTime = getRelativeTime(gameDate);
+            
+            if (gameInFuture) {
+                if (gameIsToday) {
+                    return (
+                        <div className="pick-result upcoming">
+                            Today at {gameTime}
+                        </div>
+                    );
+                } else if (gameIsTomorrow) {
+                    return (
+                        <div className="pick-result upcoming">
+                            Tomorrow at {gameTime}
+                        </div>
+                    );
+                } else {
+                    return (
+                        <div className="pick-result upcoming">
+                            {formatDateWithTimezone(gameDate, 'EEE, MMM d')} at {gameTime}
+                        </div>
+                    );
+                }
+            } else {
+                // Game is in the past or today and has started
+                if (pick.Game.winner !== null) {
+                    // Game has a winner
+                    const userWon = (pick.teamIndex === 0 && pick.Game.winner === false) || 
+                                    (pick.teamIndex === 1 && pick.Game.winner === true);
+                    
+                    return (
+                        <div className={`pick-result ${userWon ? 'win' : 'loss'}`}>
+                            {userWon ? 'Won' : 'Lost'} ({relativeTime})
+                            {pick.Game.final_score && (
+                                <span className="ml-1">({pick.Game.final_score})</span>
+                            )}
+                        </div>
+                    );
+                } else if (gameStarted) {
+                    return (
+                        <div className="pick-result in-progress">
+                            In Progress ({relativeTime})
+                        </div>
+                    );
+                } else {
+                    return (
+                        <div className="pick-result upcoming">
+                            Scheduled
+                        </div>
+                    );
+                }
+            }
+        } catch (error) {
+            console.error("Error rendering game status:", error);
+            return (
+                <div className="pick-result upcoming">
+                    Scheduled (Error)
+                </div>
+            );
+        }
+    };
+
+    // 1. First, update your API endpoint that creates or updates games
+    // This would be in a separate file like src/app/api/games/route.ts
+    async function updateGameWithTime(gameId: string, gameDate: string, gameTime: string) {
+        try {
+            // Combine date and time into a single ISO string
+            const [year, month, day] = gameDate.split('-').map(Number);
+            const [hours, minutes] = gameTime.split(':').map(Number);
+            
+            // Create a Date object in UTC
+            const gameDateTime = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+            
+            // Update the game in your database
+            await prisma.game.update({
+                where: { id: gameId },
+                data: { 
+                    gameDate: gameDateTime.toISOString() 
+                }
+            });
+            
+            return { success: true };
+        } catch (error) {
+            console.error("Error updating game time:", error);
+            return { success: false, error };
+        }
+    }
+
+    // 2. In your UI, you might add a form to update game times
+    // This could be in an admin component
+    function GameTimeEditor({ game }: GameEditorProps) {
+        const [date, setDate] = useState(game.gameDate.split('T')[0]);
+        const [time, setTime] = useState('19:00'); // Default to 7:00 PM
+        
+        const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
+            const response = await fetch('/api/games/updateTime', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    gameId: game.id,
+                    gameDate: date,
+                    gameTime: time 
+                })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                alert('Game time updated successfully!');
+            } else {
+                alert('Failed to update game time');
+            }
+        };
+        
+        return (
+            <form onSubmit={handleSubmit}>
+                <input 
+                    type="date" 
+                    value={date} 
+                    onChange={(e) => setDate(e.target.value)} 
+                />
+                <input 
+                    type="time" 
+                    value={time} 
+                    onChange={(e) => setTime(e.target.value)} 
+                />
+                <button type="submit">Update Game Time</button>
+            </form>
+        );
     }
 
     return (
@@ -628,108 +852,7 @@ export default function MyPicksPage() {
 
                                                         {/* Game Status */}
                                                         <div className="game-status ml-4">
-                                                            {(() => {
-                                                                try {
-                                                                    // Parse the game date
-                                                                    const gameDate = new Date(pick.Game.gameDate);
-                                                                    const now = new Date();
-                                                                    
-                                                                    // Get today's date (without time)
-                                                                    const today = new Date();
-                                                                    today.setHours(0, 0, 0, 0);
-                                                                    
-                                                                    // Get tomorrow's date (without time)
-                                                                    const tomorrow = new Date(today);
-                                                                    tomorrow.setDate(tomorrow.getDate() + 1);
-                                                                    
-                                                                    // Get game date without time for comparison
-                                                                    const gameDateOnly = new Date(gameDate);
-                                                                    gameDateOnly.setHours(0, 0, 0, 0);
-                                                                    
-                                                                    // Check if game is today or in the future
-                                                                    const isGameToday = gameDateOnly.getTime() === today.getTime();
-                                                                    const isGameTomorrow = gameDateOnly.getTime() === tomorrow.getTime();
-                                                                    const isGameInFuture = gameDateOnly > today;
-                                                                    
-                                                                    // Check if game has started (current time is past game time)
-                                                                    const hasGameStarted = now > gameDate;
-                                                                    
-                                                                    // Game status logic
-                                                                    if (isGameInFuture) {
-                                                                        if (isGameToday) {
-                                                                            // Game is today but hasn't started yet
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    Today at {gameDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                                                </div>
-                                                                            );
-                                                                        } else if (isGameTomorrow) {
-                                                                            // Game is tomorrow
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    Tomorrow at {gameDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                                                </div>
-                                                                            );
-                                                                        } else {
-                                                                            // Game is in the future (not today or tomorrow)
-                                                                            const options: Intl.DateTimeFormatOptions = { 
-                                                                                weekday: 'short', 
-                                                                                month: 'short', 
-                                                                                day: 'numeric',
-                                                                                hour: '2-digit',
-                                                                                minute: '2-digit',
-                                                                                timeZone: 'America/New_York'  // Specify timezone explicitly
-                                                                            };
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    {gameDate.toLocaleDateString('en-US', options)}
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                    } else {
-                                                                        // Game is in the past or today and has started
-                                                                        if (pick.Game.winner !== null) {
-                                                                            // Game has a winner
-                                                                            
-                                                                            // Determine if user won based on their pick and the game result
-                                                                            // If user picked team1 (teamIndex === 0), they win if winner is false
-                                                                            // If user picked team2 (teamIndex === 1), they win if winner is true
-                                                                            const userWon = (pick.teamIndex === 0 && pick.Game.winner === false) || 
-                                                                                            (pick.teamIndex === 1 && pick.Game.winner === true);
-                                                                            
-                                                                            return (
-                                                                                <div className={`pick-result ${userWon ? 'win' : 'loss'}`}>
-                                                                                    {userWon ? 'Won' : 'Lost'}
-                                                                                    {pick.Game.final_score && (
-                                                                                        <span className="ml-1">({pick.Game.final_score})</span>
-                                                                                    )}
-                                                                                </div>
-                                                                            );
-                                                                        } else if (hasGameStarted) {
-                                                                            // Game has started but no winner yet
-                                                                            return (
-                                                                                <div className="pick-result in-progress">
-                                                                                    In Progress
-                                                                                </div>
-                                                                            );
-                                                                        } else {
-                                                                            // Fallback for edge cases
-                                                                            return (
-                                                                                <div className="pick-result upcoming">
-                                                                                    Scheduled
-                                                                                </div>
-                                                                            );
-                                                                        }
-                                                                    }
-                                                                } catch (error) {
-                                                                    console.error("Error rendering game status:", error);
-                                                                    return (
-                                                                        <div className="pick-result upcoming">
-                                                                            Scheduled
-                                                                        </div>
-                                                                    );
-                                                                }
-                                                            })()}
+                                                            {renderGameStatus(pick)}
                                                         </div>
                                                     </div>
                                                 </div>

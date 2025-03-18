@@ -32,6 +32,10 @@ interface Game {
     awayTeam: Team;
     gameTime: string;
     status: string;
+    fullDate?: string;
+    dbDate?: string;
+    dbTime?: string;
+    estDate?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -192,51 +196,21 @@ export default function TomorrowPicks() {
         setSubmitError(null);
 
         try {
-            // Get tomorrow's date once
-            const now = new Date();
-
-            // Convert UTC time to EST (UTC-5)
-            // EST is UTC-5 for non daylight saving, -4 for during daylight saving (CHANGE savePicks Route too)
-            const estOffset =
-                new Intl.DateTimeFormat("en-US", {
-                    timeZone: "America/New_York",
-                    timeZoneName: "short",
-                })
-                    .formatToParts(now)
-                    .find((part) => part.type === "timeZoneName")?.value === "EST"
-                    ? -5
-                    : -4;
-
-            const today = new Date(now.getTime() + estOffset * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0];
-
-            // Calculate tomorrow based on today
-            const tomorrow = new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
-                .toISOString()
-                .split("T")[0];
-
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
-
-                // Parse the game time
-                const [time, period] = game?.gameTime.split(' ') || ['', ''];
-                const [hours, minutes] = time.split(':').map(Number);
-
-                // Create a new date object for the game time
-                const gameDate = new Date(tomorrow);
-                let gameHours = hours;
-                if (period === 'PM' && hours !== 12) gameHours += 12;
-                if (period === 'AM' && hours === 12) gameHours = 0;
-                gameDate.setHours(gameHours, minutes, 0, 0);
-
+                
+                // Use the full date information from the game object
                 return {
                     gameId,
                     teamIndex: teamType === 'home' ? 0 : 1,
                     homeTeam: game?.homeTeam,
                     awayTeam: game?.awayTeam,
-                    gameTime: gameDate.toISOString()  // Use the adjusted date
+                    // Pass all date-related fields
+                    fullDate: game?.fullDate,
+                    dbDate: game?.dbDate,
+                    dbTime: game?.dbTime,
+                    estDate: game?.estDate
                 };
             });
 
@@ -247,7 +221,7 @@ export default function TomorrowPicks() {
                 },
                 body: JSON.stringify({
                     picks: picksArray,
-                    pickDate: tomorrow
+                    pickDate: new Date().toISOString().split('T')[0] // Today's date for tracking purposes
                 }),
             });
 

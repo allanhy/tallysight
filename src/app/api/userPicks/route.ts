@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { sql } from '@vercel/postgres';
+import { format, parseISO, isAfter, isToday, differenceInMinutes } from 'date-fns';
+
+// Define an interface for the database row
+interface PickRow {
+    pick_id: string;
+    userId: string;
+    gameId: string;
+    teamIndex: number;
+    createdAt: Date;
+    game_id: string;
+    team1Name: string;
+    team2Name: string;
+    team1Logo: string;
+    team2Logo: string;
+    won: boolean | null;
+    final_score: string | null;
+    winner: number | null;
+    gameDate: Date | string;
+    gameTime: Date | string;
+}
 
 export async function GET(req: NextRequest) {
     try {
@@ -34,7 +54,8 @@ export async function GET(req: NextRequest) {
                         g."won",
                         g."final_score",
                         g."winner",
-                        g."gameDate"
+                        g."gameDate",
+                        g."gameTime"
                     FROM "Pick" p
                     JOIN "Game" g ON p."gameId" = g.id
                     WHERE p."userId" = ${userId}
@@ -61,11 +82,12 @@ export async function GET(req: NextRequest) {
                         g."won",
                         g."final_score",
                         g."winner",
-                        g."gameDate"
+                        g."gameDate",
+                        g."gameTime"
                     FROM "Pick" p
                     JOIN "Game" g ON p."gameId" = g.id
                     WHERE p."userId" = ${userId}
-                    ORDER BY g."gameDate" DESC
+                    ORDER BY g."gameDate" DESC, p."createdAt" DESC
                 `;
                 
                 // Log the raw result for debugging
@@ -84,113 +106,219 @@ export async function GET(req: NextRequest) {
         }
 
         // Transform the data with correct IDs and handle potential null values
-        const formattedPicks = picks.rows.map(row => {
-            // Get current time
-            const now = new Date();
-            
-            // Parse game date and create estimated start/end times
-            const gameDate = new Date(row.gameDate || new Date());
-            
-            // Log the game date for debugging
-            console.log(`Game ID: ${row.game_id}, Date: ${gameDate.toISOString()}, Now: ${now.toISOString()}`);
-            
-            // Determine game status
-            let status;
-            
-            // IMPORTANT: First check if the game has a winner already
-            if (row.winner !== null) {
-                status = 'STATUS_FINAL'; // Game is complete
-                console.log(`Game has explicit winner: ${row.game_id}, winner: ${row.winner}`);
-            } else {
-                // Check if the game is today
-                const isGameToday = 
-                    gameDate.getDate() === now.getDate() &&
-                    gameDate.getMonth() === now.getMonth() &&
-                    gameDate.getFullYear() === now.getFullYear();
+        const formattedPicks = picks.rows.map((row: any) => {
+            try {
+                // Log raw values for debugging
+                console.log('Raw gameDate:', row.gameDate);
+                console.log('Raw gameTime:', row.gameTime);
                 
-                // Check if the game is in the future
-                const isGameInFuture = gameDate > now;
+                // Use the gameDate directly if it's already a complete datetime
+                let finalDateTime;
                 
-                console.log(`Game ${row.game_id}: Is today? ${isGameToday}, Is in future? ${isGameInFuture}`);
-                
-                if (isGameToday) {
-                    // Game is today - check if it has started based on the time
-                    const gameTime = gameDate.getHours() * 60 + gameDate.getMinutes(); // Convert to minutes
-                    const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes
-                    
-                    console.log(`Game ${row.game_id} time check: Game time: ${gameTime} minutes, Current time: ${currentTime} minutes`);
-                    
-                    if (gameTime > currentTime) {
-                        // Game is later today
-                        status = 'STATUS_SCHEDULED';
-                        console.log(`Game today but not started yet: ${row.game_id}`);
+                if (row.gameDate) {
+                    // Parse the gameDate
+                    let gameDateObj;
+                    if (row.gameDate instanceof Date) {
+                        gameDateObj = row.gameDate;
+                    } else if (typeof row.gameDate === 'string') {
+                        gameDateObj = new Date(row.gameDate);
                     } else {
-                        // Game has started - check if it's likely still in progress
-                        const minutesSinceStart = currentTime - gameTime;
-                        
-                        if (minutesSinceStart < 180) { // 3 hours = 180 minutes
-                            // Game is likely still in progress
-                            status = 'STATUS_IN_PROGRESS';
-                            console.log(`Game in progress: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
+                        console.log(`Unexpected gameDate type: ${typeof row.gameDate}`);
+                        gameDateObj = new Date();
+                    }
+                    
+                    // If gameDate already has time information or gameTime is null, use it directly
+                    if (!row.gameTime || gameDateObj.getHours() !== 0 || gameDateObj.getMinutes() !== 0) {
+                        finalDateTime = gameDateObj;
+                    } else {
+                        // If we have a separate gameTime, parse it as a string
+                        if (typeof row.gameTime === 'string') {
+                            // Parse time string like "19:00:00"
+                            const timeParts = row.gameTime.split(':').map(Number);
+                            if (timeParts.length >= 2) {
+                                // Create a new date with the date from gameDate and time from gameTime
+                                finalDateTime = new Date(gameDateObj);
+                                finalDateTime.setHours(timeParts[0], timeParts[1], timeParts[2] || 0);
+                            } else {
+                                finalDateTime = gameDateObj;
+                            }
+                        } else if (row.gameTime instanceof Date) {
+                            // If gameTime is a Date object, extract hours/minutes/seconds
+                            finalDateTime = new Date(gameDateObj);
+                            finalDateTime.setHours(
+                                row.gameTime.getHours(),
+                                row.gameTime.getMinutes(),
+                                row.gameTime.getSeconds()
+                            );
                         } else {
-                            // Game has likely finished
-                            status = 'STATUS_FINAL';
-                            console.log(`Game likely finished: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
+                            finalDateTime = gameDateObj;
                         }
                     }
-                } else if (isGameInFuture) {
-                    // Game is in the future
-                    status = 'STATUS_SCHEDULED';
-                    console.log(`Future game: ${row.game_id}`);
                 } else {
-                    // Game was in the past
+                    // Fallback if no date is available
+                    finalDateTime = new Date();
+                }
+                
+                // Validate the date
+                if (isNaN(finalDateTime.getTime())) {
+                    console.log('Invalid date created, using current date instead');
+                    finalDateTime = new Date();
+                }
+                
+                console.log(`Final DateTime: ${finalDateTime.toISOString()}`);
+                
+                // IMPORTANT: Adjust for Eastern Time (ET) to UTC conversion
+                // ET is UTC-4 or UTC-5 depending on daylight saving
+                // For simplicity, we'll use a fixed offset of -4 hours (ET during daylight saving)
+                // This assumes the database times are in ET
+                const etOffsetHours = 4; // 4 hours during EDT, 5 during EST
+                const utcDateTime = new Date(finalDateTime.getTime() + (etOffsetHours * 60 * 60 * 1000));
+                
+                // Store the UTC ISO string
+                const utcIsoString = utcDateTime.toISOString();
+                
+                console.log(`Adjusted UTC DateTime: ${utcIsoString}`);
+                
+                // Format with explicit date and timezone
+                const formattedDate = format(finalDateTime, 'MMM d, yyyy h:mm a') + ' ET';
+                
+                // Determine game status
+                let status;
+                
+                // IMPORTANT: First check if the game has a winner already
+                if (row.winner !== null) {
                     status = 'STATUS_FINAL';
-                    console.log(`Past game: ${row.game_id}`);
+                } else {
+                    // Use UTC for all comparisons to avoid timezone issues
+                    const now = new Date();
+                    const isGameInFuture = finalDateTime > now;
+                    
+                    // Check if the game is today in UTC
+                    const isGameToday = 
+                        finalDateTime.getFullYear() === now.getFullYear() &&
+                        finalDateTime.getMonth() === now.getMonth() &&
+                        finalDateTime.getDate() === now.getDate();
+                    
+                    console.log(`Game ${row.game_id}: UTC Date: ${finalDateTime.toISOString()}, Is today in UTC? ${isGameToday}, Is in future in UTC? ${isGameInFuture}`);
+                    
+                    if (isGameToday) {
+                        // Game is today - check if it has started based on the time
+                        if (isGameInFuture) {
+                            // Game is later today
+                            status = 'STATUS_SCHEDULED';
+                            console.log(`Game today but not started yet: ${row.game_id}`);
+                        } else {
+                            // Game has started - check if it's likely still in progress
+                            const minutesSinceStart = differenceInMinutes(now, finalDateTime);
+                            
+                            if (minutesSinceStart < 180) { // 3 hours = 180 minutes
+                                // Game is likely still in progress
+                                status = 'STATUS_IN_PROGRESS';
+                                console.log(`Game in progress: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
+                            } else {
+                                // Game has likely finished
+                                status = 'STATUS_FINAL';
+                                console.log(`Game likely finished: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
+                            }
+                        }
+                    } else if (isGameInFuture) {
+                        // Game is in the future
+                        status = 'STATUS_SCHEDULED';
+                        console.log(`Future game: ${row.game_id}`);
+                    } else {
+                        // Game was in the past
+                        status = 'STATUS_FINAL';
+                        console.log(`Past game: ${row.game_id}`);
+                    }
                 }
+                
+                return {
+                    id: row.pick_id,
+                    userId: row.userId,
+                    gameId: row.gameId,
+                    teamIndex: row.teamIndex,
+                    createdAt: row.createdAt,
+                    Game: {
+                        id: row.game_id,
+                        team1Name: row.team1Name,
+                        team2Name: row.team2Name,
+                        team1Logo: row.team1Logo,
+                        team2Logo: row.team2Logo,
+                        winner: status === 'STATUS_FINAL' ? row.winner : null,
+                        final_score: status === 'STATUS_FINAL' ? row.final_score : null,
+                        gameDate: utcIsoString,
+                        status: status,
+                        gameDay: format(finalDateTime, 'EEEE'),
+                        formattedGameDate: formattedDate
+                    }
+                };
+            } catch (error) {
+                console.error('Error processing row:', error);
+                
+                // Return a fallback object with the current date
+                const fallbackDate = new Date();
+                return {
+                    id: row.pick_id || 'unknown',
+                    userId: row.userId || 'unknown',
+                    gameId: row.gameId || 'unknown',
+                    teamIndex: row.teamIndex || 0,
+                    createdAt: row.createdAt || fallbackDate.toISOString(),
+                    Game: {
+                        id: row.game_id || 'unknown',
+                        team1Name: row.team1Name || 'Team 1',
+                        team2Name: row.team2Name || 'Team 2',
+                        team1Logo: row.team1Logo || '',
+                        team2Logo: row.team2Logo || '',
+                        winner: null,
+                        final_score: null,
+                        gameDate: fallbackDate.toISOString(),
+                        status: 'STATUS_SCHEDULED',
+                        gameDay: format(fallbackDate, 'EEEE'),
+                        formattedGameDate: format(fallbackDate, 'MMM d, yyyy h:mm a') + ' ET'
+                    }
+                };
             }
-            
-            console.log('Raw gameDate from DB:', row.gameDate);
-            console.log('Parsed as Date object:', new Date(row.gameDate));
-            console.log('Formatted in ET:', new Date(row.gameDate).toLocaleString('en-US', {
-                timeZone: 'America/New_York'
-            }));
-            
-            return {
-                id: row.pick_id,
-                userId: row.userId,
-                gameId: row.gameId,
-                teamIndex: row.teamIndex,
-                createdAt: row.createdAt,
-                Game: {
-                    id: row.game_id,
-                    team1Name: row.team1Name,
-                    team2Name: row.team2Name,
-                    team1Logo: row.team1Logo,
-                    team2Logo: row.team2Logo,
-                    // Only include winner if the game is actually final
-                    winner: status === 'STATUS_FINAL' ? row.winner : null,
-                    final_score: status === 'STATUS_FINAL' ? row.final_score : null,
-                    gameDate: row.gameDate,
-                    status: status,
-                    gameDay: new Date(row.gameDate || new Date()).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        timeZone: 'America/New_York'
-                    })
-                }
-            };
         });
 
         // Log the formatted result for debugging
         console.log('Formatted picks:', formattedPicks.length, 'picks returned');
-
-        return NextResponse.json(formattedPicks);
+        
+        // Make sure we're not filtering out any picks accidentally
+        if (formattedPicks.length < picks.rows.length) {
+            console.warn(`Warning: Some picks were filtered out. Original: ${picks.rows.length}, Formatted: ${formattedPicks.length}`);
+        }
+        
+        // Sort the picks by date (newest first)
+        const sortedPicks = formattedPicks.sort((a, b) => {
+            try {
+                const dateA = new Date(a.Game.gameDate);
+                const dateB = new Date(b.Game.gameDate);
+                
+                // Primary sort by game date (newest first)
+                const dateDiff = dateB.getTime() - dateA.getTime();
+                
+                // If game dates are the same, sort by pick creation date
+                if (dateDiff === 0 && a.createdAt && b.createdAt) {
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                }
+                
+                return dateDiff;
+            } catch (error) {
+                console.error('Error sorting picks:', error);
+                return 0;
+            }
+        });
+        
+        console.log('Returning sorted picks:', sortedPicks.length);
+        
+        return NextResponse.json(sortedPicks);
 
     } catch (error) {
-        console.error('Error fetching picks:', error);
+        console.error('Error in GET request:', error);
         return NextResponse.json(
             { 
                 success: false,
-                message: 'Failed to fetch picks',
+                message: 'Request failed',
                 error: error instanceof Error ? error.message : 'Unknown error'
             },
             { status: 500 }
