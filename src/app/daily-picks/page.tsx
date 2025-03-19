@@ -355,89 +355,11 @@ export default function DailyPicks() {
         });
     };
 
-    const handleGetSpread = async (gameId: string) => {
+    const handleGetSpread = (gameId: string) => {
         console.log(`Fetching spread for ${gameId}`);
         const game = games.find(g => g.id === gameId);
-        
-        if (!game) {
-            console.error("Game not found:", gameId);
-            return;
-        }
-        
-        try {
-            console.log("Fetching odds for game:", {
-                id: game.id,
-                homeTeam: game.homeTeam.name,
-                awayTeam: game.awayTeam.name
-            });
-            
-            // Set the preview game immediately with what we know
-            // This ensures the dialog opens right away
-            setPreviewGame({
-                ...game,
-                homeTeam: {
-                    ...game.homeTeam,
-                    spread: "Loading...",
-                    record: ""
-                },
-                awayTeam: {
-                    ...game.awayTeam,
-                    spread: "Loading...",
-                    record: ""
-                }
-            });
-            
-            // Then fetch the odds data
-            const response = await fetch(`/api/odds?gameId=${gameId}&requestedHomeTeam=${encodeURIComponent(game.homeTeam.name)}&requestedAwayTeam=${encodeURIComponent(game.awayTeam.name)}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch odds data');
-            }
-            
-            const oddsData = await response.json();
-            console.log("Received odds data:", JSON.stringify(oddsData, null, 2));
-            
-            if (oddsData.games && oddsData.games.length > 0) {
-                const apiGame = oddsData.games[0];
-                
-                // Update the preview game with the fetched data
-                setPreviewGame(prevGame => {
-                    if (!prevGame) return null;
-                    
-                    return {
-                        ...prevGame,
-                        homeTeam: {
-                            ...prevGame.homeTeam,
-                            spread: apiGame.homeTeam?.spread || "-3.5",
-                            record: apiGame.homeTeam?.record || ""
-                        },
-                        awayTeam: {
-                            ...prevGame.awayTeam,
-                            spread: apiGame.awayTeam?.spread || "+3.5",
-                            record: apiGame.awayTeam?.record || ""
-                        }
-                    };
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching odds:', error);
-            // Even on error, ensure we have a preview game with default values
-            setPreviewGame(prevGame => {
-                if (!prevGame) return null;
-                
-                return {
-                    ...prevGame,
-                    homeTeam: {
-                        ...prevGame.homeTeam,
-                        spread: "-3.5",
-                        record: ""
-                    },
-                    awayTeam: {
-                        ...prevGame.awayTeam,
-                        spread: "+3.5",
-                        record: ""
-                    }
-                };
-            });
+        if (game) {
+            setPreviewGame(game);
         }
     };
 
