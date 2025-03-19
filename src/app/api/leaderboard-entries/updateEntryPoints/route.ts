@@ -1,6 +1,10 @@
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
+const MAXPOINTSPERGAME = 1;
+const BONUSPOINTS = 3;
+const BESTPICKPOINTS = 3;
+
 // Will update all user who entered that day's contest
 export async function POST(req: Request) {
     let client;
@@ -10,7 +14,6 @@ export async function POST(req: Request) {
         const data = await req.json();
         const { sport, week } = data;
 
-        // winners should be an array
         if (!sport || !week) {
             return NextResponse.json(
                 { success: false, message: 'Required Fields: sport, week, winners'},
@@ -26,26 +29,24 @@ export async function POST(req: Request) {
             WHERE le.leaderboard_id = (SELECT leaderboard_id FROM leaderboards 
                                     WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW())) 
             `, [sport , week]);
-
-        
         
         // Get the games from yesterday
         const games = await client.query(`
             SELECT * 
             FROM "Game"
-            WHERE "gameDate" = (
+            WHERE sport = $1 AND "gameDate" = (
                 CASE 
                     WHEN EXTRACT(HOUR FROM NOW()) BETWEEN 0 AND 3 
                     THEN (CURRENT_DATE - INTERVAL '1 day') 
                     ELSE CURRENT_DATE 
                 END);`
-        );
+        , [sport]);
 
         const gamesIds = games.rows.map(game => game.id);
 
         // Get users that made picks
         const usersPicked = await client.query(
-            `SELECT "userId", "gameId", "teamIndex" 
+            `SELECT "userId", "gameId", "teamIndex", "bestPick"
             FROM "Pick" 
             WHERE "gameId" = ANY($1)`
         , [gamesIds]);
@@ -57,17 +58,21 @@ export async function POST(req: Request) {
                 { status: 404}
             );
         }
-        // make based on won column
+
+        // Make based on won column
         const gameResults = (games.rows || games).map(game => ({
             gameId: game.id,
             won: game.won
         }));
 
-        console.log('Game Results:', JSON.stringify(gameResults, null, 2));
+        console.log(gameResults);
+
+       //console.log('Game Results:', JSON.stringify(gameResults, null, 2));
  
         // For every row update their points
-        for(const user of enteredUsers.rows){
-            let gainedPoints = 0;
+        for (const user of enteredUsers.rows){
+            let gainedPoints = 0; // Points gained from picking correct team
+            let gamesWon = 0; // Number of games won overall
 
             for(const picked of usersPicked.rows){
                 const game = gameResults.find(g => g.gameId.toString() === picked.gameId.toString());  // Get the first row
@@ -75,14 +80,17 @@ export async function POST(req: Request) {
                 // Only update if the right user and game.won is not null
                 if (game && game.won !== null && game.won !== undefined && user.clerk_id === picked.userId) {
                     if (game.won.toString() === picked.teamIndex.toString()) {
-                        gainedPoints += 1;
+                        gainedPoints += MAXPOINTSPERGAME; // Point for picking correct team
+                        gamesWon += 1;
+                        if (picked.bestPick) // Game was their best pick
+                            gainedPoints += BESTPICKPOINTS; // Add best pick points
                     }
                 }
             }
 
             // 3 Bonus points for getting all correct
-            if(gainedPoints === games.rows.length)
-                gainedPoints += 3;
+            if (gamesWon === games.rows.length)
+                gainedPoints += BONUSPOINTS;
 
             const totalPoints = user.points+gainedPoints;
 
@@ -90,7 +98,7 @@ export async function POST(req: Request) {
                 `UPDATE leaderboard_entries SET points = $1 WHERE entry_id = $2`
             , [totalPoints, user.entry_id]);
 
-            console.log(`Updating points for entry_id: ${user.entry_id}, totalPoints: ${totalPoints}`);
+           //console.log(`Updating points for entry_id: ${user.entry_id}, totalPoints: ${totalPoints}`);
 
             // Call updatePoints api to post total points to user
             const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -103,7 +111,7 @@ export async function POST(req: Request) {
                 body: JSON.stringify({ clerk_id: user.clerk_id, points: gainedPoints })
             });
 
-            console.log(`User ${user.clerk_id} gained ${gainedPoints} points`);
+           //console.log(`User ${user.clerk_id} gained ${gainedPoints} points`);
 
             if (!res.ok) {
                 return NextResponse.json({ success: false, message: data.message || 'Failed to update user total points after entry points update'}, { status: res.status });

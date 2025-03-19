@@ -73,12 +73,12 @@ interface Game {
 export async function GET() {
   try {
     const url = `${BASE_URL}/scoreboard`;
-    console.log('Fetching URL:', url);
+   //console.log('Fetching URL:', url);
     
     const response = await fetch(url);
     
     if (!response.ok) {
-      console.error('API Response Error:', response.status, response.statusText);
+     //console.error('API Response Error:', response.status, response.statusText);
       return NextResponse.json(
         { error: 'Failed to fetch NBA schedule' }, 
         { status: response.status }
@@ -86,10 +86,10 @@ export async function GET() {
     }
 
     const data = await response.json();
-    console.log('Raw API Response:', data);
+   //console.log('Raw API Response:', data);
     
     if (!data.events || !Array.isArray(data.events)) {
-      console.error('No events found in API response');
+     //console.error('No events found in API response');
       return NextResponse.json(
         { error: 'No events found' },
         { status: 500 }
@@ -99,7 +99,7 @@ export async function GET() {
     // Get current date in EST
     const now = new Date();
     const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    console.log('Current EST time:', estNow);
+   //console.log('Current EST time:', estNow);
 
     // Transform and filter games
     const games = data.events.map((game: any) => {
@@ -108,11 +108,11 @@ export async function GET() {
       const homeTeamData = competition.competitors.find((t: any) => t.homeAway === 'home')?.team;
       const awayTeamData = competition.competitors.find((t: any) => t.homeAway === 'away')?.team;
 
-      console.log('Processing game:', {
+     /*console.log('Processing game:', {
         homeTeam: homeTeamData?.name,
         awayTeam: awayTeamData?.name,
         date: gameDate
-      });
+      });*/
 
       return {
         id: competition.id,
@@ -142,7 +142,7 @@ export async function GET() {
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    console.log('Processed games:', games);
+   //console.log('Processed games:', games);
 
     if (games.length === 0) {
       return NextResponse.json({
@@ -172,7 +172,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Error in GET function:', error);
+   //console.error('Error in GET function:', error);
     return NextResponse.json(
       { error: 'Failed to fetch NBA schedule', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

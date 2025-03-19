@@ -41,12 +41,12 @@ interface Game {
     dbTime?: string;
     estDate?: string;
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 type Sport = ['NBA']
 const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
+const BESTPICKPOINTS = 3;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {
         return (
@@ -69,12 +69,18 @@ interface TimeLeft {
     seconds: number;
 }
 
+type BestPickButtonProps = {
+    gameId: string;
+    isSelected: boolean;
+  };
+
 export default function DailyPicks() {
     const router = useRouter();
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
+    const [bestPick, setBestPick] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [pickPercentages, setPickPercentages] = useState<Record<string, { home: string; away: string }>>({});
@@ -107,7 +113,7 @@ export default function DailyPicks() {
         const channel = pusher.subscribe("selection-updates");
 
         channel.bind("update", (newData: { gameId: string; homeTeamPercentage: string; awayTeamPercentage: string }) => {
-            console.log("Received live update:", newData);
+           //console.log("Received live update:", newData);
 
             // Update pickPercentages with new data
             setPickPercentages(prev => ({
@@ -128,7 +134,6 @@ export default function DailyPicks() {
         };
     }, []);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const getCurrentWeek = () => {
         const date: Date = new Date();
         const startDate: Date = new Date(date.getFullYear(), 0, 1);
@@ -155,11 +160,11 @@ export default function DailyPicks() {
 
                 const data = await response.json();
                 data.games.forEach((game: Game) => {
-                    console.log(`Game ID: ${game.id}, Status: ${game.status}`);
+                   //console.log(`Game ID: ${game.id}, Status: ${game.status}`);
                 });
                 setGames(data.games);
             } catch (error) {
-                console.error('Error fetching games:', error);
+               //console.error('Error fetching games:', error);
                 setError('Failed to load today\'s games');
             } finally {
                 setLoading(false);
@@ -181,11 +186,11 @@ export default function DailyPicks() {
                         };
                     });
                     setPickPercentages(percentages);
-                    console.log("Pick Percentages:", percentages);
+                   //console.log("Pick Percentages:", percentages);
 
                 }
             } catch (error) {
-                console.error("Error fetching pick percentages:", error);
+               //console.error("Error fetching pick percentages:", error);
             } finally {
                 setLoadingPercentages(false);
             }
@@ -195,18 +200,18 @@ export default function DailyPicks() {
     }, []);
 
     useEffect(() => {
-        console.log("Current state:", {
+       /*console.log("Current state:", {
             isLocked,
             firstGameLocked,
             startedGames: Array.from(startedGames),
             selectedPicks: Array.from(selectedPicks),
             games: games.map(g => g.id)
-        });
+        });*/
     }, [isLocked, firstGameLocked, startedGames, selectedPicks, games]);
 
     // This is the ONLY useEffect that should handle timing
     useEffect(() => {
-        console.log("TIMER SETUP: Initializing single timer instance");
+       //console.log("TIMER SETUP: Initializing single timer instance");
         
         // Function to update the countdown timer
         const updateCountdown = () => {
@@ -234,7 +239,7 @@ export default function DailyPicks() {
                 
                 // If any game has started, force lock all games
                 if (anyGameStarted) {
-                    console.log("GAMES IN PROGRESS: Forcing lock on all games");
+                   //console.log("GAMES IN PROGRESS: Forcing lock on all games");
                     setFirstGameLocked(true);
                     setIsLocked(true);
                     setStartedGames(new Set(games.map(game => game.id)));
@@ -326,7 +331,7 @@ export default function DailyPicks() {
     }, [games]);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
-        console.log(`Attempting to select ${teamType} team for game ${gameId}`);
+       //console.log(`Attempting to select ${teamType} team for game ${gameId}`);
         
         // Always allow selection for testing
         setSelectedPicks(prevPicks => {
@@ -335,10 +340,10 @@ export default function DailyPicks() {
             const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
 
             if (newPicks.has(pickId)) {
-                console.log(`Removing pick: ${pickId}`);
+               //console.log(`Removing pick: ${pickId}`);
                 newPicks.delete(pickId);
             } else {
-                console.log(`Adding pick: ${pickId}, removing opposite: ${oppositePick}`);
+               //console.log(`Adding pick: ${pickId}, removing opposite: ${oppositePick}`);
                 newPicks.add(pickId);
                 newPicks.delete(oppositePick);
             }
@@ -346,8 +351,23 @@ export default function DailyPicks() {
         });
     };
 
+    // Setting the best pick for more points
+    const handleBestPickSelect = (gameId: string) => {
+        setBestPick(prevBestPick => prevBestPick === gameId ? null : gameId); // Can select and unselect
+    };
+
+    const BestPickButton: React.FC<BestPickButtonProps> = ({ gameId, isSelected }) => (
+        <div>
+            <button
+                onClick={() => handleBestPickSelect(gameId)}
+                className={`text-gray-400 hover:text-gray-600 ${isSelected ? "font-medium text-yellow-500" : ""}`}>
+                Best Pick ★
+            </button>
+        </div>                                
+    );
+
     const handleGetSpread = (gameId: string) => {
-        console.log(`Fetching spread for ${gameId}`);
+       //console.log(`Fetching spread for ${gameId}`);
         const game = games.find(g => g.id === gameId);
         if (game) {
             setPreviewGame(game);
@@ -377,7 +397,8 @@ export default function DailyPicks() {
                     dbTime: game?.dbTime,
                     estDate: game?.estDate,
                     gameTime: game?.gameTime,
-                    status: game?.status
+                    status: game?.status,
+                    bestPick: gameId === bestPick
                 };
             });
 
@@ -397,55 +418,53 @@ export default function DailyPicks() {
             if(resData.message === "Picks have already been made for today."){
                 // Picks made already
                 alert('You have already made your picks for today.');
-                router.push('/daily-picks')
+                router.push('/myPicks');
             } else if (response.ok) {
-                /* for testing
+                /* for testing (DON"T REMOVE)
                 // Submitted picks, no previous picks from the day:
 
                 // Check if user has leaderboard entry, if not create one
-                const updateEntry = await fetch('api/leaderboard-entries/verifyEntry', {
+                const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ clerk_id: userId, sport: 'NBA', week: getCurrentWeek() })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clerk_id: userId, sport: 'NBA', week: getCurrentWeek() }),
                 });
-
-                const data3 = await updateEntry.json();
-
-                if (!updateEntry.ok) {
-                    throw new Error(data3.message || 'Failed to update user entry in leaderboard');
+        
+                const updateEntryData = await updateEntryResponse.json();
+                if (!updateEntryResponse.ok) {
+                    throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
                 }
-
+        
                 // Update Max Points for User
-                const max_points = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
+                let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
 
-                const updateMaxPoints = await fetch('/api/user/updateMaxPoints', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ clerk_id: userId, max_points: max_points })
-                });
-
-                const data2 = await updateMaxPoints.json();
-
-                if (!updateMaxPoints.ok) {
-                    throw new Error(data2.message || 'Failed to update max points');
+                // If best pick made add to total
+                if(bestPick !== null){
+                    maxPoints += BESTPICKPOINTS;
                 }
 
-                const updateUserPoints = await fetch('/api/leaderboard-entries/updateEntryPoints', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ sport: 'NBA', week: getCurrentWeek() })
-                });
-                
-                const data4 = await updateUserPoints.json();
-
-                if(!updateUserPoints.ok) {
-                    throw new Error(data4.message || 'Failed to update user total & entry points')
+                // Execute max points and leaderboard updates in parallel
+                const [updateMaxPointsResponse, updateUserPointsResponse] = await Promise.all([
+                    fetch('/api/user/updateMaxPoints', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ clerk_id: userId, max_points: maxPoints }),
+                    }),
+                    fetch('/api/leaderboard-entries/updateEntryPoints', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sport: 'NBA', week: getCurrentWeek() }),
+                    }),
+                ]);
+        
+                const updateMaxPointsData = await updateMaxPointsResponse.json();
+                if (!updateMaxPointsResponse.ok) {
+                    throw new Error(updateMaxPointsData.message || 'Failed to update max points');
+                }
+        
+                const updateUserPointsData = await updateUserPointsResponse.json();
+                if (!updateUserPointsResponse.ok) {
+                    throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
                 }
                     */
             } else {
@@ -457,7 +476,7 @@ export default function DailyPicks() {
             const data = await percentageResponse.json();
 
             if (data.message === "There is not enough data") {
-                console.warn("Not enough user data to update percentages.");
+               //console.warn("Not enough user data to update percentages.");
             } else {
                 for (const game of data.data) {
                     await fetch('/api/pusher', {
@@ -474,7 +493,7 @@ export default function DailyPicks() {
 
             router.push('/myPicks');
         } catch (error) {
-            console.error('Error submitting picks:', error);
+           //console.error('Error submitting picks:', error);
             setSubmitError(error instanceof Error ? error.message : 'Failed to submit picks');
         } finally {
             setSubmitting(false);
@@ -504,8 +523,13 @@ export default function DailyPicks() {
             }
     
             // Update Max Points for User
-            const maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
-    
+            let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
+
+            // If best pick made add to total
+            if(bestPick !== null){
+                maxPoints += BESTPICKPOINTS;
+            }
+
             // Execute max points and leaderboard updates in parallel
             const [updateMaxPointsResponse, updateUserPointsResponse] = await Promise.all([
                 fetch('/api/user/updateMaxPoints', {
@@ -530,9 +554,9 @@ export default function DailyPicks() {
                 throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
             }
         } catch (error) {
-            console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
+           //console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
         }
-    }, [userId, selectedPicks, games]);
+    }, [userId, selectedPicks, games, bestPick]);
 
     useEffect(() => {
         if (allGamesEnded) {
@@ -594,7 +618,7 @@ export default function DailyPicks() {
             
             // Update state based on checks
             if (anyGameStarted) {
-                console.log("GAMES STARTED: Locking games", Array.from(newStartedGames));
+               //console.log("GAMES STARTED: Locking games", Array.from(newStartedGames));
                 setFirstGameLocked(true);
                 setIsLocked(true);
                 setStartedGames(newStartedGames);
@@ -612,7 +636,7 @@ export default function DailyPicks() {
         return () => {
             clearInterval(intervalId);
         };
-    }, [games]);
+    }, [games, shouldGameBeLocked]);
 
     if (loading) {
         return (
@@ -951,8 +975,9 @@ export default function DailyPicks() {
                                         </button>
                                     </div>
                                     <div className="px-4 pb-3 flex justify-between items-center">
-                                        <span className="text-sm text-gray-500">Best pick</span>
-                                        <button className="text-gray-400 hover:text-gray-600">★</button>
+                                        <BestPickButton
+                                            gameId={ game.id }
+                                            isSelected={ bestPick === game.id }/>
                                     </div>
                                 </div>
                             )

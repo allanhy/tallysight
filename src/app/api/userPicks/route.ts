@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { sql } from '@vercel/postgres';
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Log the userId for debugging
-        console.log('Fetching picks for userId:', userId);
+        //console.log('Fetching picks for userId:', userId);
 
         const url = new URL(req.url);
         const dateParam = url.searchParams.get('date');
@@ -46,6 +48,7 @@ export async function GET(req: NextRequest) {
                         p."gameId",
                         p."teamIndex",
                         p."createdAt",
+                        p."bestPick",
                         g.id as game_id,
                         g."team1Name",
                         g."team2Name",
@@ -65,7 +68,7 @@ export async function GET(req: NextRequest) {
                 `;
             } else {
                 // Log the SQL query for debugging
-                console.log('Executing SQL query for all picks');
+                //console.log('Executing SQL query for all picks');
                 
                 picks = await sql`
                     SELECT 
@@ -74,6 +77,7 @@ export async function GET(req: NextRequest) {
                         p."gameId",
                         p."teamIndex",
                         p."createdAt",
+                        p."bestPick",
                         g.id as game_id,
                         g."team1Name",
                         g."team2Name",
@@ -91,10 +95,10 @@ export async function GET(req: NextRequest) {
                 `;
                 
                 // Log the raw result for debugging
-                console.log('Raw SQL result:', picks.rows.length, 'rows found');
+                //console.log('Raw SQL result:', picks.rows.length, 'rows found');
             }
         } catch (sqlError) {
-            console.error('SQL Error:', sqlError);
+            //console.error('SQL Error:', sqlError);
             return NextResponse.json(
                 { 
                     success: false,
@@ -109,8 +113,8 @@ export async function GET(req: NextRequest) {
         const formattedPicks = picks.rows.map((row: any) => {
             try {
                 // Log raw values for debugging
-                console.log('Raw gameDate:', row.gameDate);
-                console.log('Raw gameTime:', row.gameTime);
+                //console.log('Raw gameDate:', row.gameDate);
+                //console.log('Raw gameTime:', row.gameTime);
                 
                 // Use the gameDate directly if it's already a complete datetime
                 let finalDateTime;
@@ -123,7 +127,7 @@ export async function GET(req: NextRequest) {
                     } else if (typeof row.gameDate === 'string') {
                         gameDateObj = new Date(row.gameDate);
                     } else {
-                        console.log(`Unexpected gameDate type: ${typeof row.gameDate}`);
+                        //console.log(`Unexpected gameDate type: ${typeof row.gameDate}`);
                         gameDateObj = new Date();
                     }
                     
@@ -161,11 +165,11 @@ export async function GET(req: NextRequest) {
                 
                 // Validate the date
                 if (isNaN(finalDateTime.getTime())) {
-                    console.log('Invalid date created, using current date instead');
+                    //console.log('Invalid date created, using current date instead');
                     finalDateTime = new Date();
                 }
                 
-                console.log(`Final DateTime: ${finalDateTime.toISOString()}`);
+                //console.log(`Final DateTime: ${finalDateTime.toISOString()}`);
                 
                 // IMPORTANT: Adjust for Eastern Time (ET) to UTC conversion
                 // ET is UTC-4 or UTC-5 depending on daylight saving
@@ -177,7 +181,7 @@ export async function GET(req: NextRequest) {
                 // Store the UTC ISO string
                 const utcIsoString = utcDateTime.toISOString();
                 
-                console.log(`Adjusted UTC DateTime: ${utcIsoString}`);
+                //console.log(`Adjusted UTC DateTime: ${utcIsoString}`);
                 
                 // Format with explicit date and timezone
                 const formattedDate = format(finalDateTime, 'MMM d, yyyy h:mm a') + ' ET';
@@ -199,14 +203,14 @@ export async function GET(req: NextRequest) {
                         finalDateTime.getMonth() === now.getMonth() &&
                         finalDateTime.getDate() === now.getDate();
                     
-                    console.log(`Game ${row.game_id}: UTC Date: ${finalDateTime.toISOString()}, Is today in UTC? ${isGameToday}, Is in future in UTC? ${isGameInFuture}`);
+                    //console.log(`Game ${row.game_id}: UTC Date: ${finalDateTime.toISOString()}, Is today in UTC? ${isGameToday}, Is in future in UTC? ${isGameInFuture}`);
                     
                     if (isGameToday) {
                         // Game is today - check if it has started based on the time
                         if (isGameInFuture) {
                             // Game is later today
                             status = 'STATUS_SCHEDULED';
-                            console.log(`Game today but not started yet: ${row.game_id}`);
+                            //console.log(`Game today but not started yet: ${row.game_id}`);
                         } else {
                             // Game has started - check if it's likely still in progress
                             const minutesSinceStart = differenceInMinutes(now, finalDateTime);
@@ -214,21 +218,21 @@ export async function GET(req: NextRequest) {
                             if (minutesSinceStart < 180) { // 3 hours = 180 minutes
                                 // Game is likely still in progress
                                 status = 'STATUS_IN_PROGRESS';
-                                console.log(`Game in progress: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
+                                //console.log(`Game in progress: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
                             } else {
                                 // Game has likely finished
                                 status = 'STATUS_FINAL';
-                                console.log(`Game likely finished: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
+                                //console.log(`Game likely finished: ${row.game_id}, minutes since start: ${minutesSinceStart}`);
                             }
                         }
                     } else if (isGameInFuture) {
                         // Game is in the future
                         status = 'STATUS_SCHEDULED';
-                        console.log(`Future game: ${row.game_id}`);
+                        //console.log(`Future game: ${row.game_id}`);
                     } else {
                         // Game was in the past
                         status = 'STATUS_FINAL';
-                        console.log(`Past game: ${row.game_id}`);
+                        //console.log(`Past game: ${row.game_id}`);
                     }
                 }
                 
@@ -238,6 +242,7 @@ export async function GET(req: NextRequest) {
                     gameId: row.gameId,
                     teamIndex: row.teamIndex,
                     createdAt: row.createdAt,
+                    bestPick: row.bestPick,
                     Game: {
                         id: row.game_id,
                         team1Name: row.team1Name,
@@ -253,7 +258,7 @@ export async function GET(req: NextRequest) {
                     }
                 };
             } catch (error) {
-                console.error('Error processing row:', error);
+                //console.error('Error processing row:', error);
                 
                 // Return a fallback object with the current date
                 const fallbackDate = new Date();
@@ -263,6 +268,7 @@ export async function GET(req: NextRequest) {
                     gameId: row.gameId || 'unknown',
                     teamIndex: row.teamIndex || 0,
                     createdAt: row.createdAt || fallbackDate.toISOString(),
+                    bestPick: row.bestPick || null,
                     Game: {
                         id: row.game_id || 'unknown',
                         team1Name: row.team1Name || 'Team 1',
@@ -281,11 +287,11 @@ export async function GET(req: NextRequest) {
         });
 
         // Log the formatted result for debugging
-        console.log('Formatted picks:', formattedPicks.length, 'picks returned');
+        //console.log('Formatted picks:', formattedPicks.length, 'picks returned');
         
         // Make sure we're not filtering out any picks accidentally
         if (formattedPicks.length < picks.rows.length) {
-            console.warn(`Warning: Some picks were filtered out. Original: ${picks.rows.length}, Formatted: ${formattedPicks.length}`);
+            //console.warn(`Warning: Some picks were filtered out. Original: ${picks.rows.length}, Formatted: ${formattedPicks.length}`);
         }
         
         // Sort the picks by date (newest first)
@@ -304,17 +310,17 @@ export async function GET(req: NextRequest) {
                 
                 return dateDiff;
             } catch (error) {
-                console.error('Error sorting picks:', error);
+                //console.error('Error sorting picks:', error);
                 return 0;
             }
         });
         
-        console.log('Returning sorted picks:', sortedPicks.length);
+        //console.log('Returning sorted picks:', sortedPicks.length);
         
         return NextResponse.json(sortedPicks);
 
     } catch (error) {
-        console.error('Error in GET request:', error);
+        //console.error('Error in GET request:', error);
         return NextResponse.json(
             { 
                 success: false,

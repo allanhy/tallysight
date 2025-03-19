@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         // Parse the date string properly
         const date = new Date(dateStr);
         if (isNaN(date.getTime())) {
-          console.error(`Invalid date string: ${dateStr}`);
+         //console.error(`Invalid date string: ${dateStr}`);
           return new Date().toISOString().split('T')[0]; // Default to today
         }
         
@@ -74,10 +74,10 @@ export async function POST(req: NextRequest) {
         const day = String(date.getUTCDate()).padStart(2, '0');
         
         const formattedDate = `${year}-${month}-${day}`;
-        console.log(`Parsed UTC date from ${dateStr} to ${formattedDate}`);
+       //console.log(`Parsed UTC date from ${dateStr} to ${formattedDate}`);
         return formattedDate;
       } catch (error) {
-        console.error(`Error parsing date: ${dateStr}`, error);
+       //console.error(`Error parsing date: ${dateStr}`, error);
         return new Date().toISOString().split('T')[0]; // Default to today
       }
     }
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         // Format as HH:MM:SS in UTC
         return date.toISOString().split('T')[1].split('.')[0];
       } catch (error) {
-        console.error(`Error extracting UTC time:`, error);
+       //console.error(`Error extracting UTC time:`, error);
         return '19:00:00';
       }
     }
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
         if (pick.dbDate && pick.dbTime) {
           gameDate = pick.dbDate;
           gameTime = pick.dbTime;
-          console.log(`Using pre-formatted database date: ${gameDate} and time: ${gameTime}`);
+         //console.log(`Using pre-formatted database date: ${gameDate} and time: ${gameTime}`);
         }
         // Otherwise use the fullDate field and convert it
         else if (pick.fullDate) {
@@ -133,13 +133,13 @@ export async function POST(req: NextRequest) {
           const seconds = String(estDate.getSeconds()).padStart(2, '0');
           gameTime = `${hours}:${minutes}:${seconds}`;
           
-          console.log(`Converted fullDate ${pick.fullDate} to EST date: ${gameDate} and time: ${gameTime}`);
+         //console.log(`Converted fullDate ${pick.fullDate} to EST date: ${gameDate} and time: ${gameTime}`);
         }
         // Fallback to defaults
         else {
           gameDate = new Date().toISOString().split('T')[0];
           gameTime = '19:00:00';
-          console.log(`No date information found, using defaults: ${gameDate} and time: ${gameTime}`);
+         //console.log(`No date information found, using defaults: ${gameDate} and time: ${gameTime}`);
         }
         
         await sql`
@@ -186,14 +186,16 @@ export async function POST(req: NextRequest) {
           "gameId",
           "teamIndex",
           "createdAt",
-          "sport"
+          "sport",
+          "bestPick"
         ) VALUES (
           ${crypto.randomUUID()},
           ${userId},
           ${pick.gameId},
           ${pick.teamIndex},
           NOW() AT TIME ZONE 'America/New_York',
-          ${'NBA'}
+          ${'NBA'},
+          ${pick.bestPick}
         )
         ON CONFLICT ("userId", "gameId") DO NOTHING
       `;

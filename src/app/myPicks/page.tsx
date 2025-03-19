@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -8,6 +9,7 @@ import { format, parseISO, compareDesc, formatDistanceToNow, isAfter } from 'dat
 import { toZonedTime } from 'date-fns-tz';
 import { isTomorrow, isToday } from 'date-fns';
 import { PrismaClient } from '@prisma/client';
+import { PcCaseIcon } from 'lucide-react';
 const prisma = new PrismaClient();
 
 
@@ -19,6 +21,7 @@ interface Pick {
     gameId: string;
     teamIndex: number;
     createdAt: string;
+    bestPick: boolean;
     Game: {
         id: string;
         team1Name: string;
@@ -109,11 +112,11 @@ export default function MyPicksPage() {
                 }
                 const data = await response.json();
                 
-                console.log('Received picks from API:', data.length);
+                //console.log('Received picks from API:', data.length);
                 
                 // Make sure we have valid data
                 if (!Array.isArray(data)) {
-                    console.error('Expected array but got:', typeof data, data);
+                    //console.error('Expected array but got:', typeof data, data);
                     setUserPicks([]);
                     setLoading(false);
                     return;
@@ -121,7 +124,7 @@ export default function MyPicksPage() {
                 
                 // Log the first few picks for debugging
                 if (data.length > 0) {
-                    console.log('First pick:', data[0]);
+                    //console.log('First pick:', data[0]);
                     if (data.length > 1) console.log('Second pick:', data[1]);
                 }
                 
@@ -133,7 +136,7 @@ export default function MyPicksPage() {
                 setGroupedPicks(groupedPicks);
                 
             } catch (error) {
-                console.error('Error fetching picks:', error);
+                //console.error('Error fetching picks:', error);
                 setError('Failed to load picks. Please try again later.');
             } finally {
                 setLoading(false);
@@ -154,7 +157,7 @@ export default function MyPicksPage() {
                 setWeekStart(response.data.weekStart);
                 setWeekEnd(response.data.weekEnd);
             } catch (error) {
-                console.error('Error fetching games data:', error);
+                //console.error('Error fetching games data:', error);
             }
         };
         fetchGamesData();
@@ -172,7 +175,7 @@ export default function MyPicksPage() {
         // Get the user's timezone using Intl API
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         setUserTimeZone(timezone);
-        console.log("User timezone detected:", timezone);
+        //console.log("User timezone detected:", timezone);
     }, []);
 
     // Helper function to get team details from game data
@@ -223,10 +226,10 @@ export default function MyPicksPage() {
                 return parseISO(dateInput);
             }
             
-            console.error(`Unexpected date type: ${typeof dateInput}`);
+            //console.error(`Unexpected date type: ${typeof dateInput}`);
             return parseISO(new Date().toISOString());
         } catch (error) {
-            console.error(`Error parsing date: ${dateInput}`, error);
+            //console.error(`Error parsing date: ${dateInput}`, error);
             return parseISO(new Date().toISOString());
         }
     };
@@ -238,7 +241,7 @@ export default function MyPicksPage() {
             const zonedDate = toZonedTime(date, userTimeZone);
             return format(zonedDate, formatStr);
         } catch (error) {
-            console.error(`Error formatting date: ${date}`, error);
+            //console.error(`Error formatting date: ${date}`, error);
             return 'Invalid date';
         }
     };
@@ -249,7 +252,7 @@ export default function MyPicksPage() {
             const now = new Date();
             return formatDistanceToNow(date, { addSuffix: true });
         } catch (error) {
-            console.error(`Error getting relative time: ${date}`, error);
+            //console.error(`Error getting relative time: ${date}`, error);
             return 'Unknown time';
         }
     };
@@ -387,26 +390,26 @@ export default function MyPicksPage() {
 
     // Add this at the top of your component
     useEffect(() => {
-        console.log("Current userPicks state:", userPicks);
+        //console.log("Current userPicks state:", userPicks);
         
         if (userPicks.length > 0) {
             // Check the first pick to see its structure
-            console.log("Sample pick:", userPicks[0]);
-            console.log("Sample Game property:", userPicks[0].Game);
+            //console.log("Sample pick:", userPicks[0]);
+            //console.log("Sample Game property:", userPicks[0].Game);
             
             // Check if grouping works
             const grouped = groupPicksByDate(userPicks);
-            console.log("Grouped picks:", grouped);
-            console.log("Grouped keys:", Object.keys(grouped));
+            //console.log("Grouped picks:", grouped);
+            //console.log("Grouped keys:", Object.keys(grouped));
         }
     }, [userPicks]);
 
     // Modify the groupPicksByGameDate function with more logging
     const groupPicksByGameDate = (picks: Pick[]) => {
-        console.log("Starting to group picks, count:", picks.length);
+        //console.log("Starting to group picks, count:", picks.length);
         
         if (picks.length > 0) {
-            console.log("First pick gameDate:", picks[0].Game?.gameDate);
+            //console.log("First pick gameDate:", picks[0].Game?.gameDate);
         }
         
         // First remove duplicates based on gameId
@@ -500,7 +503,7 @@ export default function MyPicksPage() {
             // Sort in descending order (newest first)
             return compareDesc(dateA, dateB);
         } catch (error) {
-            console.error("Error sorting dates:", error, a, b);
+            //console.error("Error sorting dates:", error, a, b);
             return 0; // Return 0 if comparison fails
         }
     });
@@ -513,16 +516,16 @@ export default function MyPicksPage() {
             
             // Check if the date is valid
             if (isNaN(date.getTime())) {
-                console.error(`Invalid date string: ${dateString}`);
+                //console.error(`Invalid date string: ${dateString}`);
                 return new Date(); // Return current date as fallback
             }
             
             // Log the parsed date for debugging
-            console.log(`Parsed date: ${dateString} -> ${date.toLocaleString()}`);
+            //console.log(`Parsed date: ${dateString} -> ${date.toLocaleString()}`);
             
             return date;
         } catch (error) {
-            console.error(`Error parsing date: ${dateString}`, error);
+            //console.error(`Error parsing date: ${dateString}`, error);
             return new Date(); // Return current date as fallback
         }
     };
@@ -627,7 +630,7 @@ export default function MyPicksPage() {
                 }
             }
         } catch (error) {
-            console.error("Error rendering game status:", error);
+            //console.error("Error rendering game status:", error);
             return (
                 <div className="pick-result upcoming">
                     Scheduled (Error)
@@ -657,7 +660,7 @@ export default function MyPicksPage() {
             
             return { success: true };
         } catch (error) {
-            console.error("Error updating game time:", error);
+            //console.error("Error updating game time:", error);
             return { success: false, error };
         }
     }
@@ -834,6 +837,10 @@ export default function MyPicksPage() {
                                                                 />
                                                             )}
                                                             <span className="team-name text-white">{pick.Game.team1Name}</span>
+                                                            {/*For best pick star on team 0*/}
+                                                            {pick.bestPick && pick.teamIndex === 0 && (
+                                                                <span className="best-pick font-medium text-yellow-500">★</span>
+                                                            )}
                                                         </div>
 
                                                         <span className="vs text-gray-400 mx-4">VS</span>
@@ -848,6 +855,10 @@ export default function MyPicksPage() {
                                                                 />
                                                             )}
                                                             <span className="team-name text-white">{pick.Game.team2Name}</span>
+                                                            {/*For best pick star on team 1*/}
+                                                            {pick.bestPick && pick.teamIndex === 1 && (
+                                                                <span className="best-pick font-medium text-yellow-500">★</span>
+                                                            )}
                                                         </div>
 
                                                         {/* Game Status */}
