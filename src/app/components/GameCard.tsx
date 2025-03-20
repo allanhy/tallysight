@@ -42,40 +42,18 @@ export const GameCard = ({ game }: { game: Game }) => {
 
         {/* Teams with Logos */}
         <div className="flex items-center justify-between space-x-2">
-          {/* Home Team */}
+          {/* Away Team */}
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             <div className="flex-shrink-0 w-8 h-8">
-              {game.homeTeamLogo && (
+              {game.awayTeamLogo && (
                 <img 
-                  src={game.homeTeamLogo} 
-                  alt={`${game.homeTeam} logo`}
+                  src={game.awayTeamLogo} 
+                  alt={`${game.awayTeam} logo`}
                   className="w-full h-full object-contain"
                 />
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-black truncate">
-                {shortenTeamName(game.homeTeam)}
-              </span>
-              {/* Home Team Score */}
-              {(game.status === 'STATUS_IN_PROGRESS' || 
-                game.status === 'STATUS_HALFTIME' || 
-                game.status === 'STATUS_FINAL' ||
-                game.status === 'IN_PROGRESS') && 
-                game.homeScore && (
-                <span className="text-sm text-gray-600">
-                  {game.homeScore}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* VS */}
-          <span className="text-xs text-gray-500 flex-shrink-0 px-1">vs</span>
-
-          {/* Away Team */}
-          <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <div className="flex flex-col items-end">
               <span className="text-sm font-medium text-black truncate">
                 {shortenTeamName(game.awayTeam)}
               </span>
@@ -85,18 +63,40 @@ export const GameCard = ({ game }: { game: Game }) => {
                 game.status === 'STATUS_FINAL' ||
                 game.status === 'IN_PROGRESS') && 
                 game.awayScore && (
-                <span className="text-sm text-gray-600">
+                <span className="text-lg text-gray-600 font-bold">
                   {game.awayScore}
                 </span>
               )}
             </div>
-            {game.awayTeamLogo && (
+          </div>
+
+          {/* VS */}
+          <span className="text-sm text-gray-500 flex-shrink-0 px-1">@</span>
+
+          {/* Home Team */}
+          <div className="flex items-center space-x-2 inset-y-1 right-1 flex-1 min-w-0 justify-end">
+            <div className="flex flex-col items-end">
+              <span className="text-sm font-medium text-black truncate">
+                {shortenTeamName(game.homeTeam)}
+              </span>
+              {/* Home Team Score */}
+              {(game.status === 'STATUS_IN_PROGRESS' || 
+                game.status === 'STATUS_HALFTIME' || 
+                game.status === 'STATUS_FINAL' ||
+                game.status === 'IN_PROGRESS') && 
+                game.homeScore && (
+                <span className="text-lg text-gray-600 font-bold">
+                  {game.homeScore}
+                </span>
+              )}
+            </div>
+            {game.homeTeamLogo && (
               <img 
-                src={game.awayTeamLogo} 
-                alt={`${game.awayTeam} logo`}
+                src={game.homeTeamLogo} 
+                alt={`${game.homeTeam} logo`}
                 className="w-8 h-8 object-contain ml-2"
                 onError={(e) => {
-                  console.error('Error loading away team logo:', e);
+                  console.error('Error loading home team logo:', e);
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
@@ -106,7 +106,18 @@ export const GameCard = ({ game }: { game: Game }) => {
 
         {/* Status */}
         <div className="mt-4 text-sm text-gray-500">
-          {game.status?.toLowerCase() || 'scheduled'}
+          {(() => {
+            switch (game.status?.toLowerCase()) {
+              case 'status_final':
+                return 'Final';
+              case 'status_in_progress':
+                return 'In Progress';
+              case 'status_halftime':
+                return 'Halftime';
+              default:
+                return 'Scheduled';
+            }
+          })()}
         </div>
       </div>
     </div>
