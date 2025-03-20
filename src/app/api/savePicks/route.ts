@@ -170,11 +170,13 @@ export async function POST(req: NextRequest) {
     const today = convertToEST(pickDate);
     const existingPicks = await sql`
       SELECT * FROM "Pick"
-      WHERE "userId" = ${userId} AND "createdAt"::date = ${today}
-    `;
+      WHERE "userId" = ${userId} AND "createdAt"::date = ${today}`;
 
+    // If picks already exist, delete them before inserting new ones
     if (existingPicks.rows.length > 0) {
-      return NextResponse.json({ message: 'Picks have already been made for today.', }, { status: 409 }); // Conflict status code
+      await sql`
+        DELETE FROM "Pick"
+        WHERE "userId" = ${userId} AND "createdAt"::date = ${today}`;
     }
 
     // Create picks, conflict if user already made picks for that game
