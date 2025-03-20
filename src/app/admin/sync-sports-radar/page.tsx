@@ -7,7 +7,6 @@ export default function SyncSportsRadarPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [date, setDate] = useState<string>('');
   const [gameIds, setGameIds] = useState<string>('');
   const [autoSync, setAutoSync] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
@@ -19,7 +18,7 @@ export default function SyncSportsRadarPage() {
     setResult(null);
 
     try {
-      // Parse gameIds from comma-separated string to array
+      // Parse gameIds from comma-separated string to array (if provided)
       const gameIdsArray = gameIds.trim() ? gameIds.split(',').map(id => id.trim()) : [];
       
       const response = await fetch('/api/admin/syncSportsRadarData', {
@@ -28,8 +27,7 @@ export default function SyncSportsRadarPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          date: date || undefined,
-          gameIds: gameIdsArray.length > 0 ? gameIdsArray : undefined
+          gameIds: gameIdsArray
         }),
       });
 
@@ -74,26 +72,13 @@ export default function SyncSportsRadarPage() {
       <h1 className="text-2xl font-bold mb-6">Sync SportsRadar Data</h1>
       
       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2">
-            Date (YYYY/MM/DD format, optional):
-            <input
-              type="text"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              placeholder="e.g., 2023/10/15"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-            />
-          </label>
-        </div>
-        
         <div className="mb-6">
           <label className="block text-gray-700 mb-2">
             Game IDs (comma-separated, optional):
             <textarea
               value={gameIds}
               onChange={(e) => setGameIds(e.target.value)}
-              placeholder="e.g., abc123, def456"
+              placeholder="e.g., abc123, def456 (leave empty to sync all available games)"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
               rows={3}
             />
