@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from "@clerk/clerk-react";
@@ -18,6 +18,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "../components/ui/popover"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+} from "../components/ui/dialog"
 
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
@@ -29,6 +36,7 @@ interface Team {
     score: number | null;
     spread: string;
     logo?: string;
+    record?: string;
 }
 
 interface Game {
@@ -41,6 +49,7 @@ interface Game {
     dbDate?: string;
     dbTime?: string;
     estDate?: string;
+    odds?: any;
 }
 
 type Sport = ['NBA']
@@ -824,9 +833,9 @@ export default function DailyPicks() {
                                             )}
                                             <button
                                                 onClick={() => handleGetSpread(game.id)}
-                                                className="text-blue-500 text-sm hover:text-blue-600 transition-colors"
+                                                className="text-xs text-blue-500 hover:text-blue-700"
                                             >
-                                                Preview
+                                                View Odds
                                             </button>
                                         </div>
                                     </div>
@@ -1074,14 +1083,26 @@ export default function DailyPicks() {
             )}
 
             {previewGame && (
-                <OddsPreview
-                    gameId={previewGame.id}
-                    homeTeam={previewGame.homeTeam}
-                    awayTeam={previewGame.awayTeam}
-                    gameTime={previewGame.gameTime}
-                    isOpen={!!previewGame}
-                    onClose={() => setPreviewGame(null)}
-                />
+                <Dialog open={!!previewGame} onOpenChange={(open) => !open && setPreviewGame(null)}>
+                    <DialogContent className="bg-white p-0 max-w-md mx-auto">
+                        <DialogHeader className="p-4 border-b">
+                            <DialogTitle>Game Preview</DialogTitle>
+                            <DialogClose className="absolute right-4 top-4">
+                                <X className="h-4 w-4" />
+                            </DialogClose>
+                        </DialogHeader>
+                        <div className="p-0">
+                            <OddsPreview 
+                                gameId={previewGame.id}
+                                homeTeam={previewGame.homeTeam}
+                                awayTeam={previewGame.awayTeam}
+                                gameTime={previewGame.gameTime}
+                                isOpen={!!previewGame}
+                                onClose={() => setPreviewGame(null)}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
             )}
         </div>
     );

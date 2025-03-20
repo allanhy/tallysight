@@ -20,6 +20,14 @@ import {
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
 import OddsPreview from '../components/OddsPreview';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogClose,
+} from "../components/ui/dialog";
+import { X } from "lucide-react";
 
 interface Team {
     name: string;
@@ -636,14 +644,26 @@ export default function TomorrowPicks() {
             )}
 
             {previewGame && (
-                <OddsPreview
-                    gameId={previewGame.id}
-                    homeTeam={previewGame.homeTeam}
-                    awayTeam={previewGame.awayTeam}
-                    gameTime={previewGame.gameTime}
-                    isOpen={!!previewGame}
-                    onClose={() => setPreviewGame(null)}
-                />
+                <Dialog open={!!previewGame} onOpenChange={(open) => !open && setPreviewGame(null)}>
+                    <DialogContent className="bg-white p-0 max-w-md mx-auto">
+                        <DialogHeader className="p-4 border-b">
+                            <DialogTitle>Game Preview</DialogTitle>
+                            <DialogClose className="absolute right-4 top-4">
+                                <X className="h-4 w-4" />
+                            </DialogClose>
+                        </DialogHeader>
+                        <div className="p-0">
+                            <OddsPreview 
+                                gameId={previewGame.id}
+                                homeTeam={previewGame.homeTeam}
+                                awayTeam={previewGame.awayTeam}
+                                gameTime={previewGame.gameTime}
+                                isOpen={!!previewGame}
+                                onClose={() => setPreviewGame(null)}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
             )}
         </div>
     );
