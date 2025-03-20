@@ -33,6 +33,7 @@ interface DatabaseGame {
   team2Score?: number;
   winner?: number;
   gameDate: Date;
+  espnId?: string;
   // other fields
 }
 
@@ -203,39 +204,42 @@ export async function POST(req: NextRequest) {
       
       console.log(`Normalized team names: "${normAwayTeam}" @ "${normHomeTeam}"`);
       
-      // Find matching game in database with improved matching
-      let dbGame = allGames.rows.find(g => {
-        // Safely handle potentially undefined values
-        const team1 = (g?.team1Name || '').trim();
-        const team2 = (g?.team2Name || '').trim();
-        
-        // Skip empty team names
-        if (!team1 || !team2) return false;
-        
-        // Check if teams match in either order
-        const teamsMatchCorrectOrder = teamsMatch(team1, homeTeam || '') && teamsMatch(team2, awayTeam || '');
-        const teamsMatchReversedOrder = teamsMatch(team1, awayTeam || '') && teamsMatch(team2, homeTeam || '');
-        
-        const isMatch = teamsMatchCorrectOrder || teamsMatchReversedOrder;
-        
-        if (isMatch) {
-          console.log(`Found matching game in DB: ${team1} vs ${team2}, ID: ${g.id}`);
+      // First try to find by direct ID match if your DB has ESPN IDs
+      let dbGame = allGames.rows.find(g => g.espnId === espnGame.id);
+      
+      // If not found by ID, fall back to team name matching
+      if (!dbGame) {
+        dbGame = allGames.rows.find(g => {
+          // Safely handle potentially undefined values
+          const team1 = (g?.team1Name || '').trim();
+          const team2 = (g?.team2Name || '').trim();
           
-          // Also check if the dates are close (within 1 day)
-          const dbDate = new Date(g.gameDate);
-          const espnDate = new Date(espnGame.date);
-          const dateDiff = Math.abs(dbDate.getTime() - espnDate.getTime());
-          const daysDiff = dateDiff / (1000 * 60 * 60 * 24);
-          const datesAreClose = daysDiff <= 1;
+          // Skip empty team names
+          if (!team1 || !team2) return false;
           
-          console.log(`Date comparison: DB date=${dbDate.toISOString()}, ESPN date=${espnDate.toISOString()}, diff=${daysDiff} days`);
+          // Check if teams match in either order
+          const teamsMatchCorrectOrder = teamsMatch(team1, homeTeam || '') && teamsMatch(team2, awayTeam || '');
+          const teamsMatchReversedOrder = teamsMatch(team1, awayTeam || '') && teamsMatch(team2, homeTeam || '');
           
-          // Match if team names match AND dates are close
-          return isMatch && datesAreClose;
-        }
-        
-        return false;
-      });
+          // If we're looking for specific game IDs, we should be more lenient with matching
+          // and not require dates to be close
+          const isMatch = teamsMatchCorrectOrder || teamsMatchReversedOrder;
+          
+          if (isMatch) {
+            console.log(`Found matching game in DB: ${team1} vs ${team2}, ID: ${g.id}`);
+            
+            // Log the dates for debugging but don't use them for matching
+            const dbDate = new Date(g.gameDate);
+            const espnDate = new Date(espnGame.date);
+            console.log(`Date info (not used for matching): DB date=${dbDate.toISOString()}, ESPN date=${espnDate.toISOString()}`);
+            
+            // Return true based on team name matching only
+            return isMatch;
+          }
+          
+          return false;
+        });
+      }
       
       if (!dbGame) {
         console.log(`No matching game found for ${awayTeam} @ ${homeTeam} on ${dateStr}`);
