@@ -161,7 +161,7 @@ const Header = () => {
                         </div>
                     </div>
                 </div>
-            </nav>     
+            </nav>   
             {pathname !== '/profile' && (
                 <div className="pt-10">
                     <CarouselWithGames />

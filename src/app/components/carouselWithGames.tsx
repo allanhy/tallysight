@@ -63,6 +63,8 @@ const carouselWithGames = () => {
       try {
         const response = await fetch('/api/games');
         const data = await response.json();
+        console.log('Fetched data:', data); // Debugging
+
         if (data.games) {
           const duplicatedGames = [...data.games, ...data.games, ...data.games];
           setGames(duplicatedGames);
@@ -73,7 +75,6 @@ const carouselWithGames = () => {
         setLoading(false);
       }
     };
-
     fetchGames();
   }, []);
 
@@ -86,7 +87,7 @@ const carouselWithGames = () => {
             // Skeleton Loader (Show while fetching)
             <div className="flex space-x-4">
               <Skeleton className="h-48 w-full rounded-lg bg-gray-300" />
-            </div>
+            </div>   
           ) : (
             <Carousel
               ref={carouselRef}

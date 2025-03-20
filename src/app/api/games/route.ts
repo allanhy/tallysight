@@ -135,14 +135,21 @@ export async function GET() {
         period: competition.status?.period || 0,
         clock: competition.status?.displayClock || ''
       };
-    }).filter((game: { date: string }) => {
+    })
+    
+    /*
+    
+    .filter((game: { date: string }) => {
       // Only include games that are in the future
       return new Date(game.date) >= estNow;
     }).sort((a: { date: string }, b: { date: string }) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-   //console.log('Processed games:', games);
+    */
+    
+
+    console.log('Processed games:', games);
 
     if (games.length === 0) {
       return NextResponse.json({
