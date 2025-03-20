@@ -104,16 +104,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
     }
     
-    // Parse request body to get date range or specific games to sync
+    // Parse request body to get gameIds to sync
     const body = await req.json();
-    const { date, gameIds } = body;
+    const { gameIds } = body;
     
-    // Fetch games from ESPN API
-    // Format date as YYYYMMDD if provided
-    const formattedDate = date ? date.replace(/\//g, '') : '';
-    const espnUrl = formattedDate 
-      ? `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${formattedDate}`
-      : `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard`;
+    // Fetch games from ESPN API - always get the latest scoreboard
+    const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard`;
     
     console.log(`Fetching data from ESPN: ${espnUrl}`);
     
@@ -121,12 +117,17 @@ export async function POST(req: NextRequest) {
     
     // Filter to only include completed games
     const filteredGames = espnData.events.filter((game: ESPNGame) => {
+      // If gameIds are provided, only include games that match those IDs
+      if (gameIds && gameIds.length > 0) {
+        return gameIds.includes(game.id) && game.status.type.completed === true;
+      }
+      // Otherwise include all completed games
       return game.status.type.completed === true;
     });
     
-    console.log(`Retrieved ${espnData.events.length} games from ESPN, ${filteredGames.length} completed`);
+    console.log(`Retrieved ${espnData.events.length} games from ESPN, ${filteredGames.length} completed/matching games`);
     
-    // Get all games from the database - REMOVE the date filter to include recent games
+    // Get all games from the database
     const allGames = await sql<DatabaseGame>`
       SELECT * FROM "Game" 
       ORDER BY "gameDate" DESC
@@ -134,22 +135,6 @@ export async function POST(req: NextRequest) {
     `;
     
     console.log(`Found ${allGames.rows.length} recent games in database`);
-    
-    // Add more detailed logging for recent games
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
-    console.log(`Looking specifically for games on ${yesterdayStr}`);
-    const yesterdayGames = allGames.rows.filter(game => {
-      const gameDate = new Date(game.gameDate);
-      return gameDate.toISOString().split('T')[0] === yesterdayStr;
-    });
-    
-    console.log(`Found ${yesterdayGames.length} games from yesterday in database`);
-    yesterdayGames.forEach(game => {
-      console.log(`Yesterday's game: "${game.team1Name}" vs "${game.team2Name}", ID: ${game.id}`);
-    });
     
     // Check if there are any games with these specific teams
     const teamExamples = ['Chicago', 'Miami', 'Lakers', 'Boston', 'Orlando', 'Milwaukee'];
@@ -175,7 +160,7 @@ export async function POST(req: NextRequest) {
       const gameDate = new Date(espnGame.date);
       const dateStr = gameDate.toISOString().split('T')[0];
       
-      console.log(`Processing completed game: ${awayTeam} @ ${homeTeam} on ${dateStr}`);
+      console.log(`Processing completed game: ${awayTeam} @ ${homeTeam} on ${dateStr}, ESPN ID: ${espnGame.id}`);
       
       // Improved team name normalization function
       const normalizeTeamName = (name: string) => {
