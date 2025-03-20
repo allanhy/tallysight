@@ -2,8 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth, useUser } from '@clerk/nextjs';
+
+interface ClerkUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+}
 
 export default function SyncSportsRadarPage() {
+  const { user, isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
+  const [users, setUsers] = useState<ClerkUser[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -11,6 +24,40 @@ export default function SyncSportsRadarPage() {
   const [autoSync, setAutoSync] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const router = useRouter();
+  const [isVerifying, setIsVerifying] = useState(true);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) return router.push("/sign-in");
+
+    if (!user?.publicMetadata || user.publicMetadata.role !== "admin") {
+        alert("Access denied. Admins only.");
+        return router.push("/");
+    }
+    const fetchUsers = async () => {
+        try {
+            const token = await getToken();
+            const response = await fetch("/admin/get-users", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch users. Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            setUsers(data);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchUsers();
+    setIsVerifying(false);
+}, [isSignedIn, user, isLoaded, getToken, router]);
+
 
   const handleSync = async () => {
     setIsLoading(true);
@@ -66,6 +113,14 @@ export default function SyncSportsRadarPage() {
       }
     };
   }, [autoSync]);
+
+  if (!isLoaded || isVerifying) {
+    return (
+        <div className="h-screen flex items-center justify-center text-black dark:text-white text-lg font-bold">
+            <p className="text-xl">Verifying...</p>
+        </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
