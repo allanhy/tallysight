@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
@@ -38,6 +40,11 @@ interface Game {
     estDate?: string;
 }
 
+type BestPickButtonProps = {
+    gameId: string;
+    isSelected: boolean;
+  };
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {
@@ -61,6 +68,7 @@ export default function TomorrowPicks() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedPicks, setSelectedPicks] = useState<Set<string>>(new Set());
+    const [bestPick, setBestPick] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [pickPercentages, setPickPercentages] = useState<Record<string, { home: string; away: string }>>({});
@@ -181,6 +189,21 @@ export default function TomorrowPicks() {
         });
     };
 
+    // Setting the best pick for more points
+    const handleBestPickSelect = (gameId: string) => {
+        setBestPick(prevBestPick => prevBestPick === gameId ? null : gameId); // Can select and unselect
+    };
+
+    const BestPickButton: React.FC<BestPickButtonProps> = ({ gameId, isSelected }) => (
+        <div>
+            <button
+                onClick={() => handleBestPickSelect(gameId)}
+                className={`text-gray-400 hover:text-gray-600 ${isSelected ? "font-medium text-yellow-500" : ""}`}>
+                Best Pick ★
+            </button>
+        </div>                                
+    );
+
     const handleGetSpread = (gameId: string) => {
         console.log(`Fetching spread for ${gameId}`);
         const game = games.find(g => g.id === gameId);
@@ -210,7 +233,8 @@ export default function TomorrowPicks() {
                     fullDate: game?.fullDate,
                     dbDate: game?.dbDate,
                     dbTime: game?.dbTime,
-                    estDate: game?.estDate
+                    estDate: game?.estDate,
+                    bestPick: gameId === bestPick
                 };
             });
 
@@ -542,8 +566,9 @@ export default function TomorrowPicks() {
                                         </button>
                                     </div>
                                     <div className="px-4 pb-3 flex justify-between items-center">
-                                        <span className="text-sm text-gray-500">Best pick</span>
-                                        <button className="text-gray-400 hover:text-gray-600">★</button>
+                                        <BestPickButton
+                                            gameId={ game.id }
+                                            isSelected={ bestPick === game.id }/>
                                     </div>
                                 </div>
                             )
