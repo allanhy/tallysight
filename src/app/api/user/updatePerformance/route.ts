@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     // Calculate performance percentage
-    const performance = max_points > 0 ? ((points / max_points) * 100).toFixed(3) : '0.000';
+    const performance = max_points > 0 ? ((points / max_points) * 100).toFixed(2) : '0.00';
 
     await client.query(
       `UPDATE users 

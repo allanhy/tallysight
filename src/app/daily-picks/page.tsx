@@ -22,6 +22,7 @@ import {
 import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
 import OddsPreview from '../components/OddsPreview';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 interface Team {
     name: string;
@@ -93,6 +94,7 @@ export default function DailyPicks() {
     const [allGamesEnded, setAllGamesEnded] = useState(false);
     const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [previewGame, setPreviewGame] = useState<Game | null>(null);
+
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -563,6 +565,33 @@ export default function DailyPicks() {
             handleAllGamesDone();
         }
     }, [allGamesEnded, handleAllGamesDone]);
+
+    // Handle daily points updates
+    useEffect(() => {
+        const nowUtc = new Date();
+        const nowPst = toZonedTime(nowUtc, "America/Los_Angeles");
+
+        const targetTimePst = new Date(nowPst);
+        targetTimePst.setHours(23, 55, 0, 0);
+
+        if(nowPst >= targetTimePst) {
+            targetTimePst.setDate(targetTimePst.getDate() + 1);
+        }
+
+        const targetTimeUtc = fromZonedTime(targetTimePst, "America/Los_Angeles")
+        const timeUntilNextRun = targetTimeUtc.getTime() - nowUtc.getTime();
+        console.log(`Update points again in: ${timeUntilNextRun/1000/60} minutes`);
+
+        // Schedule it to run
+        const timeoutId = setTimeout(() => {
+            handleAllGamesDone();
+
+            const intervalId = setInterval(handleAllGamesDone, 24*60*60*1000);
+            return() => clearInterval(intervalId);
+        }, timeUntilNextRun);
+
+        return() => clearTimeout(timeoutId);
+    }, [handleAllGamesDone]);
 
     // Add this function to check if a specific game is locked
     const isGameLocked = useCallback((gameId: string) => {
