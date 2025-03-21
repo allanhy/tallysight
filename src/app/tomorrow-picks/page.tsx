@@ -144,7 +144,6 @@ export default function TomorrowPicks() {
     
                 setGames(data.games);
                 
-                // After setting games, fetch the relevant picks
                 if (data.games && data.games.length > 0) {
                     fetchPreviousPicks(data.games);
                 }

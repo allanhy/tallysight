@@ -104,7 +104,6 @@ export default function DailyPicks() {
     const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [previewGame, setPreviewGame] = useState<Game | null>(null);
 
-
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
     });
@@ -1099,7 +1098,7 @@ export default function DailyPicks() {
                                     />
                                 ))}
                             </div>
-                            {selectedPicks.size === games.length && (
+                            {selectedPicks.size === games.length && !isLocked && (
                                 <button
                                     className={`w-full mt-3 py-3 rounded-lg font-medium transition-all ${submitting
                                         ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
