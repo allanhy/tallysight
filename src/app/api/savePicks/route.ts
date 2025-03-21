@@ -166,19 +166,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check if picks have already been made for today
-    const today = convertToEST(pickDate);
-    const existingPicks = await sql`
-      SELECT * FROM "Pick"
-      WHERE "userId" = ${userId} AND "createdAt"::date = ${today}`;
-
-    // If picks already exist, delete them before inserting new ones
-    if (existingPicks.rows.length > 0) {
-      await sql`
-        DELETE FROM "Pick"
-        WHERE "userId" = ${userId} AND "createdAt"::date = ${today}`;
-    }
-
     // Create picks, conflict if user already made picks for that game
     for (const pick of picks) {
       await sql`
@@ -199,7 +186,10 @@ export async function POST(req: NextRequest) {
           ${'NBA'},
           ${pick.bestPick}
         )
-        ON CONFLICT ("userId", "gameId") DO NOTHING
+        ON CONFLICT ("userId", "gameId") DO UPDATE
+        SET "teamIndex" = EXCLUDED."teamIndex",
+            "createdAt" = EXCLUDED."createdAt",
+            "bestPick" = EXCLUDED."bestPick";
       `;
     }
 

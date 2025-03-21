@@ -174,11 +174,45 @@ export default function DailyPicks() {
                    //console.log(`Game ID: ${game.id}, Status: ${game.status}`);
                 });
                 setGames(data.games);
+
+                if (data.games && data.games.length > 0) {
+                    fetchPreviousPicks(data.games);
+                }
             } catch (error) {
                //console.error('Error fetching games:', error);
                 setError('Failed to load today\'s games');
             } finally {
                 setLoading(false);
+            }
+        };
+
+        // Sets selected picks as previous picks if a user is redo-ing their picks
+        const fetchPreviousPicks = async (tomorrowGames: any[]) => {
+            try {
+                const response = await fetch('/api/userPicks');
+                if (!response.ok) throw new Error('Failed to fetch user picks.');
+                
+                const picks = await response.json();
+                
+                // Create a Set of tomorrow's game IDs for quick lookup
+                const tomorrowGameIds = new Set(tomorrowGames.map(game => game.id));
+                
+                // Initialize selectedPicks only with picks that match tomorrow's games
+                const initialSelectedPicks = new Set<string>();
+                
+                picks.forEach((pick: any) => {
+                    // Only process picks for tomorrow's games
+                    if (tomorrowGameIds.has(pick.gameId)) {
+                        // Convert the API data to the format used in selectedPicks
+                        const teamType = pick.teamIndex === 0 ? 'home' : 'away';
+                        initialSelectedPicks.add(`${pick.gameId}-${teamType}`);
+                    }
+                });
+    
+                // Set the selectedPicks state with users previous picks
+                setSelectedPicks(initialSelectedPicks);
+            } catch (error) {
+                console.error('Error fetching previous picks:', error);
             }
         };
 
