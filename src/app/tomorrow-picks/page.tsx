@@ -134,16 +134,19 @@ export default function TomorrowPicks() {
                         'Pragma': 'no-cache'
                     }
                 });
-
+    
                 if (!response.ok) {
                     throw new Error('Failed to fetch games');
                 }
-
+    
                 const data = await response.json();
                 console.log('Received games:', data.games); // Debug log
-
-                // Remove the additional filtering since the API already filters for tomorrow
+    
                 setGames(data.games);
+                
+                if (data.games && data.games.length > 0) {
+                    fetchPreviousPicks(data.games);
+                }
             } catch (error) {
                 console.error('Error fetching games:', error);
                 setError('Failed to load tomorrow\'s games');
@@ -151,7 +154,7 @@ export default function TomorrowPicks() {
                 setLoading(false);
             }
         };
-
+    
         const fetchPickPercentages = async () => {
             try {
                 const response = await fetch('/api/userPickPercentage');
@@ -168,7 +171,6 @@ export default function TomorrowPicks() {
                     });
                     setPickPercentages(percentages);
                     console.log("Pick Percentages:", percentages);
-
                 }
             } catch (error) {
                 console.error("Error fetching pick percentages:", error);
@@ -176,17 +178,47 @@ export default function TomorrowPicks() {
                 setLoadingPercentages(false);
             }
         };
-
+    
+        // Sets selected picks as previous picks if a user is redo-ing their picks
+        const fetchPreviousPicks = async (tomorrowGames: any[]) => {
+            try {
+                const response = await fetch('/api/userPicks');
+                if (!response.ok) throw new Error('Failed to fetch user picks.');
+                
+                const picks = await response.json();
+                
+                // Create a Set of tomorrow's game IDs for quick lookup
+                const tomorrowGameIds = new Set(tomorrowGames.map(game => game.id));
+                
+                // Initialize selectedPicks only with picks that match tomorrow's games
+                const initialSelectedPicks = new Set<string>();
+                
+                picks.forEach((pick: any) => {
+                    // Only process picks for tomorrow's games
+                    if (tomorrowGameIds.has(pick.gameId)) {
+                        // Convert the API data to the format used in selectedPicks
+                        const teamType = pick.teamIndex === 0 ? 'home' : 'away';
+                        initialSelectedPicks.add(`${pick.gameId}-${teamType}`);
+                    }
+                });
+    
+                // Set the selectedPicks state with users previous picks
+                setSelectedPicks(initialSelectedPicks);
+            } catch (error) {
+                console.error('Error fetching previous picks:', error);
+            }
+        };
+    
         fetchTomorrowGames();
         fetchPickPercentages();
     }, []);
-
+    
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
         setSelectedPicks(prevPicks => {
             const newPicks = new Set(prevPicks);
             const pickId = `${gameId}-${teamType}`;
             const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
-
+    
             if (newPicks.has(pickId)) {
                 newPicks.delete(pickId);
             } else {
