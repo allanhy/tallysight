@@ -51,7 +51,11 @@ interface Game {
 type BestPickButtonProps = {
     gameId: string;
     isSelected: boolean;
-  };
+}
+
+const MAXPOINTSPERGAME = 1;
+const BONUSPOINTS = 3;
+const BESTPICKPOINTS = 3;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
@@ -648,6 +652,57 @@ export default function TomorrowPicks() {
                         <div className="flex flex-col items-center gap-2">
                             <div className="flex items-center gap-2 text-white">
                                 <span>{selectedPicks.size}/{games.length} picks made</span>
+                                <span className="px-10">
+                                    <strong>Total Points Possible:</strong> {selectedPicks.size * MAXPOINTSPERGAME} 
+                                    {selectedPicks.size === games.length && ` + ${BONUSPOINTS}`} 
+                                    {bestPick && ` + ${BESTPICKPOINTS}`}
+                                    
+                                    {/* Showing total only when all picks made or has best pick */}
+                                    {(selectedPicks.size === games.length || bestPick) && " = "}
+                                    
+                                    {(selectedPicks.size === games.length || bestPick) && (
+                                        <>
+                                            {selectedPicks.size * MAXPOINTSPERGAME + 
+                                            (selectedPicks.size === games.length ? BONUSPOINTS : 0) + 
+                                            (bestPick ? BESTPICKPOINTS : 0)}
+                                            <br />
+                                            {"("}
+                                            {selectedPicks.size === games.length && (
+                                                <TooltipProvider delayDuration={0}>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="cursor-pointer">
+                                                                Bonus Points: {BONUSPOINTS}
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" align="center" className="bg-black text-white text-xs px-3 py-2 rounded-md shadow-md w-65">
+                                                            Points for winning all picks.
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            )}
+                                            {" "}
+                                            {bestPick && (
+                                                <>
+                                                    {selectedPicks.size === games.length && " "}
+                                                    <TooltipProvider delayDuration={0}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span className="cursor-pointer">
+                                                                    Best Pick Points: {BESTPICKPOINTS}
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top" align="center" className="bg-black text-white text-xs px-3 py-2 rounded-md shadow-md w-65">
+                                                                Points for winning your best pick.
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </>
+                                            )}
+                                            {")"}
+                                        </>
+                                    )}
+                                </span>
                             </div>
                             <div className="w-full flex gap-2">
                                 {[...Array(games.length)].map((_, i) => (
