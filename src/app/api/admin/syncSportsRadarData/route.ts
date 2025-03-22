@@ -291,6 +291,7 @@ export async function POST(req: NextRequest) {
           UPDATE "Game"
           SET 
             "winner" = ${winnerBoolean},
+            "won" = ${Number(winnerBoolean)},
             "final_score" = ${finalScoreStr}
           WHERE "id" = ${dbGame.id}
         `;
@@ -301,7 +302,7 @@ export async function POST(req: NextRequest) {
         
         // Check after commit
         const checkResult = await sql`
-          SELECT id, "team1Name", "team2Name", winner, final_score
+          SELECT id, "team1Name", "team2Name", winner, won, final_score
           FROM "Game"
           WHERE "id" = ${dbGame.id}
         `;
@@ -309,7 +310,7 @@ export async function POST(req: NextRequest) {
         console.log(`Direct check of game ${dbGame.id} after update:`);
         if (checkResult.rows.length > 0) {
           const game = checkResult.rows[0];
-          console.log(`Current DB state: winner=${game.winner}, final_score=${game.final_score}`);
+          console.log(`Current DB state: winner=${game.winner}, won=${game.won}, final_score=${game.final_score}`);
         }
         
         return {
