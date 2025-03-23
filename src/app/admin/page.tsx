@@ -68,39 +68,38 @@ export default function AdminPage() {
         const fetchUsers = async () => {
             try {
                 if (!isSignedIn || !user) {
-                    console.warn('User not signed in');
+                    console.warn('[Client] User not signed in');
                     router.push("/sign-in");
                     return;
                 }
 
                 const token = await getToken();
                 if (!token) {
-                    console.error('No authentication token available');
+                    console.error('[Client] No authentication token available');
                     throw new Error('Authentication token not available');
                 }
 
-                console.log('Making request to fetch users');
+                console.log('[Client] Making request to fetch users');
                 const response = await fetch("/api/admin/get-users", {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
-                    },
-                    cache: 'no-store'
+                    }
                 });
 
-                console.log('Response status:', response.status);
+                console.log('[Client] Response status:', response.status);
                 
                 if (response.status === 401) {
-                    console.error('Unauthorized access');
+                    console.error('[Client] Unauthorized access');
                     router.push("/sign-in");
                     return;
                 }
 
                 if (response.status === 403) {
-                    console.error('Access forbidden - Not an admin');
+                    console.error('[Client] Access forbidden - Not an admin');
                     const responseData = await response.json();
-                    console.error('Server response:', responseData);
+                    console.error('[Client] Server response:', responseData);
                     alert("Access denied. Admins only.");
                     router.push("/");
                     return;
@@ -108,18 +107,28 @@ export default function AdminPage() {
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error('API Error:', errorData);
+                    console.error('[Client] API Error:', errorData);
                     throw new Error(`Failed to fetch users. Status: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log('Fetched users:', data);
+                console.log('[Client] Fetched users data:', data);
+                
                 if (!Array.isArray(data)) {
+                    console.error('[Client] Invalid response format:', data);
                     throw new Error('Invalid response format: expected an array of users');
                 }
+
+                if (data.length === 0) {
+                    console.log('[Client] No users returned from API');
+                } else {
+                    console.log(`[Client] Successfully fetched ${data.length} users`);
+                }
+
                 setUsers(data);
+                setError(null);
             } catch (error) {
-                console.error("Error fetching users:", error);
+                console.error("[Client] Error fetching users:", error);
                 setError(error instanceof Error ? error.message : 'Failed to fetch users');
             } finally {
                 setLoading(false);

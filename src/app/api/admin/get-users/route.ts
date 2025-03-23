@@ -5,17 +5,17 @@ import { clerkClient } from "@clerk/clerk-sdk-node";
 export async function GET() {
   try {
     const { userId } = await auth();
-    console.log('Auth check - userId:', userId);
+    console.log('[API] Auth check - userId:', userId);
 
     if (!userId) {
-      console.log('No userId found');
+      console.log('[API] No userId found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch user details to verify admin status
-    console.log('Fetching user details for:', userId);
+    console.log('[API] Fetching user details for:', userId);
     const adminUser = await clerkClient.users.getUser(userId);
-    console.log('Admin check - user details:', {
+    console.log('[API] Admin check - user details:', {
       id: adminUser.id,
       publicMetadata: adminUser.publicMetadata,
       hasMetadata: !!adminUser.publicMetadata,
@@ -23,7 +23,7 @@ export async function GET() {
     });
 
     if (!adminUser?.publicMetadata?.role || adminUser.publicMetadata.role !== "admin") {
-      console.log('Access denied - Invalid role:', {
+      console.log('[API] Access denied - Invalid role:', {
         hasMetadata: !!adminUser.publicMetadata,
         role: adminUser.publicMetadata?.role
       });
@@ -33,31 +33,51 @@ export async function GET() {
       );
     }
 
-    // Fetch all users from Clerk
-    console.log('Fetching user list');
-    const usersResponse = await clerkClient.users.getUserList({
-      limit: 100
-    });
+    try {
+      // Fetch all users from Clerk
+      console.log('[API] Fetching user list');
+      const usersResponse = await clerkClient.users.getUserList();
+      console.log('[API] Raw users response:', usersResponse);
 
-    if (!Array.isArray(usersResponse)) {
-      console.error('Invalid response from Clerk API');
-      throw new Error("Invalid response from Clerk API");
+      if (!Array.isArray(usersResponse)) {
+        console.error('[API] Invalid response from Clerk API - not an array');
+        throw new Error("Invalid response from Clerk API");
+      }
+
+      if (usersResponse.length === 0) {
+        console.log('[API] No users found in Clerk');
+        return NextResponse.json([]);
+      }
+
+      console.log(`[API] Found ${usersResponse.length} users`);
+      
+      // Format users
+      const formattedUsers = usersResponse.map((user: any) => {
+        const emailAddress = user.emailAddresses?.[0]?.emailAddress || "No email";
+        console.log(`[API] Formatting user:`, {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: emailAddress
+        });
+        
+        return {
+          id: user.id,
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          username: user.username || "",
+          email: emailAddress,
+        };
+      });
+
+      console.log('[API] Returning formatted users:', formattedUsers);
+      return NextResponse.json(formattedUsers);
+    } catch (clerkError) {
+      console.error('[API] Error fetching users from Clerk:', clerkError);
+      throw clerkError;
     }
-
-    console.log(`Found ${usersResponse.length} users`);
-    
-    // Format users
-    const formattedUsers = usersResponse.map((user: any) => ({
-      id: user.id,
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
-      username: user.username || "",
-      email: user.emailAddresses[0]?.emailAddress || "No email",
-    }));
-
-    return NextResponse.json(formattedUsers);
   } catch (error) {
-    console.error("Error fetching users:", error);
+    console.error("[API] Error in GET handler:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal Server Error" },
       { status: 500 }
