@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { AlertTriangle, Trash2, ArrowUpDown, Search, Mail, X } from "lucide-react";
+import { AlertTriangle, Trash2, ArrowUpDown, Search, Mail, X, RefreshCw } from "lucide-react";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "../components/ui/alert-dialog";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
@@ -34,30 +34,102 @@ export default function AdminPage() {
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [isSending, setIsSending] = useState(false); // Track sending state
     const [isVerifying, setIsVerifying] = useState(true);
+    const [lastGameSync, setLastGameSync] = useState<string | null>(null);
+    const [isGameSyncing, setIsGameSyncing] = useState(false);
+    const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isLoaded) return;
-        if (!isSignedIn) return router.push("/sign-in");
+        if (!isLoaded) {
+            console.log('Clerk not loaded yet');
+            return;
+        }
+        if (!isSignedIn) {
+            console.log('User not signed in');
+            return router.push("/sign-in");
+        }
+
+        // Debug user metadata
+        console.log('User object:', {
+            id: user?.id,
+            isSignedIn,
+            publicMetadata: user?.publicMetadata
+        });
 
         if (!user?.publicMetadata || user.publicMetadata.role !== "admin") {
+            console.log('Access denied - User metadata:', {
+                hasMetadata: !!user?.publicMetadata,
+                role: user?.publicMetadata?.role
+            });
             alert("Access denied. Admins only.");
             return router.push("/");
         }
+
         const fetchUsers = async () => {
             try {
+                if (!isSignedIn || !user) {
+                    console.warn('[Client] User not signed in');
+                    router.push("/sign-in");
+                    return;
+                }
+
                 const token = await getToken();
-                const response = await fetch("/admin/get-users", {
-                    headers: { Authorization: `Bearer ${token}` },
+                if (!token) {
+                    console.error('[Client] No authentication token available');
+                    throw new Error('Authentication token not available');
+                }
+
+                console.log('[Client] Making request to fetch users');
+                const response = await fetch("/api/admin/get-users", {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
 
+                console.log('[Client] Response status:', response.status);
+                
+                if (response.status === 401) {
+                    console.error('[Client] Unauthorized access');
+                    router.push("/sign-in");
+                    return;
+                }
+
+                if (response.status === 403) {
+                    console.error('[Client] Access forbidden - Not an admin');
+                    const responseData = await response.json();
+                    console.error('[Client] Server response:', responseData);
+                    alert("Access denied. Admins only.");
+                    router.push("/");
+                    return;
+                }
+
                 if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('[Client] API Error:', errorData);
                     throw new Error(`Failed to fetch users. Status: ${response.status}`);
                 }
 
                 const data = await response.json();
+                console.log('[Client] Fetched users data:', data);
+                
+                if (!Array.isArray(data)) {
+                    console.error('[Client] Invalid response format:', data);
+                    throw new Error('Invalid response format: expected an array of users');
+                }
+
+                if (data.length === 0) {
+                    console.log('[Client] No users returned from API');
+                } else {
+                    console.log(`[Client] Successfully fetched ${data.length} users`);
+                }
+
                 setUsers(data);
+                setError(null);
             } catch (error) {
-                console.error("Error fetching users:", error);
+                console.error("[Client] Error fetching users:", error);
+                setError(error instanceof Error ? error.message : 'Failed to fetch users');
             } finally {
                 setLoading(false);
             }
@@ -66,6 +138,57 @@ export default function AdminPage() {
         fetchUsers();
         setIsVerifying(false);
     }, [isSignedIn, user, isLoaded, getToken, router]);
+
+    // Function to sync games
+    const syncGames = async () => {
+        setIsGameSyncing(true);
+        try {
+            const token = await getToken();
+            const response = await fetch('/api/admin/syncSportsRadarData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ gameIds: [] }), // Empty array to sync all games
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to sync games');
+            }
+
+            setLastGameSync(new Date().toLocaleString());
+        } catch (error) {
+            console.error('Error syncing games:', error);
+            alert('Failed to sync games');
+        } finally {
+            setIsGameSyncing(false);
+        }
+    };
+
+    // Set up auto-sync interval
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout | null = null;
+        
+        if (autoSyncEnabled) {
+            // Run immediately when enabled
+            syncGames();
+            
+            // Set up interval for every 6 hours
+            intervalId = setInterval(syncGames, 6 * 60 * 60 * 1000);
+            
+            // Log next sync time
+            const nextSync = new Date(Date.now() + 6 * 60 * 60 * 1000);
+            console.log('Next sync scheduled for:', nextSync.toLocaleString());
+        }
+        
+        // Cleanup interval on component unmount or when autoSync is disabled
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [autoSyncEnabled]);
 
     if (!isLoaded || isVerifying) {
         return (
@@ -228,6 +351,30 @@ export default function AdminPage() {
 
     return (
         <div className="max-w-5xl mx-auto p-6 bg-black text-white rounded-lg shadow-lg">
+            {/* Game Sync Section */}
+            <div className="mb-8 p-4 border border-gray-700 rounded-lg">
+                <h2 className="text-xl font-bold mb-4">Game Synchronization</h2>
+                <div className="flex items-center gap-4 mb-4">
+                    <Button
+                        onClick={() => setAutoSyncEnabled(!autoSyncEnabled)}
+                        className={`${autoSyncEnabled ? 'bg-green-600' : 'bg-blue-500'} text-white`}
+                    >
+                        {autoSyncEnabled ? 'Disable Auto-Sync' : 'Enable Auto-Sync'}
+                    </Button>
+                    <Button
+                        onClick={syncGames}
+                        disabled={isGameSyncing}
+                        className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
+                    >
+                        <RefreshCw size={16} className={`${isGameSyncing ? 'animate-spin' : ''}`} />
+                        {isGameSyncing ? 'Syncing...' : 'Sync Now'}
+                    </Button>
+                </div>
+                <div className="text-sm text-gray-400">
+                    {autoSyncEnabled && <p>Auto-sync is enabled (every 6 hours)</p>}
+                    {lastGameSync && <p>Last synced: {lastGameSync}</p>}
+                </div>
+            </div>
 
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-white">Users</h1>
