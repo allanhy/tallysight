@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import './header.css'
 import Image from 'next/image';
-import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link'
 import { useTheme } from '@/context/ThemeContext';
 import CarouselWithGames from './carouselWithGames';
@@ -50,11 +50,12 @@ const Header = () => {
                         <div className="flex items-center">
                             <Link href="/" className="flex-shrink-0">
                                 <Image
-                                    src={theme === 'dark' ? "/TallySight.png" : "/TallysightDark.png"}
+                                    src={theme === 'dark' ? "/TallySight.png" : "https://cdn.prod.website-files.com/62e979d60820e0255f5b19dd/62e99bac66e670659812115e_ts-logo-horizontal-b-p-500.png"}
                                     alt="Tallysight"
-                                    width={120}
-                                    height={32}
+                                    width={150}
+                                    height={40}
                                     priority
+                                    className="object-contain"
                                 />
                             </Link>
 
@@ -79,8 +80,13 @@ const Header = () => {
                             {/* Desktop Auth */}
                             <div className="hidden md:block">
                                 <SignedOut>
-                                    <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                                        <SignInButton mode="redirect"/>
+                                    <div className='flex gap-2'>
+                                        <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
+                                            <SignUpButton mode="redirect"/>
+                                        </div>
+                                        <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
+                                            <SignInButton mode="redirect"/>
+                                        </div>
                                     </div>
                                 </SignedOut>
                                 <SignedIn>
@@ -146,8 +152,13 @@ const Header = () => {
                             {/* Mobile Auth */}
                             <div className="mt-4">
                                 <SignedOut>
-                                    <div className='p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                                        <SignInButton mode="redirect"/>
+                                    <div className='space-y-2'>
+                                        <div className='p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
+                                            <SignUpButton mode="redirect"/>
+                                        </div>
+                                        <div className='p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
+                                            <SignInButton mode="redirect"/>
+                                        </div>
                                     </div>
                                 </SignedOut>
                                 <SignedIn>
