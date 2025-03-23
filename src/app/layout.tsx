@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning={true} className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
-        <ClerkProvider>
+        <ClerkProvider dynamic>
           <ThemeProvider>
             <div className="flex flex-col min-h-screen">
               <NavigationWrapper /> 

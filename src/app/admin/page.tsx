@@ -80,7 +80,7 @@ export default function AdminPage() {
                 }
 
                 console.log('[Client] Making request to fetch users');
-                const response = await fetch("/api/admin/get-users", {
+                const response = await fetch("/admin/get-users", {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
