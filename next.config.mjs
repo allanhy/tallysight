@@ -8,7 +8,8 @@ const nextConfig = {
             'cdn.bleacherreport.net',
             'stats.nba.com',
             'ak-static.cms.nba.com',
-            'www.nba.com'
+            'www.nba.com',
+            'cdn.prod.website-files.com'
         ],
     },
 };

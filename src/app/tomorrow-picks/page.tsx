@@ -28,6 +28,7 @@ import {
     DialogClose,
 } from "../components/ui/dialog";
 import { X } from "lucide-react";
+import { useAuth } from "@clerk/clerk-react";
 
 interface Team {
     name: string;
@@ -76,6 +77,7 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function TomorrowPicks() {
     const router = useRouter();
+    const { userId } = useAuth();
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -186,10 +188,39 @@ export default function TomorrowPicks() {
         // Sets selected picks as previous picks if a user is redo-ing their picks
         const fetchPreviousPicks = async (tomorrowGames: any[]) => {
             try {
-                const response = await fetch('/api/userPicks');
-                if (!response.ok) throw new Error('Failed to fetch user picks.');
+                // Check if user is authenticated
+                if (!userId) {
+                    console.warn('No user ID available, skipping previous picks fetch');
+                    return;
+                }
+
+                const response = await fetch('/api/userPicks', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                // Handle different response statuses
+                if (response.status === 404) {
+                    // No picks found - this is a valid state
+                    return;
+                }
+                
+                if (response.status === 401) {
+                    console.warn('User not authorized to fetch picks');
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch user picks: ${response.statusText}`);
+                }
                 
                 const picks = await response.json();
+                
+                // If picks is empty or not an array, return early
+                if (!Array.isArray(picks) || picks.length === 0) {
+                    return;
+                }
                 
                 // Create a Set of tomorrow's game IDs for quick lookup
                 const tomorrowGameIds = new Set(tomorrowGames.map(game => game.id));
@@ -209,7 +240,10 @@ export default function TomorrowPicks() {
                 // Set the selectedPicks state with users previous picks
                 setSelectedPicks(initialSelectedPicks);
             } catch (error) {
+                // Log the error but don't throw it - this allows the app to continue
                 console.error('Error fetching previous picks:', error);
+                // Optionally set an error state that can be displayed to the user
+                setError('Unable to load previous picks. You can still make new picks.');
             }
         };
     

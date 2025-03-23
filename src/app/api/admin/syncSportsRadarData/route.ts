@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getAuth } from '@clerk/nextjs/server';
+import { Buda } from 'next/font/google';
 
 // Define interfaces for type safety
 interface ESPNGame {
@@ -11,6 +12,7 @@ interface ESPNGame {
       completed: boolean;
     }
   };
+  sport: string;
   date: string;
   competitions: Array<{
     id: string;
@@ -34,6 +36,7 @@ interface DatabaseGame {
   winner?: number;
   gameDate: Date;
   espnId?: string;
+  sport: string;
   // other fields
 }
 
@@ -99,35 +102,47 @@ const teamMappings: Record<string, string[]> = {
 
 export async function POST(req: NextRequest) {
   try {
-    // Check admin authorization
-    const { userId } = getAuth(req);
-    if (!userId) {
-      return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
-    }
-    
     // Parse request body to get gameIds to sync
     const body = await req.json();
     const { gameIds } = body;
-    
-    // Fetch games from ESPN API - always get the latest scoreboard
-    const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard`;
-    
-    console.log(`Fetching data from ESPN: ${espnUrl}`);
-    
-    const espnData = await fetchESPNData(espnUrl);
-    
+    console.log(`Request Body Received:`, body);
+
+    // Fetch both NBA and MLB data
+    const [nbaData, mlbData, nflData, nhlData, mlsData, eplData, laligaData, bundesligaData, seriesaData, ligue1Data] = await Promise.all([
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard'), 
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard'),
+      fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard'),
+
+    ]);
+    // Combine NBA & MLB data and tag each with a sport identifier
+    const combinedGames = [
+      ...nbaData.events.map((game: any) => ({ ...game, sport: 'NBA' })),
+      ...mlbData.events.map((game: any) => ({ ...game, sport: 'MLB' })),
+      ...nflData.events.map((game: any) => ({ ...game, sport: 'NFL' })),
+      ...nhlData.events.map((game: any) => ({ ...game, sport: 'NFL' })),
+      ...mlsData.events.map((game: any) => ({ ...game, sport: 'MLS' })),
+      ...eplData.events.map((game: any) => ({ ...game, sport: 'EPL' })),
+      ...laligaData.events.map((game: any) => ({ ...game, sport: 'LALIGA' })),
+      ...bundesligaData.events.map((game: any) => ({ ...game, sport: 'BUNDESLIGA' })),
+      ...seriesaData.events.map((game: any) => ({ ...game, sport: 'SERIES_A' })),
+      ...ligue1Data.events.map((game: any) => ({ ...game, sport: 'LIGUE_1' })),
+    ];
+
     // Filter to only include completed games
-    const filteredGames = espnData.events.filter((game: ESPNGame) => {
-      // If gameIds are provided, only include games that match those IDs
+    const filteredGames = combinedGames.filter((game: ESPNGame & { sport: string }) => {
       if (gameIds && gameIds.length > 0) {
         return gameIds.includes(game.id) && game.status.type.completed === true;
       }
-      // Otherwise include all completed games
       return game.status.type.completed === true;
     });
-    
-    console.log(`Retrieved ${espnData.events.length} games from ESPN, ${filteredGames.length} completed/matching games`);
-    
+        
     // Get all games from the database
     const allGames = await sql<DatabaseGame>`
       SELECT * FROM "Game" 
@@ -292,8 +307,9 @@ export async function POST(req: NextRequest) {
           SET 
             "winner" = ${winnerBoolean},
             "won" = ${Number(winnerBoolean)},
-            "final_score" = ${finalScoreStr}
-          WHERE "id" = ${dbGame.id}
+            "final_score" = ${finalScoreStr},
+            "sport" = ${espnGame.sport}
+          WHERE "id" = ${dbGame.id} AND "sport" = ${espnGame.sport}
         `;
         
         await sql`COMMIT`;
