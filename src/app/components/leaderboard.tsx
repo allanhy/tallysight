@@ -106,7 +106,9 @@ const Leaderboard: React.FC = () => {
         <div className='leaderboard-page'>
             <div className='content-wrapper'>
                 <div className='main-content'>
-                    <h1 className='leaderboard-title'>Leaderboard</h1>
+                    <h1 className='leaderboard-title'>
+                    {selectedSport === "SELECT" || selectedWeek === -1 ? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
+                    </h1>
                     <div className='leaderboard-container'>
                         <div className='leaderboard-controls'>
                             <select 
@@ -144,7 +146,6 @@ const Leaderboard: React.FC = () => {
                                         {leaderboard.length <= 0 ? (
                                                 <div>No rankings available for the selected sport and week. Please choose a different option.</div>
                                         ) : (
-                                            /*<div><LeaderboardProfiles userIds={leaderboard.map(entry => entry.user_id)}></LeaderboardProfiles></div>*/
                                             <div><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
                                         )}
                                 </div>
