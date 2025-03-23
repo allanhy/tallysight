@@ -79,15 +79,14 @@ export default function AdminPage() {
                     throw new Error('Authentication token not available');
                 }
 
-                console.log('Making request to /admin/get-users');
-                const response = await fetch("/admin/get-users", {
+                console.log('Making request to fetch users');
+                const response = await fetch("/api/admin/get-users", {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    cache: 'no-store',
-                    credentials: 'include'
+                    cache: 'no-store'
                 });
 
                 console.log('Response status:', response.status);
@@ -114,6 +113,10 @@ export default function AdminPage() {
                 }
 
                 const data = await response.json();
+                console.log('Fetched users:', data);
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid response format: expected an array of users');
+                }
                 setUsers(data);
             } catch (error) {
                 console.error("Error fetching users:", error);
