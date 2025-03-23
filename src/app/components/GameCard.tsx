@@ -25,7 +25,7 @@ export const GameCard = ({ game }: { game: Game }) => {
 
   return (
     <div className="h-[180px] w-full max-w-[400px] mx-auto">
-      <div className="bg-white rounded-lg shadow-lg p-4 h-full flex flex-col">
+      <div className="bg-white rounded-lg border border-gray-200 p-4 h-full flex flex-col">
         {/* Date and Time */}
         <div className="text-sm text-gray-600 mb-1">
           {isValidDate 

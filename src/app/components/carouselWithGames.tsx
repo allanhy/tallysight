@@ -79,7 +79,7 @@ const carouselWithGames = () => {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 pt-8">
+    <div className="max-w-7xl mx-auto px-4 pt-12">
       {/* Carousel Section */}
       <div className="relative mb-5">
         <div className="px-2 md:px-8">
