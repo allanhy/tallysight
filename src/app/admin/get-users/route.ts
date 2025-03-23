@@ -1,25 +1,32 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 
 export async function GET() {
   try {
     const { userId } = await auth();
+    console.log('Auth check - userId:', userId);
 
     if (!userId) {
+      console.log('No userId found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch user details to verify admin status
-    const adminUser = await fetch(`https://api.clerk.dev/v1/users/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
-      },
-    }).then((res) => res.json());
+    console.log('Fetching user details for:', userId);
+    const adminUser = await clerkClient.users.getUser(userId);
+    console.log('Admin check - user details:', {
+      id: adminUser.id,
+      publicMetadata: adminUser.publicMetadata,
+      hasMetadata: !!adminUser.publicMetadata,
+      role: adminUser.publicMetadata?.role
+    });
 
-    if (
-      !adminUser.public_metadata?.role ||
-      adminUser.public_metadata.role !== "admin"
-    ) {
+    if (!adminUser?.publicMetadata?.role || adminUser.publicMetadata.role !== "admin") {
+      console.log('Access denied - Invalid role:', {
+        hasMetadata: !!adminUser.publicMetadata,
+        role: adminUser.publicMetadata?.role
+      });
       return NextResponse.json(
         { error: "Access denied. Admins only." },
         { status: 403 }
@@ -27,42 +34,33 @@ export async function GET() {
     }
 
     let allUsers: any[] = [];
-    let offset = 0;
-    const limit = 100; // Clerk allows a maximum of 100 users per request
 
     // Fetch all users from Clerk
-    const usersResponse = await fetch(
-        `https://api.clerk.dev/v1/users?limit=${limit}&offset=${offset}`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
-          },
-        }
-      );
+    const usersResponse = await clerkClient.users.getUserList({
+      limit: 100,
+      offset: 0
+    });
 
-      if (!usersResponse.ok) {
-        throw new Error("Failed to fetch users from Clerk");
-      }
+    if (!Array.isArray(usersResponse)) {
+      throw new Error("Invalid response from Clerk API");
+    }
 
-      const users = await usersResponse.json();
-
-      allUsers = [...allUsers, ...users];
-      offset += limit;
+    allUsers = usersResponse;
     
     // Format users
     const formattedUsers = allUsers.map((user: any) => ({
       id: user.id,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      username: user.username,
-      email: user.email_addresses[0]?.email_address || "No email",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      username: user.username || "",
+      email: user.emailAddresses[0]?.emailAddress || "No email",
     }));
 
     return NextResponse.json(formattedUsers);
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: error instanceof Error ? error.message : "Internal Server Error" },
       { status: 500 }
     );
   }
