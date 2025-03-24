@@ -297,13 +297,13 @@ async function handleSpecificGameRequest(gameId: string | null, requestedHomeTea
         name: fullHomeTeamName,
         record: homeRecord,
         logo: NBA_TEAM_LOGOS[fullHomeTeamName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-        spread: "-3.5"  // Default spread
+        spread: foundGame?.competitions?.[0]?.odds?.[0]?.spread || "-3.5"  // Use ESPN spread if available
       },
       awayTeam: {
         name: fullAwayTeamName,
         record: awayRecord,
         logo: NBA_TEAM_LOGOS[fullAwayTeamName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-        spread: "+3.5"  // Default spread
+        spread: foundGame?.competitions?.[0]?.odds?.[0]?.awayTeamOdds?.spreadOdds || "+3.5"  // Use ESPN spread if available
       },
       gameTime: gameTime,
       status: status,
