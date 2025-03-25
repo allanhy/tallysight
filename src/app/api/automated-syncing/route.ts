@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { POST as syncGames } from "@/app/api/admin/syncSportsRadarData/route";
-import { GET as sendReminders } from "@/app/api/send-picks-reminders/route"; 
+import { GET as sendReminders } from "@/app/api/send-pick-reminders/route"; 
 export async function GET(req: NextRequest) {
   // Authorization check
   const authHeader = req.headers.get("Authorization");

@@ -11,10 +11,11 @@ const pool = new Pool({
 
 export async function GET(req: NextRequest) {
   const client = await pool.connect();
+
   try {
     const now = new Date();
 
-    //Get today's games from the "Game" table
+    // Fetch today's games
     const { rows: games } = await client.query<{
       id: string;
       team1Name: string;
@@ -32,18 +33,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'No games today.' });
     }
 
-    //Get users from Clerk
+    // Get all users from Clerk
     const userRes = await fetch('https://api.clerk.com/v1/users', {
       headers: {
         Authorization: `Bearer ${process.env.CLERK_SECRET_KEY || ''}`,
       },
     });
 
-    if (!userRes.ok) {
-      throw new Error('Failed to fetch users from Clerk');
-    }
+    if (!userRes.ok) throw new Error('Failed to fetch users from Clerk');
 
     const clerkUsers = await userRes.json();
+    const gameIds = games.map((g) => g.id);
+
     let emailsSent = 0;
 
     for (const user of clerkUsers) {
@@ -52,13 +53,12 @@ export async function GET(req: NextRequest) {
       const name = user.first_name || 'there';
       if (!email) continue;
 
-      //Check user's picks for today's games
       const { rows: picks } = await client.query<{ gameId: string }>(
         `
         SELECT "gameId" FROM "Pick"
         WHERE "userId" = $1 AND "gameId" = ANY($2::text[])
       `,
-        [userId, games.map((g) => g.id)]
+        [userId, gameIds]
       );
 
       const pickedGameIds = picks.map((p) => p.gameId);
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
 
       if (!reminderGames.length) continue;
 
-      const gameList = reminderGames.map((g) => {
+      const personalizedList = reminderGames.map((g) => {
         const timeStr = new Date(`${now.toDateString()} ${g.gameTime}`).toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
@@ -82,26 +82,33 @@ export async function GET(req: NextRequest) {
 
       const msg: MailDataRequired = {
         to: email,
-        from: 'ts.tallysight@gmail.com',
+        from: 'olivegardencsus@gmail.com',
         templateId: process.env.SENDGRID_TEMPLATE_ID || '',
         dynamicTemplateData: {
           name,
-          games: gameList,
-          picksLink: 'https://tallysight-og.vercel.app',
+          games: personalizedList,
+          picksLink: 'https://tallysight-og.vercel.app/daily-picks',
           unsubscribeLink: 'https://tallysight-og.vercel.app/unsubscribe',
         },
       };
 
-      await sgMail.send(msg);
-      emailsSent++;
-
+      try {
+        await sgMail.send(msg);
+        console.log(`✅ Email sent to ${email} (${name}) with ${personalizedList.length} games`);
+        emailsSent++;
+      } catch (error: any) {
+        console.error(` Failed to send email to ${email}:`, error?.response?.body || error.message);
+      }
     }
 
-    return NextResponse.json({ message: `✅ Sent ${emailsSent} reminder emails.` });
+    return NextResponse.json({ message: ` Sent ${emailsSent} reminder email(s).` });
   } catch (err) {
     console.error('[Reminder Email Error]', err);
-    return NextResponse.json({ error: 'Failed to send reminders.' }, { status: 500 });
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
   } finally {
-    client.release(); // Release the connection back to the pool
+    client.release();
   }
 }
