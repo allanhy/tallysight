@@ -81,7 +81,7 @@ const FavoriteTeamsModal = ({ onClose, onSave }: FavoriteTeamsModalProps) => {
 
   const renderTeamGrid = (leagueTeams: Team[]) => {
     return (
-      <div className="grid grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
         {leagueTeams.map((team) => (
           <button
             key={team.id}
@@ -178,7 +178,7 @@ const FavoriteTeamsModal = ({ onClose, onSave }: FavoriteTeamsModalProps) => {
       ref={modalRef}
       open
     >
-      <div className="bg-white rounded-lg flex flex-col w-[800px] max-h-[80vh]">
+      <div className="bg-white rounded-lg flex flex-col w-full max-w-md sm:max-w-lg md:max-w-2xl max-h-[80vh]">
         {/* Header */}
         <h2 id="modal-title" className="text-2xl font-bold p-6 pb-4 text-[#008AFF]">
           Select Your Favorite Team
@@ -205,24 +205,22 @@ const FavoriteTeamsModal = ({ onClose, onSave }: FavoriteTeamsModalProps) => {
         </div>
 
         {/* Fixed Footer */}
-        <div className="border-t p-6 bg-white rounded-b-lg">
-          <div className="flex justify-end space-x-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-800"
-              type="button"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 rounded bg-[#008AFF] hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isLoading || !selectedTeamId}
-              type="button"
-            >
-              Save
-            </button>
-          </div>
+        <div className="border-t p-6 bg-white rounded-b-lg flex justify-end space-x-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 text-gray-800"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 rounded bg-[#008AFF] hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading || !selectedTeamId}
+            type="button"
+          >
+            Save
+          </button>
         </div>
       </div>
     </dialog>
