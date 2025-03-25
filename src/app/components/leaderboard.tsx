@@ -17,8 +17,9 @@ const Leaderboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
-    const [selectedSport, setSelectedSport] = useState<Sport>("SELECT"); // type selected sport
-    const [selectedWeek, setSelectedWeek] = useState<number | null>(-1);
+    const [selectedSport, setSelectedSport] = useState<Sport>("NBA"); // Default to nba can be changed if needed
+    const [selectedWeek, setSelectedWeek] = useState<number | null>(0); // Defaults to all time
+    const [isInitialRender] = useState(true);
 
     // Updating Weekly Items
     useEffect(() => {
@@ -30,32 +31,74 @@ const Leaderboard: React.FC = () => {
 
     // Getting selected leaderboard for chosen week and sport
     useEffect(() => {
-        const fetchLeaderboard = async () => {
-            if(!selectedSport || !selectedWeek)
+        
+            // Initial fetch proceed without early return
+            if (!isInitialRender && (selectedSport === 'SELECT' || selectedWeek === null || selectedWeek === -1)) {
+                setLeaderboard([]);
+                setLoading(false);
                 return;
+            }
+            const fetchLeaderboard = async () => {
+            
 
             setLoading(true);
             setError('');
 
             try {
-                // Getting Users with entries in the sport & week
-                const res = await fetch(`/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`);
+                // Log the fetch for debugging
+                console.log(`Fetching leaderboard: sport=${selectedSport}, week=${selectedWeek}`);
+
+                const res = await fetch(
+                    `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`
+                );
                 const data = await res.json();
+
+                console.log("API response:", data);
 
                 if (res.ok) {
                     setLeaderboard(data.data);
                 } else {
                     setError(data.message || "Failed to load leaderboard");
-                }   
+                }
             } catch (error) {
+                console.error("Fetch error:", error);
                 setError(`Network error fetching leaderboard: ${error}`);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
+        // Force a fetch on initial render
         fetchLeaderboard();
-    }, [selectedSport, selectedWeek]);   
-    
+    }, [selectedSport, selectedWeek, isInitialRender]);
+
+    // recovery mechanism if loading gets stuck
+    useEffect(() => {
+        // If loading is true for more than 5 seconds, force it to false
+        let loadingTimer: NodeJS.Timeout;
+        
+        if (loading) {
+            loadingTimer = setTimeout(() => {
+                console.log("Loading timeout - forcing loading state to false");
+                setLoading(false);
+                
+                // Try to fetch again if we're on the initial NBA All Time selection
+                if (selectedSport === 'NBA' && selectedWeek === 0) {
+                    console.log("Retrying NBA All Time fetch");
+                    // Force a re-fetch by toggling and restoring the selection
+                    setSelectedWeek(-1);
+                    setTimeout(() => {
+                        setSelectedWeek(0);
+                    }, 100);
+                }
+            }, 5000);
+        }
+        
+        return () => {
+            if (loadingTimer) clearTimeout(loadingTimer);
+        };
+    }, [loading, selectedSport, selectedWeek]);
+
     // Function to get the current week of the year
     const getCurrentWeek = () => {
         const date: Date = new Date();
@@ -113,17 +156,17 @@ const Leaderboard: React.FC = () => {
                                 className='select'
                                 value={selectedSport}
                                 onChange={handleSportChange}>
-                                <option value='SELECT' disabled>Select Sport</option>
                                 <option value='NFL' disabled>NFL</option>
                                 <option value='MLB' disabled>MLB</option>
-                                <option value='NBA' >NBA</option>
+                                <option value='NBA'>NBA</option>
                             </select>
 
                             <select 
                                 className='select' 
-                                value={selectedWeek ?? -1} 
+                                value={selectedWeek ?? 0}
                                 onChange={handleWeekChange}>
                                 <option value='-1' disabled>Select Week</option>
+                                <option value='0'>All Time</option>
                                 {generateWeeks().map((week, index) => (
                                     <option key={index} value={currentWeek ? currentWeek - index : index + 1}>{week}</option>))}
                             </select>

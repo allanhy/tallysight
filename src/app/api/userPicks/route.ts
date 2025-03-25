@@ -22,6 +22,7 @@ interface PickRow {
     winner: number | null;
     gameDate: Date | string;
     gameTime: Date | string;
+    sport: string | null;
 }
 
 export async function GET(req: NextRequest) {
@@ -58,7 +59,8 @@ export async function GET(req: NextRequest) {
                         g."final_score",
                         g."winner",
                         g."gameDate",
-                        g."gameTime"
+                        g."gameTime",
+                        g."sport"
                     FROM "Pick" p
                     JOIN "Game" g ON p."gameId" = g.id
                     WHERE p."userId" = ${userId}
@@ -87,7 +89,8 @@ export async function GET(req: NextRequest) {
                         g."final_score",
                         g."winner",
                         g."gameDate",
-                        g."gameTime"
+                        g."gameTime",
+                        g."sport"
                     FROM "Pick" p
                     JOIN "Game" g ON p."gameId" = g.id
                     WHERE p."userId" = ${userId}
@@ -254,7 +257,8 @@ export async function GET(req: NextRequest) {
                         gameDate: utcIsoString,
                         status: status,
                         gameDay: format(finalDateTime, 'EEEE'),
-                        formattedGameDate: formattedDate
+                        formattedGameDate: formattedDate,
+                        sport: row.sport || 'Unknown'
                     }
                 };
             } catch (error) {
@@ -280,7 +284,8 @@ export async function GET(req: NextRequest) {
                         gameDate: fallbackDate.toISOString(),
                         status: 'STATUS_SCHEDULED',
                         gameDay: format(fallbackDate, 'EEEE'),
-                        formattedGameDate: format(fallbackDate, 'MMM d, yyyy h:mm a') + ' ET'
+                        formattedGameDate: format(fallbackDate, 'MMM d, yyyy h:mm a') + ' ET',
+                        sport: 'Unknown'
                     }
                 };
             }

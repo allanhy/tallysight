@@ -27,21 +27,52 @@ export async function GET(req: Request) {
         ORDER BY u.rank ASC, u.points DESC;`;
         users = await client.query(query);
 
-    } else {
+    } 
+    // Handle All Time (week = 0) case
+    else if (week === '0') {
+      // First update ranks for all-time data (if needed)
+      await client.query(`
+        UPDATE users u
+        SET rank = subquery.rank
+        FROM (
+          SELECT user_id, DENSE_RANK() OVER (ORDER BY 
+            (SELECT COALESCE(SUM(points), 0) 
+             FROM leaderboard_entries le
+             JOIN leaderboards l ON le.leaderboard_id = l.leaderboard_id
+             WHERE le.user_id = users.user_id AND l.sport = $1) DESC
+          ) AS rank
+          FROM users
+        ) AS subquery
+        WHERE u.user_id = subquery.user_id;
+      `, [sport]);
 
-      // for leaderboard_id implementation
+      // Query to get all-time points for a given sport
+      const query = `
+        SELECT 
+          u.user_id, 
+          u.clerk_id, 
+          u.username, 
+          COALESCE(SUM(le.points), 0) as points,
+          DENSE_RANK() OVER (ORDER BY COALESCE(SUM(le.points), 0) DESC) as rank,
+          u.performance, 
+          u.bio, 
+          u.fav_team, 
+          u.max_points
+        FROM 
+          users u
+        LEFT JOIN 
+          leaderboard_entries le ON u.user_id = le.user_id
+        LEFT JOIN 
+          leaderboards l ON le.leaderboard_id = l.leaderboard_id AND l.sport = $1
+        GROUP BY 
+          u.user_id, u.clerk_id, u.username, u.performance, u.bio, u.fav_team, u.max_points
+        ORDER BY 
+          rank ASC, points DESC;
+      `;
 
-      /*const query =
-        `SELECT entry_id, u.user_id, u.username, le.rank, le.points, le.start_date
-        FROM leaderboard_entries le
-        JOIN users u ON le.user_id = u.user_id
-        JOIN leaderboards l ON le.leaderboard_id = l.leaderboard_id
-        WHERE le.leaderboard_id = $1 AND l.sport = $2 AND le.week = $3
-        ORDER BY le.rank ASC`;
-
-        const values = [leaderboard_id, sport, week];
-      */
-
+      users = await client.query(query, [sport]);
+    }
+    else {
       // Updating rank before getting users
       await client.query(`
         UPDATE leaderboard_entries
@@ -68,7 +99,7 @@ export async function GET(req: Request) {
     }
 
     if (users.rows.length === 0) {
-      return NextResponse.json({ success: false, message: `No ranking is available for ${sport} Week ${week}. Please choose another option.` }, { status: 404 });
+      return NextResponse.json({ success: true, data: [], message: `No ranking is available for ${sport} Week ${week}. Please choose another option.` }, { status: 200 });
     }
 
     // Extract Clerk IDs and filter out invalid ones
