@@ -33,6 +33,7 @@ interface Pick {
         status?: string;
         gameDate: string;
         gameDay: string;
+        sport?: string;
     };
 }
 
@@ -317,20 +318,6 @@ export default function MyPicksPage() {
         
         return normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd;
     };
-
-    // Update the week filtering logic to use the consistent date handling
-    const weekFilteredPicks = selectedWeek === 0 
-        ? userPicks // Show all picks if no week selected
-        : userPicks.filter((pick) => {
-            if (!pick.Game || !pick.Game.gameDate) return false;
-            
-            // Parse the date string properly
-            const pickDate = new Date(pick.Game.gameDate);
-            const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
-            if (!selectedWeekData) return false;
-            
-            return isDateInWeek(pickDate, selectedWeekData.startDate, selectedWeekData.endDate);
-        });
 
     // Move week options generation to a useEffect to ensure client-side only
     useEffect(() => {
@@ -708,6 +695,49 @@ export default function MyPicksPage() {
         );
     }
 
+    // function to get different sports from the picks
+    const getUniqueSports = () => {
+        const sports = userPicks.reduce((acc: string[], pick) => {
+            if (pick.Game?.sport && !acc.includes(pick.Game.sport)) {
+                acc.push(pick.Game.sport);
+            }
+            return acc;
+        }, []);
+        
+        return sports.sort();
+    };
+
+    // new week and sport filter
+    useEffect(() => {
+        if (!userPicks.length) return;
+
+        const filtered = userPicks.filter((pick) => {
+            // sport filter if selected
+            if (selectedSport !== null && pick.Game?.sport !== selectedSport) {
+                return false;
+            }
+            
+            // week filter if selected
+            if (selectedWeek !== 0) {
+                if (!pick.Game?.gameDate) return false;
+
+                const pickDate = new Date(pick.Game.gameDate);
+                const selectedWeekData = weekOptions.find((week) => week.weekNumber === selectedWeek);
+                if (!selectedWeekData) return false;
+
+                return isDateInWeek(pickDate, selectedWeekData.startDate, selectedWeekData.endDate);
+            }
+            
+            return true;
+        });
+
+        setGroupedPicks(groupPicksByDate(filtered));
+    }, [selectedSport, selectedWeek, userPicks, weekOptions]);
+
+    
+    // calculation or replace it with this if needed for debugging:
+    const weekFilteredPicks = Object.values(groupedPicks).flat();
+
     return (
         <div className="picks-page">
             {/* Single history button */}
@@ -748,11 +778,15 @@ export default function MyPicksPage() {
                         <div className="picks-container bg-gradient-to-r from-gray-900 to-black text-white">
                             {/* Sport and Week Selection Dropdowns */}
                             <div className="picks-controls">
-                                <select className="select" onChange={(e) => setSelectedSport(e.target.value as Sport)} value={selectedSport || ''}>
-                                    <option value="" disabled>Select Sport</option>
+                                <select 
+                                    className="select" 
+                                    onChange={(e) => setSelectedSport(e.target.value === "" ? null : e.target.value as Sport)} 
+                                    value={selectedSport || ''}
+                                >
+                                    <option value="">All Sports</option>
                                     <option value="NFL">NFL</option>
-                                    <option value="MLB">MLB</option>
                                     <option value="NBA">NBA</option>
+                                    <option value="MLB">MLB</option>
                                 </select>
                                 <select 
                                     className="select" 
