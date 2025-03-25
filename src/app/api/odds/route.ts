@@ -177,6 +177,10 @@ async function handleSpecificGameRequest(gameId: string | null, requestedHomeTea
     let awayRecord = '';
     let gameTime = '7:00 PM ET'; // Default
     let status = 'Scheduled';
+    let homeSpread = null;
+    let awaySpread = null;
+    let homeScore = null;
+    let awayScore = null;
     
     try {
       // First try to fetch the specific game by ID
@@ -270,6 +274,10 @@ async function handleSpecificGameRequest(gameId: string | null, requestedHomeTea
           homeRecord = homeTeamData?.records?.[0]?.summary || '';
           awayRecord = awayTeamData?.records?.[0]?.summary || '';
           
+          // Get scores if available
+          homeScore = homeTeamData?.score;
+          awayScore = awayTeamData?.score;
+          
           // Format game time
           if (foundGame.date) {
             try {
@@ -283,11 +291,122 @@ async function handleSpecificGameRequest(gameId: string | null, requestedHomeTea
             }
           }
           
+          // Get game status
           status = foundGame.status?.type?.name || 'Scheduled';
+          
+          // Define isGameOver before using it
+          const isGameOver = status === 'Final' || status === 'Completed' || status.includes('End');
+          
+          if (!isGameOver) {
+            // Get odds information if available
+            if (competition.odds && competition.odds.length > 0) {
+              const odds = competition.odds[0];
+              
+              // Check for spread information
+              if (odds.spread) {
+                // ESPN typically shows the spread for the favorite team
+                const spreadValue = Math.abs(parseFloat(odds.spread));
+                
+                if (odds.favorite === 'home') {
+                  homeSpread = `-${spreadValue}`;
+                  awaySpread = `+${spreadValue}`;
+                } else if (odds.favorite === 'away') {
+                  homeSpread = `+${spreadValue}`;
+                  awaySpread = `-${spreadValue}`;
+                }
+              }
+              
+              // Alternative format for odds
+              if (odds.details) {
+                console.log('Found odds details:', odds.details);
+                // Parse odds details string (e.g., "BOS -5.5")
+                const oddsMatch = odds.details.match(/([A-Z]{2,3})\s+([-+]?\d+\.?\d*)/);
+                if (oddsMatch) {
+                  const favoriteTeamCode = oddsMatch[1];
+                  const spreadValue = Math.abs(parseFloat(oddsMatch[2]));
+                  
+                  // Determine if home or away is favorite based on team code
+                  const homeTeamCode = homeTeamData?.team?.abbreviation;
+                  if (favoriteTeamCode === homeTeamCode) {
+                    homeSpread = `-${spreadValue}`;
+                    awaySpread = `+${spreadValue}`;
+                  } else {
+                    homeSpread = `+${spreadValue}`;
+                    awaySpread = `-${spreadValue}`;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // Try to fetch odds from The Odds API if we have an API key and game is not over
+      const API_KEY = process.env.ODDS_API_KEY;
+      
+      if (API_KEY  && !homeSpread && !awaySpread) {
+        try {
+          console.log('Fetching odds from The Odds API');
+          const oddsResponse = await fetch(
+            `https://api.the-odds-api.com/v4/sports/basketball_nba/odds/?apiKey=${API_KEY}&regions=us&markets=spreads&oddsFormat=american&bookmakers=fanduel`,
+            { cache: 'no-store' }
+          );
+          
+          if (oddsResponse.ok) {
+            const oddsData = await oddsResponse.json();
+            console.log(`Found ${oddsData.length} games with odds`);
+            
+            // Find matching game in odds data
+            const matchingOdds = oddsData.find((game: any) => {
+              return (
+                (game.home_team.toLowerCase().includes(fullHomeTeamName.toLowerCase()) || 
+                 fullHomeTeamName.toLowerCase().includes(game.home_team.toLowerCase())) &&
+                (game.away_team.toLowerCase().includes(fullAwayTeamName.toLowerCase()) || 
+                 fullAwayTeamName.toLowerCase().includes(game.away_team.toLowerCase()))
+              );
+            });
+            
+            if (matchingOdds) {
+              console.log('Found matching odds:', matchingOdds);
+              
+              // Extract spread information
+              const bookmaker = matchingOdds.bookmakers[0];
+              if (bookmaker) {
+                const spreadsMarket = bookmaker.markets.find((market: any) => market.key === 'spreads');
+                if (spreadsMarket) {
+                  const homeOutcome = spreadsMarket.outcomes.find((outcome: any) => 
+                    outcome.name.toLowerCase().includes(fullHomeTeamName.toLowerCase()) ||
+                    fullHomeTeamName.toLowerCase().includes(outcome.name.toLowerCase())
+                  );
+                  
+                  const awayOutcome = spreadsMarket.outcomes.find((outcome: any) => 
+                    outcome.name.toLowerCase().includes(fullAwayTeamName.toLowerCase()) ||
+                    fullAwayTeamName.toLowerCase().includes(outcome.name.toLowerCase())
+                  );
+                  
+                  if (homeOutcome && homeOutcome.point !== undefined) {
+                    homeSpread = homeOutcome.point > 0 ? `+${homeOutcome.point}` : `${homeOutcome.point}`;
+                  }
+                  
+                  if (awayOutcome && awayOutcome.point !== undefined) {
+                    awaySpread = awayOutcome.point > 0 ? `+${awayOutcome.point}` : `${awayOutcome.point}`;
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching odds from The Odds API:', error);
+          // Continue with default or ESPN odds
         }
       }
     } catch (error) {
       console.error('Error fetching game data:', error);
+      // Return an error response instead of continuing
+      return NextResponse.json(
+        { error: 'Failed to fetch game data', message: error instanceof Error ? error.message : String(error) },
+        { status: 500 }
+      );
     }
     
     // Create response with the best data we have
@@ -297,13 +416,15 @@ async function handleSpecificGameRequest(gameId: string | null, requestedHomeTea
         name: fullHomeTeamName,
         record: homeRecord,
         logo: NBA_TEAM_LOGOS[fullHomeTeamName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-        spread: foundGame?.competitions?.[0]?.odds?.[0]?.spread || "-3.5"  // Use ESPN spread if available
+        spread: status === 'STATUS_FINAL' ? "Game Over" : (homeSpread || "N/A"),
+        score: homeScore
       },
       awayTeam: {
         name: fullAwayTeamName,
         record: awayRecord,
         logo: NBA_TEAM_LOGOS[fullAwayTeamName] || 'https://a.espncdn.com/i/teamlogos/nba/500/default.png',
-        spread: foundGame?.competitions?.[0]?.odds?.[0]?.awayTeamOdds?.spreadOdds || "+3.5"  // Use ESPN spread if available
+        spread: status === 'STATUS_FINAL' ? "Game Over" : (awaySpread || "N/A"),
+        score: awayScore
       },
       gameTime: gameTime,
       status: status,
@@ -316,7 +437,7 @@ async function handleSpecificGameRequest(gameId: string | null, requestedHomeTea
   } catch (error) {
     console.error('Error in API route:', error);
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: 'Failed to process request', message: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
