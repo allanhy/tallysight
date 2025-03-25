@@ -34,6 +34,7 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Favorite team states and effects from the second file
   const [favoriteTeam, setFavoriteTeam] = useState<Team | null>(null);
@@ -104,28 +105,38 @@ const Profile = () => {
 
   {/* Navigation Buttons */}
   const renderNavigationButtons = () => (
-    <ul className="flex flex-col w-full mt-4 space-y-2">
-      {["Profile", "Preferences", "Favorite Team", "Social Media"].map((section) => (
-        <li key={section}>
-          <button
-            onClick={() => {
-              if (section === "Favorite Team") {
-                setShowFavoriteTeamModal(true);
-                setSelectedSection(section);
-              } else {
-                setSelectedSection(section);
-              }
-            }}
-            className={`w-full text-left px-4 py-2 rounded-lg ${
-              selectedSection === section
-                ? 'bg-[var(--accent-color)] text-white font-semibold shadow-sm'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}>
-            {section}
-          </button>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <button
+        className="md:hidden p-3 text-gray-700 dark:text-gray-200 text-2xl"
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        &#9776; {/* Hamburger icon */}
+      </button>
+      <ul className={`flex-col w-full mt-4 space-y-2 ${menuOpen ? 'flex' : 'hidden'} md:flex`}>
+        {["Profile", "Preferences", "Favorite Team", "Social Media"].map((section) => (
+          <li key={section}>
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                if (section === "Favorite Team") {
+                  setShowFavoriteTeamModal(true);
+                  setSelectedSection(section);
+                } else {
+                  setSelectedSection(section);
+                }
+              }}
+              className={`w-full text-left px-4 py-2 rounded-lg ${
+                selectedSection === section
+                  ? 'bg-[var(--accent-color)] text-white font-semibold shadow-sm'
+                  : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {section}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 
   // Fetching favorite team data
@@ -226,10 +237,10 @@ const Profile = () => {
             />
           </div>
         )}
-            <table className="w-full text-left bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md table-fixed">
+            <table className="w-full text-left bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md table-auto">
                 <tbody>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6 text-xl">Current Username</td>
+                        <td className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 text-xl">Current Username</td>
                         <td className="px-4 py-2 text-gray-600 dark:text-gray-300 text-xl">{user?.username}</td>
                     </tr>
                     <tr>
@@ -387,38 +398,39 @@ const Profile = () => {
   };
 
   return (
-    <div className="h-[80vh] p-8 flex items-center justify-center">
-      <div className="flex w-full h-full max-w-[80vw] bg-card dark:bg-card-background rounded-lg shadow-lg overflow-hidden">
+    <div className="h-[80vh] p-4 md:p-8 flex items-center justify-center">
+      <div className="flex flex-col md:flex-row w-full h-full max-w-[90vw] bg-card dark:bg-card-background rounded-lg shadow-lg overflow-hidden">
         {/* Left Section of profile screen */}
-        <div className="w-1/6 bg-gray-50 dark:bg-gray-800 p-6 flex flex-col items-center">
-          {/* Pfp that can be changed via clicking and selecting file */}
-          <div className="relative w-24 h-24 cursor-pointer group" onClick={handleImageClick}>
+        <div className="w-full md:w-1/6 bg-gray-50 dark:bg-gray-800 p-6 flex flex-col items-center">
+          {/* Profile Picture and Navigation */}
+          <div className="relative w-24 h-24 mb-4 cursor-pointer group" onClick={handleImageClick}>
             <div className="absolute inset-0 bg-gray-800/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             {user?.imageUrl && (
               <Image
-              loader={contentfulImageLoader}
-              src={user.imageUrl}
-              width={100}
-              height={100}
-              alt={user.username!}
-              quality={100}
-              className="rounded-full shadow-md cursor-pointer"
-              />)}
-            {/* On hover shows pencil icon */}
+                loader={contentfulImageLoader}
+                src={user.imageUrl}
+                width={100}
+                height={100}
+                alt={user.username!}
+                quality={100}
+                className="rounded-full shadow-md cursor-pointer"
+              />
+            )}
             <div className="absolute inset-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
               <p className="select-none cursor-pointer text-white text-4xl">&#9998;</p>
             </div>
           </div>
-          {/* File Input for pfp*/}
           <input type="file" ref={fileInputRef} onClick={event => event.currentTarget.value = ""} onChange={handleFileChange} style={{ display: "none" }} />
           {renderNavigationButtons()}
-        {/* Right Section of profile screen (Changed by setSelectedSection) */}
         </div>
-        <div className="w-5/6 p-8 overflow-y-auto bg-white dark:bg-gray-900">{renderContent()}</div>
+        {/* Right Section of profile screen */}
+        <div className="w-full md:w-5/6 p-4 md:p-8 overflow-y-auto bg-white dark:bg-gray-900">
+          {renderContent()}
+        </div>
       </div>
       {showCropper && selectedFile && (
         <ImageCropper imageFile={selectedFile} onCropComplete={handleCropComplete} onCancel={() => setShowCropper(false)} />
-      )}   
+      )}
     </div>
   );
 };
