@@ -33,7 +33,7 @@ const Leaderboard: React.FC = () => {
     useEffect(() => {
         
             // Initial fetch proceed without early return
-            if (!isInitialRender && (selectedSport === 'SELECT' || selectedWeek === null || selectedWeek === -1)) {
+            if (!isInitialRender && (selectedSport === 'SELECT' || selectedWeek === null || selectedWeek === -1 || selectedWeek === 0)) {
                 setLeaderboard([]);
                 setLoading(false);
                 return;
@@ -149,7 +149,9 @@ const Leaderboard: React.FC = () => {
         <div className='leaderboard-page'>
             <div className='content-wrapper'>
                 <div className='main-content'>
-                    <h1 className='leaderboard-title'>Leaderboard</h1>
+                    <h1 className='leaderboard-title'>
+                    {selectedSport === "SELECT" || selectedWeek === -1 || selectedWeek === 0? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
+                    </h1>
                     <div className='leaderboard-container'>
                         <div className='leaderboard-controls'>
                             <select 
@@ -187,7 +189,6 @@ const Leaderboard: React.FC = () => {
                                         {leaderboard.length <= 0 ? (
                                                 <div>No rankings available for the selected sport and week. Please choose a different option.</div>
                                         ) : (
-                                            /*<div><LeaderboardProfiles userIds={leaderboard.map(entry => entry.user_id)}></LeaderboardProfiles></div>*/
                                             <div><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
                                         )}
                                 </div>
@@ -195,11 +196,11 @@ const Leaderboard: React.FC = () => {
                     </div>
                 </div>
             </div>
-
             <style jsx>{`
                 .leaderboard-page {
                     min-height: 100vh;
                     display: flex;
+                    flex-wrap: no-wrap;
                     align-items: center;
                     justify-content: center;
                     position: relative;
@@ -223,12 +224,11 @@ const Leaderboard: React.FC = () => {
                     letter-spacing: 1.5px;
                     font-family: 'Montserrat', sans-serif;
                     font-weight: 600;
-                    font-size:65px;
+                    font-size: 65px;
                     color: var(--text-color);
                     margin-bottom: 20px;
                     text-align: center;
                 }
-                 
 
                 .leaderboard-container {
                     background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
@@ -265,44 +265,100 @@ const Leaderboard: React.FC = () => {
                 .leaderboard-table {
                     width: 100%;
                     border-collapse: collapse;
-                    
+                    margin-top: 10px;
                 }
-
 
                 .leaderboard-header {
                     display: flex;
-                    background-color: rgba(255, 255, 255, 0.1);
                     justify-content: space-between;
+                    background-color: rgba(255, 255, 255, 0.1);
                     text-transform: uppercase;
-                    text-align: center;
                     font-size: 1.3vh;
                     font-weight: 600;
                     color: white;
                     padding: 10px;
                     border-radius: 5px;
+                    min-width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .rank, .username, .performance, .points {
+                    padding: 10px;
+                    font-weight: bold;
+                    min-width: 80px; /* Prevent wrapping */
                 }
 
                 .rank {
-                    margin-bottom: 5px;
+                    width: 15%;
                     text-align: left;
-                }
-
-                .points {
-                    margin-bottom: 5px;
-                    text-align: right;
-                    margin-left: 5vh;
-                }
-
-                .performance{
-                    margin-bottom: 5px;
-                    text-align: left;
-                    margin-left: 5vh;
                 }
 
                 .username {
+                    width: 35%;
                     text-align: left;
-                    margin-bottom: 5px;
-                    margin-right: 5em;
+                }
+
+                .performance {
+                    width: 25%;
+                    text-align: right;
+                }
+
+                .points {
+                    width: 15%;
+                    text-align: right;
+                    padding-right: 3vh;
+                }
+
+                .leaderboard-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    min-width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .leaderboard-row div {
+                    padding: 5px;
+                    text-align: center;
+                    min-width: 80px; /* Prevent wrapping in rows */
+                }
+
+                @media (max-width: 600px) {
+                    .leaderboard-header {
+                        flex-direction: row;
+                        text-align: left;
+                        align-items: flex-start;
+                    }
+
+                    .rank, .username, .performance, .points {
+                        width: 100%;
+                        text-align: left;
+                        padding: 8px;
+                        font-size: .5rem; /* Slightly smaller for mobile */
+                    }
+
+                    .leaderboard-row {
+                        flex-direction: column;
+                        align-items: flex-start;
+                    }
+
+                    .rank{
+                        text-align: left;
+                    }
+
+                    .points {
+                        text-align: right;
+                    }
+
+                    .username {
+                        text-align: left;
+                    }
+
+                    .performance {
+                        text-align: right;
+                    }
                 }
             `}</style>
             </div>

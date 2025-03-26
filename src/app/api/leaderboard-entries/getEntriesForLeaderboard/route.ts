@@ -75,14 +75,22 @@ export async function GET(req: Request) {
     else {
       // Updating rank before getting users
       await client.query(`
-        UPDATE leaderboard_entries
+        UPDATE leaderboard_entries le
         SET rank = subquery.rank
         FROM (
-          SELECT user_id, DENSE_RANK() OVER (ORDER BY points DESC) AS rank
-          FROM users
+          SELECT u.user_id, DENSE_RANK() OVER (ORDER BY u.points DESC) AS rank
+          FROM users u
+          JOIN leaderboard_entries le ON u.user_id = le.user_id
+          WHERE le.leaderboard_id IN (
+            SELECT leaderboard_id FROM leaderboards 
+            WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW())
+          )
         ) AS subquery
-        WHERE leaderboard_entries.user_id = subquery.user_id
-        AND leaderboard_entries.leaderboard_id IN (SELECT leaderboard_id FROM leaderboards WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW()));
+         WHERE le.user_id = subquery.user_id
+        AND le.leaderboard_id IN (
+          SELECT leaderboard_id FROM leaderboards 
+          WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW())
+        );
       `, [sport, week]);
 
       const query = 
