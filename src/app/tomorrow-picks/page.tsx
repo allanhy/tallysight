@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
@@ -29,6 +30,7 @@ import {
 } from "../components/ui/dialog";
 import { X } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
+import AuthDialog from '../components/AuthDialog';
 
 interface Team {
     name: string;
@@ -289,8 +291,14 @@ export default function TomorrowPicks() {
             setPreviewGame(game);
         }
     };
+    const [showAuthDialog, setShowAuthDialog] = useState(false);
 
     const handleSubmitPicks = async () => {
+        if (!userId) {
+            setShowAuthDialog(true);
+            return;
+        }
+
         if (selectedPicks.size !== games.length) return;
 
         setSubmitting(true);
@@ -786,6 +794,11 @@ export default function TomorrowPicks() {
                     </DialogContent>
                 </Dialog>
             )}
+
+            <AuthDialog 
+                isOpen={showAuthDialog} 
+                onClose={() => setShowAuthDialog(false)}
+            />
         </div>
     );
 } 
