@@ -1,3 +1,6 @@
+// WARNING: This file is deprecated please use the DailyPicks and TomorrowPicks 
+//
+//
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";

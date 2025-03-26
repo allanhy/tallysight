@@ -222,6 +222,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
                                 width={100} 
                                 height={100}
                                 className={styles.popoutImage}
+                                unoptimized
                             />
                             <h2>{selectedUser.username}</h2>
                         </div>
@@ -305,7 +306,8 @@ function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) =
                         width={60}
                         height={60}
                         quality={100}
-                        className={styles.image}/>
+                        className={styles.image}
+                        unoptimized/>
                     <div className={styles.username}>{user.username}</div>
                     <div className={styles.performance}>{user.performance}%</div>
                     <div className={styles.points}>{user.points}</div>

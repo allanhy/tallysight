@@ -1,12 +1,21 @@
+export interface Team {
+  name: string;
+  score: string;
+  spread?: string; 
+  logo?: string;
+}
+
 export interface Game {
   id: string;
-  homeTeam: string;
-  awayTeam: string;
+  homeTeam: Team;
+  awayTeam: Team;
+  homeTeamAbbreviation: string;
+  awayTeamAbbreviation: string; 
   date: string;
   time: string;
+  gameTime: string; // This should now have the correct original time
+  fullDate: string;
   status: string;
-  homeTeamLogo?: string;
-  awayTeamLogo?: string;
   homeScore?: string;
   awayScore?: string;
 } 

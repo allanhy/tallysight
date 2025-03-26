@@ -124,10 +124,10 @@ const Leaderboard: React.FC = () => {
     const generateWeeks = () => {
         if (currentWeek === null)
             return []; // Or return a default value
-        
+
         const weeks = [];
         const weeksToDisplay = 52;
-        
+
         for (let i = currentWeek; i > currentWeek - weeksToDisplay; i--) {
             if (i > 0) {
                 const weekLabel = (i === currentWeek) ? `Week ${i} (Current)` : `Week ${i}`;
@@ -149,18 +149,29 @@ const Leaderboard: React.FC = () => {
         <div className='leaderboard-page'>
             <div className='content-wrapper'>
                 <div className='main-content'>
-                    <h1 className='leaderboard-title'>
+                    <h1 className='leaderboard-title text-black dark:text-white'>
                     {selectedSport === "SELECT" || selectedWeek === -1 || selectedWeek === 0? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
                     </h1>
                     <div className='leaderboard-container'>
                         <div className='leaderboard-controls'>
-                            <select 
+                            <select
                                 className='select'
                                 value={selectedSport}
                                 onChange={handleSportChange}>
-                                <option value='NFL' disabled>NFL</option>
-                                <option value='MLB' disabled>MLB</option>
-                                <option value='NBA'>NBA</option>
+                                <option value='SELECT' disabled>Select Sport</option>
+                                <option value="NBA">NBA</option>
+                                <option value="NFL">NFL</option>
+                                <option value="MLB">MLB</option>
+                                <option value="NHL">NHL</option>
+
+                                <optgroup label="Soccer" className='pt-2 pb-2 font-bold text-gray-100 bg-gray-600'>
+                                    <option value="MLS">MLS</option>
+                                    <option value="EPL">English Premier League</option>
+                                    <option value="LALIGA">La Liga</option>
+                                    <option value="BUNDESLIGA">Bundesliga</option>
+                                    <option value="SERIE_A">Serie A</option>
+                                    <option value="LIGUE_1">Ligue 1</option>
+                                </optgroup>
                             </select>
 
                             <select 
@@ -189,7 +200,7 @@ const Leaderboard: React.FC = () => {
                                         {leaderboard.length <= 0 ? (
                                                 <div>No rankings available for the selected sport and week. Please choose a different option.</div>
                                         ) : (
-                                            <div><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
+                                            <div className='hover:cursor-pointer'><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
                                         )}
                                 </div>
                         )}
@@ -225,11 +236,17 @@ const Leaderboard: React.FC = () => {
                     font-family: 'Montserrat', sans-serif;
                     font-weight: 600;
                     font-size: 65px;
-                    color: var(--text-color);
                     margin-bottom: 20px;
                     text-align: center;
                 }
-
+                
+                /* For small screens (e.g., mobile devices) */
+                @media (max-width: 480px) {
+                    .leaderboard-title {
+                        font-size: 50px;
+                    }
+                }
+                 
                 .leaderboard-container {
                     background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
                     padding: 20px;
@@ -361,7 +378,7 @@ const Leaderboard: React.FC = () => {
                     }
                 }
             `}</style>
-            </div>
+        </div>
     );
 };
 

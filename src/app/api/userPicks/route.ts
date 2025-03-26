@@ -32,6 +32,9 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
         }
 
+        const { searchParams } = new URL(req.url);
+        const selectedSport = searchParams.get('sport') || 'NBA';
+
         // Log the userId for debugging
         //console.log('Fetching picks for userId:', userId);
 
@@ -51,6 +54,7 @@ export async function GET(req: NextRequest) {
                         p."createdAt",
                         p."bestPick",
                         g.id as game_id,
+                        g."sport",
                         g."team1Name",
                         g."team2Name",
                         g."team1Logo",
@@ -62,7 +66,7 @@ export async function GET(req: NextRequest) {
                         g."gameTime",
                         g."sport"
                     FROM "Pick" p
-                    JOIN "Game" g ON p."gameId" = g.id
+                    JOIN "Game" g ON p."gameId" = g.id AND p."sport" = g."sport"
                     WHERE p."userId" = ${userId}
                     AND g."gameDate" >= ${date.toISOString()}::date
                     AND g."gameDate" < (${date.toISOString()}::date + interval '1 day')
@@ -81,6 +85,7 @@ export async function GET(req: NextRequest) {
                         p."createdAt",
                         p."bestPick",
                         g.id as game_id,
+                        g."sport",
                         g."team1Name",
                         g."team2Name",
                         g."team1Logo",
@@ -92,7 +97,7 @@ export async function GET(req: NextRequest) {
                         g."gameTime",
                         g."sport"
                     FROM "Pick" p
-                    JOIN "Game" g ON p."gameId" = g.id
+                    JOIN "Game" g ON p."gameId" = g.id AND p."sport" = g."sport"
                     WHERE p."userId" = ${userId}
                     ORDER BY g."gameDate" DESC, p."createdAt" DESC
                 `;

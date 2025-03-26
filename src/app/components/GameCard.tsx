@@ -3,8 +3,9 @@ import { Game } from '../types/game';
 export const GameCard = ({ game }: { game: Game }) => {
   console.log('Game data in card:', game);
 
-  const gameDate = new Date(game.date);
+  const gameDate = new Date(game.fullDate);
   const isValidDate = !isNaN(gameDate.getTime());
+  console.log('Raw game.date:', game.date);
 
   // Function to shorten team names
   const shortenTeamName = (name: string) => {
@@ -37,7 +38,7 @@ export const GameCard = ({ game }: { game: Game }) => {
             : 'Date TBD'}
         </div>
         <div className="text-lg font-bold text-black mb-2">
-          {game.time || 'Time TBD'}
+          {game.gameTime || 'Time TBD'}
         </div>
   
         {/* Teams with Logos */}
@@ -45,17 +46,20 @@ export const GameCard = ({ game }: { game: Game }) => {
           {/* Away Team */}
           <div className="flex items-center space-x-2 flex-1 min-w-0">
             <div className="flex-shrink-0 w-8 h-8">
-              {game.awayTeamLogo && (
+              {game.awayTeam.logo && (
                 <img 
-                  src={game.awayTeamLogo} 
+                  src={game.awayTeam.logo} 
                   alt={`${game.awayTeam} logo`}
                   className="w-full h-full object-contain"
                 />
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-black truncate">
-                {shortenTeamName(game.awayTeam)}
+              <span className="text-sm font-medium text-black truncate hidden md:block">
+                {shortenTeamName(game.awayTeam.name)}
+              </span>
+              <span className="text-sm font-medium text-black truncate block md:hidden">
+                {game.awayTeamAbbreviation.toUpperCase()}
               </span>
               <span className="text-lg text-gray-600 font-bold h-6">
                 {(game.status === 'STATUS_IN_PROGRESS' || 
@@ -73,8 +77,11 @@ export const GameCard = ({ game }: { game: Game }) => {
           {/* Home Team */}
           <div className="flex items-center space-x-2 inset-y-1 right-1 flex-1 min-w-0 justify-end">
             <div className="flex flex-col items-end">
-              <span className="text-sm font-medium text-black truncate">
-                {shortenTeamName(game.homeTeam)}
+              <span className="text-sm font-medium text-black truncate hidden md:block">
+                {shortenTeamName(game.homeTeam.name)}
+              </span>
+              <span className="text-sm font-medium text-black truncate block md:hidden">
+                {game.homeTeamAbbreviation.toUpperCase()}
               </span>
               <span className="text-lg text-gray-600 font-bold h-6">
                 {(game.status === 'STATUS_IN_PROGRESS' || 
@@ -84,9 +91,9 @@ export const GameCard = ({ game }: { game: Game }) => {
                   game.homeScore ? game.homeScore : ''}
               </span>
             </div>
-            {game.homeTeamLogo && (
+            {game.homeTeam.logo && (
               <img 
-                src={game.homeTeamLogo} 
+                src={game.homeTeam.logo} 
                 alt={`${game.homeTeam} logo`}
                 className="w-8 h-8 object-contain ml-2"
                 onError={(e) => {

@@ -10,28 +10,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    const syncRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/syncSportsRadarData`, {
-        method: "POST",
+  try {    
+      const reminderRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-pick-reminders`, {
+        method: "GET",
         headers: {
           Authorization: expectedToken,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ gameIds: [] }), // or any actual value
-      });    
-      const syncResult = await syncRes.json();
+      });
+      
+      const reminderResult = await reminderRes.json();
 
     return NextResponse.json({
       success: true,
-      message: "Automated sync completed successfully",
-      sync: syncResult,
+      message: "Automated pick reminders completed successfully",
+      reminder: reminderResult,
     });
   } catch (error) {
     console.error("Automated sync error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to run automated sync",
+        message: "Failed to run automated reminders",
         error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }

@@ -25,7 +25,9 @@ interface OddsPreviewProps {
   awayTeam: Team;
   gameTime: string;
   isOpen: boolean;
+  day: 'today' | 'tomorrow';
   onClose: () => void;
+  sport: string;
 }
 
 export default function OddsPreview({
@@ -33,8 +35,10 @@ export default function OddsPreview({
   homeTeam,
   awayTeam,
   gameTime,
+  day,
   isOpen,
-  onClose
+  onClose,
+  sport
 }: OddsPreviewProps) {
   const [gameData, setGameData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -50,18 +54,35 @@ export default function OddsPreview({
             homeTeam: homeTeam.name,
             awayTeam: awayTeam.name
           });
-          
-          const response = await fetch(`/api/odds?gameId=${gameId}&requestedHomeTeam=${encodeURIComponent(homeTeam.name)}&requestedAwayTeam=${encodeURIComponent(awayTeam.name)}`);
-          
+
+          // Calculate the correct date based on the 'day' prop
+          const getDateParam = () => {
+            let dayOfGame = "";
+
+            if (day === 'tomorrow') {
+              return dayOfGame = "tomorrow"
+            }
+            return dayOfGame = "today";
+          };
+
+          const response = await fetch(`/api/all-espn-games?sport=${sport}&day=${getDateParam()}`);
+
           if (!response.ok) {
             throw new Error('Failed to fetch odds data');
           }
-          
+
           const data = await response.json();
           console.log('API Response data:', data);
-          
-          if (data.games && data.games.length > 0) {
-            setGameData(data.games[0]);
+
+          const filteredGame = data.games.find(
+            (game: any) =>
+              game.id === gameId &&
+              game.homeTeam.name === homeTeam.name &&
+              game.awayTeam.name === awayTeam.name
+          );
+
+          if (filteredGame) {
+            setGameData(filteredGame);
           } else {
             throw new Error('No game data found');
           }
@@ -72,18 +93,18 @@ export default function OddsPreview({
           setLoading(false);
         }
       };
-      
+
       fetchOdds();
     }
-  }, [gameId, homeTeam.name, awayTeam.name, isOpen]);
+  }, [gameId, homeTeam.name, awayTeam.name, day, isOpen, sport]);
 
   // Determine favorite and underdog
   const getFavoriteAndUnderdog = () => {
     if (!gameData) return { favorite: null, underdog: null };
-    
-    const homeSpreadValue = parseFloat(gameData.homeTeam.spread);
-    const awaySpreadValue = parseFloat(gameData.awayTeam.spread);
-    
+
+    const homeSpreadValue = isNaN(parseFloat(gameData.homeTeam.spread)) ? 0 : parseFloat(gameData.homeTeam.spread);
+    const awaySpreadValue = isNaN(parseFloat(gameData.awayTeam.spread)) ? 0 : parseFloat(gameData.awayTeam.spread);
+
     if (homeSpreadValue < awaySpreadValue) {
       return {
         favorite: gameData.homeTeam.name,
@@ -107,9 +128,9 @@ export default function OddsPreview({
     <div className="p-4">
       {loading ? (
         <div className="space-y-4">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-8 w-3/4 mx-auto" />
+          <Skeleton className="h-16 w-full bg-gray-300" />
+          <Skeleton className="h-16 w-full bg-gray-300" />
+          <Skeleton className="h-8 w-3/4 mx-auto bg-gray-300" />
         </div>
       ) : error ? (
         <div className="text-red-500 text-center p-4">{error}</div>
@@ -120,7 +141,7 @@ export default function OddsPreview({
             {gameData.gameTime && gameData.gameTime !== "Invalid Date ET" && (
               <div className="text-sm text-gray-500 mb-2">{gameData.gameTime}</div>
             )}
-            
+
             <div className="grid grid-cols-3 w-full items-center gap-2 mb-4">
               {/* Away Team */}
               <div className="flex flex-col items-center">
@@ -133,13 +154,13 @@ export default function OddsPreview({
                   />
                 </div>
                 <div className="text-center">
-                  <div className="font-medium">{gameData.awayTeam.name}</div>
+                  <div className="font-medium text-black">{gameData.awayTeam.name}</div>
                   {gameData.awayTeam.record && (
                     <div className="text-xs text-gray-500">{gameData.awayTeam.record}</div>
                   )}
                 </div>
               </div>
-              
+
               {/* VS */}
               <div className="flex flex-col items-center justify-center">
                 <div className="text-xl font-bold text-gray-400">VS</div>
@@ -149,7 +170,7 @@ export default function OddsPreview({
                   </span>
                 </div>
               </div>
-              
+
               {/* Home Team */}
               <div className="flex flex-col items-center">
                 <div className="relative w-16 h-16 mb-2">
@@ -161,14 +182,14 @@ export default function OddsPreview({
                   />
                 </div>
                 <div className="text-center">
-                  <div className="font-medium">{gameData.homeTeam.name}</div>
+                  <div className="font-medium text-black">{gameData.homeTeam.name}</div>
                   {gameData.homeTeam.record && (
                     <div className="text-xs text-gray-500">{gameData.homeTeam.record}</div>
                   )}
                 </div>
               </div>
             </div>
-            
+
             {/* Spread Information */}
             <div className="w-full bg-gray-100 rounded-lg p-4 mb-4">
               <div className="grid grid-cols-3 gap-4 text-center">
@@ -179,8 +200,8 @@ export default function OddsPreview({
                 <div>
                   <div className="text-sm text-gray-500">Prediction</div>
                   <div className="font-bold text-gray-800">
-                    {parseFloat(gameData.awayTeam.spread) < parseFloat(gameData.homeTeam.spread) 
-                      ? gameData.awayTeam.name 
+                    {parseFloat(gameData.awayTeam.spread) < parseFloat(gameData.homeTeam.spread)
+                      ? gameData.awayTeam.name
                       : gameData.homeTeam.name}
                   </div>
                 </div>
@@ -190,7 +211,7 @@ export default function OddsPreview({
                 </div>
               </div>
             </div>
-            
+
             {/* Favorite and Underdog Information */}
             {favorite && underdog && (
               <div className="w-full bg-blue-50 rounded-lg p-4 mb-4">
@@ -208,7 +229,7 @@ export default function OddsPreview({
                 </div>
               </div>
             )}
-            
+
             {/* Venue and Broadcast Information */}
             <div className="w-full text-sm text-gray-600 space-y-2">
               {gameData.venue && (
@@ -220,7 +241,7 @@ export default function OddsPreview({
                   <span>{gameData.venue}</span>
                 </div>
               )}
-              
+
               {gameData.broadcast && (
                 <div className="flex items-center justify-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
