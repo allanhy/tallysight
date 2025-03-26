@@ -149,7 +149,7 @@ const Leaderboard: React.FC = () => {
         <div className='leaderboard-page'>
             <div className='content-wrapper'>
                 <div className='main-content'>
-                    <h1 className='leaderboard-title'>
+                    <h1 className='leaderboard-title text-black dark:text-white'>
                     {selectedSport === "SELECT" || selectedWeek === -1 || selectedWeek === 0? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
                     </h1>
                     <div className='leaderboard-container'>
@@ -236,7 +236,6 @@ const Leaderboard: React.FC = () => {
                     font-family: 'Montserrat', sans-serif;
                     font-weight: 600;
                     font-size: 65px;
-                    color: var(--text-color);
                     margin-bottom: 20px;
                     text-align: center;
                 }
