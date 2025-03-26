@@ -53,7 +53,7 @@ const CustomLeftArrow = ({ onClick }: { onClick?: () => void }) => (
   </button>
 );
 
-const carouselWithGames = () => {
+const carouselWithGames = ({ selectedSport }: { selectedSport: string }) => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const carouselRef = useRef<any>(null);
@@ -61,9 +61,9 @@ const carouselWithGames = () => {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const response = await fetch('/api/games');
+        const response = await fetch(`/api/all-espn-games?sport=${selectedSport}`);
         const data = await response.json();
-        console.log('Fetched data:', data); // Debugging
+        console.log(`Fetched data for ${selectedSport}:`, data); // Debugging
 
         if (data.games) {
           const duplicatedGames = [...data.games, ...data.games, ...data.games];
@@ -76,7 +76,7 @@ const carouselWithGames = () => {
       }
     };
     fetchGames();
-  }, []);
+  }, [selectedSport]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-12">

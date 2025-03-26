@@ -17,27 +17,32 @@ const Header = () => {
     const [error, setError] = useState('');
     const { theme } = useTheme();
     const pathname = usePathname();
+    const [selectedSport, setSelectedSport] = useState('NBA');
+
+    const handleSportChange = (sport: string) => {
+        setSelectedSport(sport);
+    };
 
     useEffect(() => {
         const getPoints = async () => {
             try {
-                if(!isLoaded || !isSignedIn || !user?.id) return;
+                if (!isLoaded || !isSignedIn || !user?.id) return;
 
                 // Getting User points
                 const res = await fetch(`/api/user/getPoints?clerk_id=${user.id}`);
                 const points = await res.json();
-    
+
                 if (res.ok) {
                     setPoints(points.data);
                 } else {
                     setError(points.message || "Failed to get user points");
-                }   
-                
+                }
+
             } catch (error) {
                 setError(`Network error fetching user points: ${error}`);
             }
-        }   
-        
+        }
+
         getPoints();
     }, [isLoaded, isSignedIn, user?.id]);
 
@@ -82,10 +87,10 @@ const Header = () => {
                                 <SignedOut>
                                     <div className='flex gap-2'>
                                         <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                                            <SignUpButton mode="redirect"/>
+                                            <SignUpButton mode="redirect" />
                                         </div>
                                         <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                                            <SignInButton mode="redirect"/>
+                                            <SignInButton mode="redirect" />
                                         </div>
                                     </div>
                                 </SignedOut>
@@ -126,24 +131,15 @@ const Header = () => {
                     {/* Mobile Menu */}
                     <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'}`}>
                         <div className="px-2 pt-2 pb-3 space-y-1">
-                            <Link 
-                                href="/leaderboards" 
+                            <Link
+                                href="/leaderboards"
                                 className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 Leaderboards
                             </Link>
-                            {/*
-                            <Link 
-                                href="/contests" 
-                                className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                Contests
-                            </Link>
-                            */}
-                            <Link 
-                                href="/myPicks" 
+                            <Link
+                                href="/myPicks"
                                 className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-bold"
                                 onClick={() => setIsMenuOpen(false)}
                             >
@@ -153,35 +149,61 @@ const Header = () => {
                             <div className="mt-4">
                                 <SignedOut>
                                     <div className='space-y-2'>
-                                        <div className='p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                                            <SignUpButton mode="redirect"/>
-                                        </div>
-                                        <div className='p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                                            <SignInButton mode="redirect"/>
-                                        </div>
+                                        <SignUpButton mode='redirect'>
+                                            <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'>
+                                                Sign up
+                                            </button>
+                                        </SignUpButton>
+                                        <SignInButton mode='redirect'>
+                                            <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'>
+                                                Sign in
+                                            </button>
+                                        </SignInButton>
                                     </div>
                                 </SignedOut>
                                 <SignedIn>
                                     <div className='p-3'>
                                         <UserButton userProfileUrl='/profile' />
-                                         {/*show user points*/}
-                                         <div className="font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2"> Points: {points}</div>
+                                        {/*show user points*/}
+                                        <div className="font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2"> Points: {points}</div>
                                     </div>
                                 </SignedIn>
                             </div>
                         </div>
                     </div>
                 </div>
-            </nav>   
+            </nav>
             {pathname !== '/profile' && (
-                <div className="pt-10">
-                    <CarouselWithGames />
+                <div className="pt-20">
+                    <div className="max-w-7xl mx-auto px-4 pl-4">
+                        <select
+                            value={selectedSport}
+                            onChange={(e) => handleSportChange(e.target.value)}
+                            className="px-2 py-2 mx-2 rounded bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-300 dark:border-gray-600"
+                        >
+                            <option value="" disabled>Select Sport</option>
+                            <option value="NBA">NBA</option>
+                            <option value="NFL">NFL</option>
+                            <option value="MLB">MLB</option>
+                            <option value="NHL">NHL</option>
+
+                            <optgroup label="Soccer" className='pt-2 pb-2 font-bold'>
+                                <option value="MLS">MLS</option>
+                                <option value="EPL">English Premier League</option>
+                                <option value="LALIGA">La Liga</option>
+                                <option value="BUNDESLIGA">Bundesliga</option>
+                                <option value="SERIE_A">Serie A</option>
+                                <option value="LIGUE_1">Ligue 1</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <CarouselWithGames selectedSport={selectedSport} />
                 </div>
-            )} 
+            )}
             {pathname === '/profile' && (
-                <div className="py-10"/>
-            )} 
-        </div>        
+                <div className="py-10" />
+            )}
+        </div>
     );
 };
 

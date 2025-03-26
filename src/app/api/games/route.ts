@@ -1,3 +1,6 @@
+// WARNING: This file is deprecated please use the all-espn-games route 
+//
+//
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { toZonedTime, format } from 'date-fns-tz';
@@ -185,4 +188,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-} 
+}

@@ -6,7 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 const ACCENT_COLORS = [
   { value: '#000000', label: 'Black' },
   { value: '#6E41E2', label: 'Purple' },
-  { value: '#3B82F6', label: 'Blue' },
+  { value: '#0070f3', label: 'Blue' },
   { value: '#0EA5E9', label: 'Light Blue' },
   { value: '#06B6D4', label: 'Cyan' },
   { value: '#10B981', label: 'Green' },

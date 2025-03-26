@@ -100,6 +100,25 @@ export async function POST(req: NextRequest) {
 
     // First ensure all games exist
     for (const pick of picks) {
+      const sport = pick.homeTeam.logo.includes('/mlb/') ? 'MLB' 
+                : pick.homeTeam.logo.includes('/nba/') ? 'NBA' 
+                : pick.homeTeam.logo.includes('/nfl/') ? 'NFL' 
+                : pick.homeTeam.logo.includes('/nhl/') ? 'NHL' 
+                : pick.homeTeam.logo.includes('/mls/') ? 'MLS' 
+                : pick.homeTeam.logo.includes('/epl/') ? 'EPL' 
+                : pick.homeTeam.logo.includes('/laliga/') ? 'LALIGA' 
+                : pick.homeTeam.logo.includes('/bundesliga/') ? 'BUNDESLIGA' 
+                : pick.homeTeam.logo.includes('/series_a/') ? 'SERIE_A' 
+                : pick.homeTeam.logo.includes('/ligue_1/') ? 'LIGUE_1'
+                : null;
+
+    if (!sport) {
+        console.error(`Could not determine sport for gameId ${pick.gameId}`);
+        return NextResponse.json({ 
+            success: false,
+            message: `Failed to determine sport for gameId ${pick.gameId}`
+        }, { status: 400 });
+    }
       // Check if game exists
       const gameExists = await sql`
         SELECT id FROM "Game" WHERE id = ${pick.gameId}
@@ -160,7 +179,7 @@ export async function POST(req: NextRequest) {
             ${pick.awayTeam.logo || ''},
             ${gameDate}::date,
             ${gameTime}::time,
-            ${'NBA'}
+            ${sport}
           )
         `;
       }
@@ -168,6 +187,20 @@ export async function POST(req: NextRequest) {
 
     // Create picks, conflict if user already made picks for that game
     for (const pick of picks) {
+      const sport = pick.sport || (
+        pick.homeTeam.logo.includes('/mlb/') ? 'MLB'
+        : pick.homeTeam.logo.includes('/nba/') ? 'NBA'
+        : pick.homeTeam.logo.includes('/nfl/') ? 'NFL'
+        : null
+    );
+
+    if (!sport) {
+        console.error(`Could not determine sport for gameId ${pick.gameId}`);
+        return NextResponse.json({ 
+            success: false,
+            message: `Failed to determine sport for gameId ${pick.gameId}`
+        }, { status: 400 });
+    }
       await sql`
         INSERT INTO "Pick" (
           id,
@@ -183,7 +216,7 @@ export async function POST(req: NextRequest) {
           ${pick.gameId},
           ${pick.teamIndex},
           NOW() AT TIME ZONE 'America/New_York',
-          ${'NBA'},
+          ${sport},
           ${pick.bestPick}
         )
         ON CONFLICT ("userId", "gameId") DO UPDATE
