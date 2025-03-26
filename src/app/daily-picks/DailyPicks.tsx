@@ -938,6 +938,7 @@ export default function DailyPicks() {
                                                             alt={`${game.awayTeam.name} logo`}
                                                             fill
                                                             className="object-contain"
+                                                            unoptimized
                                                         />
                                                     ) : (
                                                         <div className="w-full h-full bg-gray-200 rounded-full" />
@@ -1075,6 +1076,7 @@ export default function DailyPicks() {
                                                             alt={`${game.homeTeam.name} logo`}
                                                             fill
                                                             className="object-contain"
+                                                            unoptimized
                                                         />
                                                     ) : (
                                                         <div className="w-full h-full bg-gray-200 rounded-full" />
@@ -1230,6 +1232,7 @@ export default function DailyPicks() {
                                 isOpen={!!previewGame}
                                 day="today"
                                 onClose={() => setPreviewGame(null)}
+                                sport={selectedSport}
                             />
                         </div>
                     </DialogContent>

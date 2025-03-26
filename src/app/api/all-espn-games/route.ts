@@ -187,10 +187,10 @@ export async function GET(request: Request) {
           const spreadDetails = competition.odds?.[0]?.details || "N/A";
 
           // Default spreads
-          let homeTeamSpread = "TBD";
-          let awayTeamSpread = "TBD";
+          let homeTeamSpread = "N/A";
+          let awayTeamSpread = "N/A";
 
-          if (spreadDetails !== "TBD") {
+          if (spreadDetails !== "N/A") {
             const spreadParts = spreadDetails
               .split(",")
               .map((s: string) => s.trim());
@@ -216,30 +216,13 @@ export async function GET(request: Request) {
 
           const awayTeamOdds = competition.odds?.[0]?.awayTeamOdds || {};
           const homeTeamOdds = competition.odds?.[0]?.homeTeamOdds || {};
-          const homeScore =
-            Number(
-              competition.competitors.find((t: any) => t.homeAway === "home")
-                ?.score
-            ) || 0;
-
-          const awayScore =
-            Number(
-              competition.competitors.find((t: any) => t.homeAway === "away")
-                ?.score
-            ) || 0;
-          console.log(
-            `Game: ${awayTeam?.name} @ ${
-              homeTeam?.name
-            } — Home Score: ${homeScore}, Away Score: ${awayScore}, Status: ${
-              competition.status?.type?.description || "N/A"
-            }`
-          );
+    
           return {
             id: game.id,
             homeTeam: {
               name: homeTeam?.name || "TBD",
               score: "0",
-              spread: homeTeamSpread || "TBD",
+              spread: homeTeamSpread || "N/A",
               isFavorite: homeTeamOdds.favorite || false,
               isUnderdog: homeTeamOdds.underdog || false,
               logo: await getTeamLogo(homeTeam?.name, selectedSport),
@@ -247,7 +230,7 @@ export async function GET(request: Request) {
             awayTeam: {
               name: awayTeam?.name || "TBD",
               score: "0",
-              spread: awayTeamSpread || "TBD",
+              spread: awayTeamSpread || "N/A",
               isFavorite: awayTeamOdds.favorite || false,
               isUnderdog: awayTeamOdds.underdog || false,
               logo: await getTeamLogo(awayTeam?.name, selectedSport),

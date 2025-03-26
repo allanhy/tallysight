@@ -27,6 +27,7 @@ interface OddsPreviewProps {
   isOpen: boolean;
   day: 'today' | 'tomorrow';
   onClose: () => void;
+  sport: string;
 }
 
 export default function OddsPreview({
@@ -36,7 +37,8 @@ export default function OddsPreview({
   gameTime,
   day,
   isOpen,
-  onClose
+  onClose,
+  sport
 }: OddsPreviewProps) {
   const [gameData, setGameData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ export default function OddsPreview({
             return dayOfGame = "today";
           };
 
-          const response = await fetch(`/api/all-espn-games?sport=NBA&day=${getDateParam()}`);
+          const response = await fetch(`/api/all-espn-games?sport=${sport}&day=${getDateParam()}`);
 
           if (!response.ok) {
             throw new Error('Failed to fetch odds data');
@@ -94,7 +96,7 @@ export default function OddsPreview({
 
       fetchOdds();
     }
-  }, [gameId, homeTeam.name, awayTeam.name, day, isOpen]);
+  }, [gameId, homeTeam.name, awayTeam.name, day, isOpen, sport]);
 
   // Determine favorite and underdog
   const getFavoriteAndUnderdog = () => {

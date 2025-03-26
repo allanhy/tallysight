@@ -390,7 +390,7 @@ export default function TomorrowPicks() {
                     </div>
                 </div>
                 <div className="accent-bg-light p-2 text-center text-sm text-accent">
-                    Spread finalized | Picks lock at the start of each game
+                    Picks lock at the start of each game
                 </div>
                 <div className="p-4 max-w-5xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -449,7 +449,7 @@ export default function TomorrowPicks() {
 
             {/* Info Bar */}
             <div className="accent-bg-light p-2 text-center text-sm text-accent">
-                Spread finalized | Picks lock at the start of each game
+                Picks lock at the start of each game
             </div>
 
             {/* Games Grid */}
@@ -503,6 +503,7 @@ export default function TomorrowPicks() {
                                                             alt={`${game.awayTeam.name} logo`}
                                                             fill
                                                             className="object-contain"
+                                                            unoptimized
                                                         />
                                                     ) : (
                                                         <div className="w-full h-full bg-gray-200 rounded-full" />
@@ -637,6 +638,7 @@ export default function TomorrowPicks() {
                                                             alt={`${game.homeTeam.name} logo`}
                                                             fill
                                                             className="object-contain"
+                                                            unoptimized
                                                         />
                                                     ) : (
                                                         <div className="w-full h-full bg-gray-200 rounded-full" />
@@ -792,6 +794,7 @@ export default function TomorrowPicks() {
                                 isOpen={!!previewGame}
                                 day="tomorrow"
                                 onClose={() => setPreviewGame(null)}
+                                sport={selectedSport}
                             />
                         </div>
                     </DialogContent>

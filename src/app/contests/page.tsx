@@ -46,7 +46,7 @@ export default function ContestsPage() {
     const [ligue1TodayGames, setLigue1TodayGames] = useState<Game[]>([]);
     const [ligue1TomorrowGames, setLigue1TomorrowGames] = useState<Game[]>([]);
 
-    const [selectedSport, setSelectedSport] = useState<'NBA' | 'MLB' | 'NFL' | 'NHL' | 'Soccer'>('NBA');
+    const [selectedSport, setSelectedSport] = useState<'NBA' | 'MLB' | 'NFL' | 'NHL' | 'Soccer' | null>(null);
     const [selectedSoccerLeague, setSelectedSoccerLeague] = useState<string | null>(null);
 
     useEffect(() => {
@@ -127,41 +127,68 @@ export default function ContestsPage() {
     }, []);
 
     const renderTodayGames = () => {
+        if (selectedSport === 'Soccer') {
+            const allSoccerGames = [
+                ...mlsTodayGames,
+                ...eplTodayGames,
+                ...laligaTodayGames,
+                ...bundesligaTodayGames,
+                ...serieaTodayGames,
+                ...ligue1TodayGames
+            ];
+            return selectedSoccerLeague
+                ? allSoccerGames.filter(game => {
+                    switch (selectedSoccerLeague) {
+                        case 'MLS': return mlsTodayGames.includes(game);
+                        case 'EPL': return eplTodayGames.includes(game);
+                        case 'LALIGA': return laligaTodayGames.includes(game);
+                        case 'BUNDESLIGA': return bundesligaTodayGames.includes(game);
+                        case 'SERIE_A': return serieaTodayGames.includes(game);
+                        case 'LIGUE_1': return ligue1TodayGames.includes(game);
+                        default: return true;
+                    }
+                })
+                : allSoccerGames;
+        }
+
         switch (selectedSport) {
             case 'NBA': return nbaTodayGames;
             case 'MLB': return mlbTodayGames;
             case 'NFL': return nflTodayGames;
             case 'NHL': return nhlTodayGames;
-            case 'Soccer':
-            switch (selectedSoccerLeague) {
-                case 'MLS': return mlsTodayGames;
-                case 'EPL': return eplTodayGames;
-                case 'LALIGA': return laligaTodayGames;
-                case 'BUNDESLIGA': return bundesligaTodayGames;
-                case 'SERIE_A': return serieaTodayGames;
-                case 'LIGUE_1': return ligue1TodayGames;
-                default: return [];
-            }
             default: return [];
         }
     };
 
     const renderTomorrowGames = () => {
+        if (selectedSport === 'Soccer') {
+            const allSoccerGames = [
+                ...mlsTomorrowGames,
+                ...eplTomorrowGames,
+                ...laligaTomorrowGames,
+                ...bundesligaTomorrowGames,
+                ...serieaTomorrowGames,
+                ...ligue1TomorrowGames
+            ];
+            return selectedSoccerLeague
+                ? allSoccerGames.filter(game => {
+                    switch (selectedSoccerLeague) {
+                        case 'MLS': return mlsTomorrowGames.includes(game);
+                        case 'EPL': return eplTomorrowGames.includes(game);
+                        case 'LALIGA': return laligaTomorrowGames.includes(game);
+                        case 'BUNDESLIGA': return bundesligaTomorrowGames.includes(game);
+                        case 'SERIE_A': return serieaTomorrowGames.includes(game);
+                        case 'LIGUE_1': return ligue1TomorrowGames.includes(game);
+                        default: return true;
+                    }
+                })
+                : allSoccerGames;
+        }
         switch (selectedSport) {
             case 'NBA': return nbaTomorrowGames;
             case 'MLB': return mlbTomorrowGames;
             case 'NFL': return nflTomorrowGames;
             case 'NHL': return nhlTomorrowGames;
-            case 'Soccer':
-            switch (selectedSoccerLeague) {
-                case 'MLS': return mlsTomorrowGames;
-                case 'EPL': return eplTomorrowGames;
-                case 'LALIGA': return laligaTomorrowGames;
-                case 'BUNDESLIGA': return bundesligaTomorrowGames;
-                case 'SERIE_A': return serieaTomorrowGames;
-                case 'LIGUE_1': return ligue1TomorrowGames;
-                default: return [];
-            }
             default: return [];
         }
     };
@@ -179,6 +206,64 @@ export default function ContestsPage() {
             : `sport=${selectedSport}`;
         router.push(`/tomorrow-picks?${query}`);
     };
+
+    const hasGames = (today: Game[], tomorrow: Game[]) => {
+        return today.length > 0 || tomorrow.length > 0;
+    };
+
+    const sortedSports = [
+        {
+            sport: 'NBA',
+            logo: '/nba-logo.png',
+            hasGames: hasGames(nbaTodayGames, nbaTomorrowGames),
+        },
+        {
+            sport: 'MLB',
+            logo: '/mlb-logo.png',
+            hasGames: hasGames(mlbTodayGames, mlbTomorrowGames),
+        },
+        {
+            sport: 'NFL',
+            logo: '/nfl-logo.png',
+            hasGames: hasGames(nflTodayGames, nflTomorrowGames),
+        },
+        {
+            sport: 'NHL',
+            logo: '/nhl-logo.png',
+            hasGames: hasGames(nhlTodayGames, nhlTomorrowGames),
+        },
+        {
+            sport: 'Soccer',
+            logo: '/soccer-logo.png',
+            hasGames: hasGames(
+                [
+                    ...mlsTodayGames,
+                    ...eplTodayGames,
+                    ...laligaTodayGames,
+                    ...bundesligaTodayGames,
+                    ...serieaTodayGames,
+                    ...ligue1TodayGames,
+                ],
+                [
+                    ...mlsTomorrowGames,
+                    ...eplTomorrowGames,
+                    ...laligaTomorrowGames,
+                    ...bundesligaTomorrowGames,
+                    ...serieaTomorrowGames,
+                    ...ligue1TomorrowGames,
+                ]
+            ),
+        },
+    ].sort((a, b) => {
+        if (a.hasGames === b.hasGames) return 0;
+        return a.hasGames ? -1 : 1; // Sports with games come first
+    });
+    
+    useEffect(() => {
+        if (!selectedSport && sortedSports.length > 0) {
+            setSelectedSport(sortedSports[0].sport as 'NBA' | 'MLB' | 'NFL' | 'NHL' | 'Soccer');
+        }
+    }, [sortedSports, selectedSport]);
 
     if (loading) {
         return (
@@ -218,18 +303,13 @@ export default function ContestsPage() {
             </div>
         )
     }
+    
     return (
         <div className="p-4 sm:p-8 min-h-screen" >
             <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{ letterSpacing: '1.5px', fontSize: '65px' }}
             >Contests</h1>
             <div className="flex gap-4 mb-6 overflow-x-auto whitespace-nowrap scrollbar w-full sm:justify-center">
-                {[
-                    { sport: 'NBA', logo: '/nba-logo.png' },
-                    { sport: 'MLB', logo: '/mlb-logo.png' },
-                    { sport: 'NFL', logo: '/nfl-logo.png' },
-                    { sport: 'NHL', logo: '/nhl-logo.png' },
-                    { sport: 'Soccer', logo: '/soccer-logo.png' },
-                ].map(({ sport, logo }) => (
+                {sortedSports.map(({ sport, logo }) => (
                     <button
                         key={sport}
                         onClick={() => {
@@ -255,7 +335,7 @@ export default function ContestsPage() {
             </div>
 
             {/* Show Dropdown for Soccer Leagues */}
-            {selectedSport === 'Soccer' && (
+            {selectedSport === 'Soccer' && selectedSport !== null && (
                 <div className="mb-6 max-w-4xl mx-auto w-full p-1">
                     <label htmlFor="soccer-league" className="block text-black dark:text-white font-bold text-lg mb-2">Select a Soccer League:</label>
                     <select
@@ -264,7 +344,7 @@ export default function ContestsPage() {
                         onChange={(e) => setSelectedSoccerLeague(e.target.value)}
                         className="p-2 bg-gray-700 text-white rounded-lg w-full"
                     >
-                        <option value="">-- Select a League --</option>
+                        <option value="">All Soccer Leagues</option>
                         <option value="MLS">MLS</option>
                         <option value="EPL">English Premier League</option>
                         <option value="LALIGA">La Liga</option>
@@ -275,7 +355,85 @@ export default function ContestsPage() {
                 </div>
             )}
 
-            {(selectedSport !== 'Soccer' || selectedSoccerLeague) && (
+            {selectedSport === 'Soccer' && !selectedSoccerLeague ? (
+                (() => {
+                    const allToday = [
+                        ...mlsTodayGames,
+                        ...eplTodayGames,
+                        ...laligaTodayGames,
+                        ...bundesligaTodayGames,
+                        ...serieaTodayGames,
+                        ...ligue1TodayGames
+                    ];
+                    const allTomorrow = [
+                        ...mlsTomorrowGames,
+                        ...eplTomorrowGames,
+                        ...laligaTomorrowGames,
+                        ...bundesligaTomorrowGames,
+                        ...serieaTomorrowGames,
+                        ...ligue1TomorrowGames
+                    ];
+
+                    if (allToday.length === 0 && allTomorrow.length === 0) {
+                        return (
+                            <div className="text-center text-gray-400 text-lg mt-8">
+                                No soccer games available today or tomorrow. ⚽ Come back soon!
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+                            {[
+                                { title: "Today's MLS Games", games: mlsTodayGames, sport: 'MLS' },
+                                { title: "Today's EPL Games", games: eplTodayGames, sport: 'EPL' },
+                                { title: "Today's La Liga Games", games: laligaTodayGames, sport: 'LALIGA' },
+                                { title: "Today's Bundesliga Games", games: bundesligaTodayGames, sport: 'BUNDESLIGA' },
+                                { title: "Today's Serie A Games", games: serieaTodayGames, sport: 'SERIE_A' },
+                                { title: "Today's Ligue 1 Games", games: ligue1TodayGames, sport: 'LIGUE_1' },
+                                { title: "Tomorrow's MLS Games", games: mlsTomorrowGames, sport: 'MLS', tomorrow: true },
+                                { title: "Tomorrow's EPL Games", games: eplTomorrowGames, sport: 'EPL', tomorrow: true },
+                                { title: "Tomorrow's La Liga Games", games: laligaTomorrowGames, sport: 'LALIGA', tomorrow: true },
+                                { title: "Tomorrow's Bundesliga Games", games: bundesligaTomorrowGames, sport: 'BUNDESLIGA', tomorrow: true },
+                                { title: "Tomorrow's Serie A Games", games: serieaTomorrowGames, sport: 'SERIE_A', tomorrow: true },
+                                { title: "Tomorrow's Ligue 1 Games", games: ligue1TomorrowGames, sport: 'LIGUE_1', tomorrow: true },
+                            ].map(({ title, games, sport, tomorrow }) =>
+                                games.length > 0 && (
+                                    <div
+                                        key={title}
+                                        className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden"
+                                        style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}
+                                    >
+                                        <div className="p-4 sm:p-8">
+                                            <div className="uppercase tracking-wide text-sm text-white font-semibold">
+                                                {tomorrow ? 'Upcoming Contest' : 'Featured Contest'}
+                                            </div>
+                                            <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
+                                                {title} ({games.length} games)
+                                            </h1>
+                                            <p className="mt-2 text-slate-500">
+                                                {tomorrow
+                                                    ? `Get ready for tomorrow's ${sport} matchups!`
+                                                    : `Make your picks for today's ${sport} matchups!`}
+                                            </p>
+                                            <button
+                                                onClick={() =>
+                                                    router.push(
+                                                        `${tomorrow ? '/tomorrow-picks' : '/daily-picks'}?sport=${sport}`
+                                                    )
+                                                }
+                                                className="mt-4 w-full accent-button text-white py-2 px-4 rounded-lg transition duration-200"
+                                            >
+                                                {tomorrow ? 'Preview Games' : 'Play Now'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    );
+                })()
+            ) : (
                 <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
                     <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}>
                         <div className="p-4 sm:p-8">
