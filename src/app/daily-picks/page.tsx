@@ -852,7 +852,7 @@ export default function DailyPicks() {
             {isLocked && !allGamesEnded && (
                 <div className="bg-red-50 p-2 text-center text-sm">
                     <span className="text-red-600 font-bold">
-                        PICKS ARE LOCKED - GAMES HAVE STARTED
+                        PICKS ARE LOCKED
                     </span>
                 </div>
             )}
@@ -870,11 +870,6 @@ export default function DailyPicks() {
                 <div className="text-gray-300">
                     Spread finalized | Picks lock: At the start of each game
                 </div>
-                {isLocked && (
-                    <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
-                        GAMES LOCKED - REFRESH PAGE TO CONTINUE
-                    </div>
-                )}
                 {firstGameLocked && !isLocked && (
                     <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
                         FIRST GAME HAS STARTED - SOME PICKS ARE LOCKED
