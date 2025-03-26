@@ -33,7 +33,7 @@ const Leaderboard: React.FC = () => {
     useEffect(() => {
         
             // Initial fetch proceed without early return
-            if (!isInitialRender && (selectedSport === 'SELECT' || selectedWeek === null || selectedWeek === -1)) {
+            if (!isInitialRender && (selectedSport === 'SELECT' || selectedWeek === null || selectedWeek === -1 || selectedWeek === 0)) {
                 setLeaderboard([]);
                 setLoading(false);
                 return;
@@ -150,7 +150,7 @@ const Leaderboard: React.FC = () => {
             <div className='content-wrapper'>
                 <div className='main-content'>
                     <h1 className='leaderboard-title'>
-                    {selectedSport === "SELECT" || selectedWeek === -1 ? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
+                    {selectedSport === "SELECT" || selectedWeek === -1 || selectedWeek === 0? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
                     </h1>
                     <div className='leaderboard-container'>
                         <div className='leaderboard-controls'>
