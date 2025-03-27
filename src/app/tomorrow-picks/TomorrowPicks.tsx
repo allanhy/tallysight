@@ -322,7 +322,8 @@ export default function TomorrowPicks() {
                     dbDate: game?.dbDate,
                     dbTime: game?.dbTime,
                     estDate: game?.estDate,
-                    bestPick: gameId === bestPick
+                    bestPick: gameId === bestPick,
+                    sport: selectedSport.toUpperCase()
                 };
             });
 

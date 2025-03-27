@@ -558,7 +558,8 @@ export default function DailyPicks() {
                     estDate: game?.estDate,
                     gameTime: game?.gameTime,
                     status: game?.status,
-                    bestPick: gameId === bestPick
+                    bestPick: gameId === bestPick,
+                    sport: selectedSport.toUpperCase()
                 };
             });
 

@@ -100,7 +100,8 @@ export async function POST(req: NextRequest) {
 
     // First ensure all games exist
     for (const pick of picks) {
-      const sport = pick.homeTeam.logo.includes('/mlb/') ? 'MLB' 
+      const sport = pick.sport || (
+        pick.homeTeam.logo.includes('/mlb/') ? 'MLB' 
                 : pick.homeTeam.logo.includes('/nba/') ? 'NBA' 
                 : pick.homeTeam.logo.includes('/nfl/') ? 'NFL' 
                 : pick.homeTeam.logo.includes('/nhl/') ? 'NHL' 
@@ -110,7 +111,8 @@ export async function POST(req: NextRequest) {
                 : pick.homeTeam.logo.includes('/bundesliga/') ? 'BUNDESLIGA' 
                 : pick.homeTeam.logo.includes('/series_a/') ? 'SERIE_A' 
                 : pick.homeTeam.logo.includes('/ligue_1/') ? 'LIGUE_1'
-                : null;
+                : null
+      );
 
     if (!sport) {
         console.error(`Could not determine sport for gameId ${pick.gameId}`);
@@ -191,6 +193,13 @@ export async function POST(req: NextRequest) {
         pick.homeTeam.logo.includes('/mlb/') ? 'MLB'
         : pick.homeTeam.logo.includes('/nba/') ? 'NBA'
         : pick.homeTeam.logo.includes('/nfl/') ? 'NFL'
+        : pick.homeTeam.logo.includes('/nhl/') ? 'NHL'
+        : pick.homeTeam.logo.includes('/mls/') ? 'MLS'
+        : pick.homeTeam.logo.includes('/epl/') ? 'EPL'
+        : pick.homeTeam.logo.includes('/laliga/') ? 'LALIGA'
+        : pick.homeTeam.logo.includes('/bundesliga/') ? 'BUNDESLIGA'
+        : pick.homeTeam.logo.includes('/series_a/') ? 'SERIE_A'
+        : pick.homeTeam.logo.includes('/ligue_1/') ? 'LIGUE_1'
         : null
     );
 
