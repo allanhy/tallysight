@@ -30,6 +30,7 @@ import Pusher from "pusher-js";
 import useSWR, { mutate } from "swr";
 import OddsPreview from '../components/OddsPreview';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
+import AuthDialog from '../components/AuthDialog';
 
 interface Team {
     name: string;
@@ -80,7 +81,7 @@ interface TimeLeft {
 type BestPickButtonProps = {
     gameId: string;
     isSelected: boolean;
-  };
+};
 
 export default function DailyPicks() {
     const router = useRouter();
@@ -103,6 +104,7 @@ export default function DailyPicks() {
     const [previewGame, setPreviewGame] = useState<Game | null>(null);
     const searchParams = useSearchParams();
     const selectedSport = searchParams.get('sport') || 'NBA';
+    const [showAuthDialog, setShowAuthDialog] = useState(false);
 
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -123,7 +125,7 @@ export default function DailyPicks() {
         const channel = pusher.subscribe("selection-updates");
 
         channel.bind("update", (newData: { gameId: string; homeTeamPercentage: string; awayTeamPercentage: string }) => {
-           //console.log("Received live update:", newData);
+            //console.log("Received live update:", newData);
 
             // Update pickPercentages with new data
             setPickPercentages(prev => ({
@@ -170,15 +172,15 @@ export default function DailyPicks() {
 
                 const data = await response.json();
                 data.games.forEach((game: Game) => {
-                   //console.log(`Game ID: ${game.id}, Status: ${game.status}`);
+                    //console.log(`Game ID: ${game.id}, Status: ${game.status}`);
                 });
                 setGames(data.games);
-                
+
                 if (data.games && data.games.length > 0) {
                     fetchPreviousPicks(data.games);
                 }
             } catch (error) {
-               //console.error('Error fetching games:', error);
+                //console.error('Error fetching games:', error);
                 setError('Failed to load today\'s games');
             } finally {
                 setLoading(false);
@@ -205,29 +207,29 @@ export default function DailyPicks() {
                     // No picks found - this is a valid state
                     return;
                 }
-                
+
                 if (response.status === 401) {
                     console.warn('User not authorized to fetch picks');
                     return;
                 }
-                
+
                 if (!response.ok) {
                     throw new Error(`Failed to fetch user picks: ${response.statusText}`);
                 }
-                
+
                 const picks = await response.json();
-                
+
                 // If picks is empty or not an array, return early
                 if (!Array.isArray(picks) || picks.length === 0) {
                     return;
                 }
-                
+
                 // Create a Set of tomorrow's game IDs for quick lookup
                 const tomorrowGameIds = new Set(tomorrowGames.map(game => game.id));
-                
+
                 // Initialize selectedPicks only with picks that match tomorrow's games
                 const initialSelectedPicks = new Set<string>();
-                
+
                 picks.forEach((pick: any) => {
                     // Only process picks for tomorrow's games
                     if (tomorrowGameIds.has(pick.gameId)) {
@@ -236,7 +238,7 @@ export default function DailyPicks() {
                         initialSelectedPicks.add(`${pick.gameId}-${teamType}`);
                     }
                 });
-    
+
                 // Set the selectedPicks state with users previous picks
                 setSelectedPicks(initialSelectedPicks);
             } catch (error) {
@@ -262,11 +264,11 @@ export default function DailyPicks() {
                         };
                     });
                     setPickPercentages(percentages);
-                   //console.log("Pick Percentages:", percentages);
+                    //console.log("Pick Percentages:", percentages);
 
                 }
             } catch (error) {
-               //console.error("Error fetching pick percentages:", error);
+                //console.error("Error fetching pick percentages:", error);
             } finally {
                 setLoadingPercentages(false);
             }
@@ -276,13 +278,13 @@ export default function DailyPicks() {
     }, [selectedSport]);
 
     useEffect(() => {
-       /*console.log("Current state:", {
-            isLocked,
-            firstGameLocked,
-            startedGames: Array.from(startedGames),
-            selectedPicks: Array.from(selectedPicks),
-            games: games.map(g => g.id)
-        });*/
+        /*console.log("Current state:", {
+             isLocked,
+             firstGameLocked,
+             startedGames: Array.from(startedGames),
+             selectedPicks: Array.from(selectedPicks),
+             games: games.map(g => g.id)
+         });*/
     }, [isLocked, firstGameLocked, startedGames, selectedPicks, games]);
 
     // This function checks if a specific game should be locked based on its start time
@@ -290,16 +292,16 @@ export default function DailyPicks() {
         // Get current time in EST/EDT
         const now = new Date();
         const nowEst = toZonedTime(now, "America/New_York");
-        
+
         // Parse the game time (in ET)
         const [timeStr, period] = gameTime.split(' ');
         const [hourStr, minuteStr] = timeStr.split(':');
         let etHours = parseInt(hourStr);
-        
+
         // Convert to 24-hour format
         if (period === 'PM' && etHours !== 12) etHours += 12;
         if (period === 'AM' && etHours === 12) etHours = 0;
-        
+
         // Create game time in EST/EDT
         const gameStartTime = new Date(nowEst);
         gameStartTime.setHours(etHours, parseInt(minuteStr), 0, 0);
@@ -320,7 +322,7 @@ export default function DailyPicks() {
                 }
             }
         }
-        
+
         // If game time is in the past for today, it has started
         return nowEst >= gameStartTime;
     }, []);
@@ -330,15 +332,15 @@ export default function DailyPicks() {
         // Function to check all games and lock as needed
         const checkGamesStatus = () => {
             if (games.length === 0) return;
-            
+
             // Get current time in EST/EDT
             const now = new Date();
             const nowEst = toZonedTime(now, "America/New_York");
-            
+
             // Check each game
             let anyGameStarted = false;
             const newStartedGames = new Set<string>();
-            
+
             games.forEach(game => {
                 // Check if game has started based on time
                 if (shouldGameBeLocked(game.gameTime)) {
@@ -346,7 +348,7 @@ export default function DailyPicks() {
                     newStartedGames.add(game.id);
                 }
             });
-            
+
             // Update state based on checks
             if (anyGameStarted) {
                 setFirstGameLocked(true);
@@ -355,13 +357,13 @@ export default function DailyPicks() {
                 setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
             }
         };
-        
+
         // Call the function immediately on mount
         checkGamesStatus();
-        
+
         // Set up interval to check every minute
         const intervalId = setInterval(checkGamesStatus, 60000);
-        
+
         // Clean up on component unmount
         return () => {
             clearInterval(intervalId);
@@ -374,7 +376,7 @@ export default function DailyPicks() {
         const updateCountdown = () => {
             const now = new Date();
             const nowEst = toZonedTime(now, "America/New_York");
-            
+
             // If we have games, check if they've started
             if (games.length > 0) {
                 // Sort games by start time
@@ -403,7 +405,7 @@ export default function DailyPicks() {
                     setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
                     return;
                 }
-                
+
                 // Parse the game time (which is in ET)
                 const [timeStr, period] = firstGame.gameTime.split(' ');
                 const [hourStr, minuteStr] = timeStr.split(':');
@@ -412,11 +414,11 @@ export default function DailyPicks() {
                 // Convert ET time to 24-hour format
                 if (period === 'PM' && etHours !== 12) etHours += 12;
                 if (period === 'AM' && etHours === 12) etHours = 0;
-                
+
                 // Create a Date object for the game time in EST/EDT
                 const gameStartTime = new Date(nowEst);
                 gameStartTime.setHours(etHours, parseInt(minuteStr), 0, 0);
-                
+
                 // If the calculated time is in the past, check if we're in the PST edge case
                 if (gameStartTime < nowEst) {
                     const userOffset = -now.getTimezoneOffset() / 60;
@@ -435,7 +437,7 @@ export default function DailyPicks() {
 
                 // Calculate time until game starts
                 const timeDiff = gameStartTime.getTime() - nowEst.getTime();
-                
+
                 // If game has started or timer is at 0
                 if (timeDiff <= 0) {
                     // Lock the first game
@@ -464,7 +466,7 @@ export default function DailyPicks() {
                 // Default to midnight reset if no games
                 const midnight = new Date(nowEst);
                 midnight.setHours(24, 0, 0, 0);
-                
+
                 const timeUntilMidnight = midnight.getTime() - nowEst.getTime();
                 const hours = Math.floor(timeUntilMidnight / (1000 * 60 * 60));
                 const minutes = Math.floor((timeUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
@@ -491,8 +493,8 @@ export default function DailyPicks() {
     }, [games]);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
-       //console.log(`Attempting to select ${teamType} team for game ${gameId}`);
-        
+        //console.log(`Attempting to select ${teamType} team for game ${gameId}`);
+
         // Always allow selection for testing
         setSelectedPicks(prevPicks => {
             const newPicks = new Set(prevPicks);
@@ -500,10 +502,10 @@ export default function DailyPicks() {
             const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
 
             if (newPicks.has(pickId)) {
-               //console.log(`Removing pick: ${pickId}`);
+                //console.log(`Removing pick: ${pickId}`);
                 newPicks.delete(pickId);
             } else {
-               //console.log(`Adding pick: ${pickId}, removing opposite: ${oppositePick}`);
+                //console.log(`Adding pick: ${pickId}, removing opposite: ${oppositePick}`);
                 newPicks.add(pickId);
                 newPicks.delete(oppositePick);
             }
@@ -523,11 +525,11 @@ export default function DailyPicks() {
                 className={`text-gray-400 hover:text-gray-600 ${isSelected ? "font-medium text-yellow-500" : ""}`}>
                 Best Pick ★
             </button>
-        </div>                                
+        </div>
     );
 
     const handleGetSpread = (gameId: string) => {
-       //console.log(`Fetching spread for ${gameId}`);
+        //console.log(`Fetching spread for ${gameId}`);
         const game = games.find(g => g.id === gameId);
         if (game) {
             setPreviewGame(game);
@@ -535,6 +537,11 @@ export default function DailyPicks() {
     };
 
     const handleSubmitPicks = async () => {
+        if (!userId) {
+            setShowAuthDialog(true);
+            return;
+        }
+
         if (selectedPicks.size !== games.length) return;
 
         setSubmitting(true);
@@ -637,7 +644,7 @@ export default function DailyPicks() {
             const data = await percentageResponse.json();
 
             if (data.message === "There is not enough data") {
-               //console.warn("Not enough user data to update percentages.");
+                //console.warn("Not enough user data to update percentages.");
             } else {
                 for (const game of data.data) {
                     await fetch('/api/pusher', {
@@ -654,7 +661,7 @@ export default function DailyPicks() {
 
             router.push('/myPicks');
         } catch (error) {
-           //console.error('Error submitting picks:', error);
+            //console.error('Error submitting picks:', error);
             setSubmitError(error instanceof Error ? error.message : 'Failed to submit picks');
         } finally {
             setSubmitting(false);
@@ -687,7 +694,7 @@ export default function DailyPicks() {
             let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
 
             // If best pick made add to total
-            if(bestPick !== null){
+            if (bestPick !== null) {
                 maxPoints += BESTPICKPOINTS;
             }
 
@@ -715,7 +722,7 @@ export default function DailyPicks() {
                 throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
             }
         } catch (error) {
-           //console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
+            //console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
         }
     }, [userId, selectedPicks, games, bestPick]);
 
@@ -733,23 +740,23 @@ export default function DailyPicks() {
         const targetTimePst = new Date(nowPst);
         targetTimePst.setHours(23, 55, 0, 0);
 
-        if(nowPst >= targetTimePst) {
+        if (nowPst >= targetTimePst) {
             targetTimePst.setDate(targetTimePst.getDate() + 1);
         }
 
         const targetTimeUtc = fromZonedTime(targetTimePst, "America/Los_Angeles")
         const timeUntilNextRun = targetTimeUtc.getTime() - nowUtc.getTime();
-        console.log(`Update points again in: ${timeUntilNextRun/1000/60} minutes`);
+        console.log(`Update points again in: ${timeUntilNextRun / 1000 / 60} minutes`);
 
         // Schedule it to run
         const timeoutId = setTimeout(() => {
             handleAllGamesDone();
 
-            const intervalId = setInterval(handleAllGamesDone, 24*60*60*1000);
-            return() => clearInterval(intervalId);
+            const intervalId = setInterval(handleAllGamesDone, 24 * 60 * 60 * 1000);
+            return () => clearInterval(intervalId);
         }, timeUntilNextRun);
 
-        return() => clearTimeout(timeoutId);
+        return () => clearTimeout(timeoutId);
     }, [handleAllGamesDone]);
 
     // Add this function to check if a specific game is locked
@@ -1096,8 +1103,8 @@ export default function DailyPicks() {
                                     </div>
                                     <div className="px-4 pb-3 flex justify-between items-center">
                                         <BestPickButton
-                                            gameId={ game.id }
-                                            isSelected={ bestPick === game.id }/>
+                                            gameId={game.id}
+                                            isSelected={bestPick === game.id} />
                                     </div>
                                 </div>
                             )
@@ -1138,18 +1145,18 @@ export default function DailyPicks() {
                             <div className="flex items-center gap-2 text-white">
                                 <span>{selectedPicks.size}/{games.length} picks made</span>
                                 <span className="px-10">
-                                    <strong>Total Points Possible:</strong> {selectedPicks.size * MAXPOINTSPERGAME} 
-                                    {selectedPicks.size === games.length && ` + ${BONUSPOINTS}`} 
+                                    <strong>Total Points Possible:</strong> {selectedPicks.size * MAXPOINTSPERGAME}
+                                    {selectedPicks.size === games.length && ` + ${BONUSPOINTS}`}
                                     {bestPick && ` + ${BESTPICKPOINTS}`}
-                                    
+
                                     {/* Showing total only when all picks made or has best pick */}
                                     {(selectedPicks.size === games.length || bestPick) && " = "}
-                                    
+
                                     {(selectedPicks.size === games.length || bestPick) && (
                                         <>
-                                            {selectedPicks.size * MAXPOINTSPERGAME + 
-                                            (selectedPicks.size === games.length ? BONUSPOINTS : 0) + 
-                                            (bestPick ? BESTPICKPOINTS : 0)}
+                                            {selectedPicks.size * MAXPOINTSPERGAME +
+                                                (selectedPicks.size === games.length ? BONUSPOINTS : 0) +
+                                                (bestPick ? BESTPICKPOINTS : 0)}
                                             <br />
                                             {"("}
                                             {selectedPicks.size === games.length && (
@@ -1225,7 +1232,7 @@ export default function DailyPicks() {
                             </DialogClose>
                         </DialogHeader>
                         <div className="p-0">
-                            <OddsPreview 
+                            <OddsPreview
                                 gameId={previewGame.id}
                                 homeTeam={previewGame.homeTeam}
                                 awayTeam={previewGame.awayTeam}
@@ -1239,6 +1246,11 @@ export default function DailyPicks() {
                     </DialogContent>
                 </Dialog>
             )}
+
+            <AuthDialog
+                isOpen={showAuthDialog}
+                onClose={() => setShowAuthDialog(false)}
+            />
         </div>
     );
 }

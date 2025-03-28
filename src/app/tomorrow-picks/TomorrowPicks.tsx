@@ -93,6 +93,7 @@ export default function TomorrowPicks() {
     const [previewGame, setPreviewGame] = useState<Game | null>(null);
     const searchParams = useSearchParams();
     const selectedSport = searchParams.get('sport') || 'NBA';
+    const [showAuthDialog, setShowAuthDialog] = useState(false);
     
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
@@ -293,7 +294,6 @@ export default function TomorrowPicks() {
             setPreviewGame(game);
         }
     };
-    const [showAuthDialog, setShowAuthDialog] = useState(false);
 
     const handleSubmitPicks = async () => {
         if (!userId) {

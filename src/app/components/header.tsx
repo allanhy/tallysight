@@ -86,11 +86,13 @@ const Header = () => {
                             <div className="hidden md:block">
                                 <SignedOut>
                                     <div className='flex gap-2'>
+                                    <SignInButton mode='redirect'>
+                                            <button className='flex justify-end p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:scale-105'>
+                                                Log in
+                                            </button>
+                                        </SignInButton>
                                         <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
                                             <SignUpButton mode="redirect" />
-                                        </div>
-                                        <div className='flex justify-end p-3 text-white rounded-lg bg-[#008AFF] hover:scale-105'>
-                                            <SignInButton mode="redirect" />
                                         </div>
                                     </div>
                                 </SignedOut>
@@ -149,16 +151,16 @@ const Header = () => {
                             <div className="mt-4">
                                 <SignedOut>
                                     <div className='space-y-2'>
+                                        <SignInButton mode='redirect'>
+                                            <button className='p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-whitek w-full hover:scale-105'>
+                                                Log in
+                                            </button>
+                                        </SignInButton>
                                         <SignUpButton mode='redirect'>
                                             <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'>
                                                 Sign up
                                             </button>
                                         </SignUpButton>
-                                        <SignInButton mode='redirect'>
-                                            <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'>
-                                                Sign in
-                                            </button>
-                                        </SignInButton>
                                     </div>
                                 </SignedOut>
                                 <SignedIn>
