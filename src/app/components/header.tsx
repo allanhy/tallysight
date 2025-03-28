@@ -152,7 +152,7 @@ const Header = () => {
                                 <SignedOut>
                                     <div className='space-y-2'>
                                         <SignInButton mode='redirect'>
-                                            <button className='p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-whitek w-full hover:scale-105'>
+                                            <button className='p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full hover:scale-105'>
                                                 Log in
                                             </button>
                                         </SignInButton>
