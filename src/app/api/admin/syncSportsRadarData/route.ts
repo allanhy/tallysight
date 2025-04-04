@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     console.log(`Request Body Received:`, body);
 
     // Fetch both NBA and MLB data
-    const [nbaData, mlbData, nflData, nhlData, mlsData, eplData, laligaData, bundesligaData, seriesaData, ligue1Data] = await Promise.all([
+    const [nbaData, mlbData, nflData, nhlData, mlsData, eplData, laligaData, bundesligaData, serieaData, ligue1Data] = await Promise.all([
       fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'),
       fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'),
       fetchESPNData('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'),
@@ -126,12 +126,12 @@ export async function POST(req: NextRequest) {
       ...nbaData.events.map((game: any) => ({ ...game, sport: 'NBA' })),
       ...mlbData.events.map((game: any) => ({ ...game, sport: 'MLB' })),
       ...nflData.events.map((game: any) => ({ ...game, sport: 'NFL' })),
-      ...nhlData.events.map((game: any) => ({ ...game, sport: 'NFL' })),
+      ...nhlData.events.map((game: any) => ({ ...game, sport: 'NHL' })),
       ...mlsData.events.map((game: any) => ({ ...game, sport: 'MLS' })),
       ...eplData.events.map((game: any) => ({ ...game, sport: 'EPL' })),
       ...laligaData.events.map((game: any) => ({ ...game, sport: 'LALIGA' })),
       ...bundesligaData.events.map((game: any) => ({ ...game, sport: 'BUNDESLIGA' })),
-      ...seriesaData.events.map((game: any) => ({ ...game, sport: 'SERIES_A' })),
+      ...serieaData.events.map((game: any) => ({ ...game, sport: 'SERIE_A' })),
       ...ligue1Data.events.map((game: any) => ({ ...game, sport: 'LIGUE_1' })),
     ];
 
