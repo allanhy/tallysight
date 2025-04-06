@@ -9,7 +9,6 @@
     padding: .5em;
     border: 1px solid #2a2c33;
     border-radius: .3em;
-    background-color: #42464f;
     font-size: 1em;
     font-weight: 100;
     max-width: 1000px;
@@ -17,7 +16,6 @@
 
 .rank {
     font-weight: bold;
-    color: #fff;
     text-align: center;
     padding-right: 2em;
     width: 10%;
@@ -35,7 +33,6 @@
 
 .username {
     font-weight: 500;
-    color: #fff;
     flex-grow: 1;
     text-align: left;
     margin-right: 1em;
@@ -43,7 +40,6 @@
 
 .performance {
     font-weight: bold;
-    color: #fff;
     text-align: left;
     flex-shrink: 0;
     width: 15%;
@@ -51,7 +47,6 @@
 
 .points {
     font-weight: bold;
-    color: #fff;
     text-align: center;
     width: 10%;
     flex-shrink: 0;

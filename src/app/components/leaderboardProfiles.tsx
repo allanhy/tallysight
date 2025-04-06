@@ -294,7 +294,7 @@ function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) =
         <>
             {sortedData.map((user) => (
                 <div 
-                    className={styles.profile} 
+                    className={styles.profile + " text-black bg-gray-300/30 dark:text-white dark:bg-gray-800/30"}
                     key={`${user.username}-${user.rank}`}
                     onClick={() => onUserClick(user)}
                 >
@@ -308,9 +308,9 @@ function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) =
                         quality={100}
                         className={styles.image}
                         unoptimized/>
-                    <div className={styles.username}>{user.username}</div>
-                    <div className={styles.performance}>{user.performance}%</div>
-                    <div className={styles.points}>{user.points}</div>
+                    <div className={styles.username + " text-black dark:text-white"}>{user.username}</div>
+                    <div className={styles.performance +  " text-black dark:text-white"}>{user.performance}%</div>
+                    <div className={styles.points+  " text-black dark:text-white"}>{user.points}</div>
                 </div>
             ))}
         </>

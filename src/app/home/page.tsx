@@ -285,7 +285,7 @@ export default function ContestsPage() {
                 </div>
                 <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
                     {/* Skeleton for Featured Contest */}
-                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gray-900 p-4 sm:p-8">
+                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4 sm:p-8">
                         <Skeleton className="h-5 w-1/4 bg-gray-600 mb-2" />
                         <Skeleton className="h-8 w-3/4 bg-gray-500 mb-2" />
                         <Skeleton className="h-4 w-1/2 bg-gray-600 mb-4" />
@@ -293,7 +293,7 @@ export default function ContestsPage() {
                     </div>
 
                     {/* Skeleton for Upcoming Contest */}
-                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gray-900 p-4 sm:p-8">
+                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4 sm:p-8">
                         <Skeleton className="h-5 w-1/4 bg-gray-600 mb-2" />
                         <Skeleton className="h-8 w-3/4 bg-gray-500 mb-2" />
                         <Skeleton className="h-4 w-1/2 bg-gray-600 mb-4" />
@@ -435,12 +435,12 @@ export default function ContestsPage() {
                 })()
             ) : (
                 <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
-                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}>
+                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950">
                         <div className="p-4 sm:p-8">
-                            <div className="uppercase tracking-wide text-sm text-white font-semibold">
+                            <div className="uppercase tracking-wide text-sm text-black dark:text-white font-semibold">
                                 Featured Contest
                             </div>
-                            <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
+                            <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
                                 Today's {selectedSoccerLeague} {selectedSport} Games ({renderTodayGames().length} games)
                             </h1>
                             <p className="mt-2 text-slate-500">
@@ -455,12 +455,12 @@ export default function ContestsPage() {
                         </div>
                     </div>
 
-                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden" style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}>
+                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950">
                         <div className="p-4 sm:p-8">
-                            <div className="uppercase tracking-wide text-sm text-white font-semibold">
+                            <div className="uppercase tracking-wide text-sm text-black dark:text-white font-semibold">
                                 Upcoming Contest
                             </div>
-                            <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
+                            <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
                                 Tomorrow's {selectedSoccerLeague} {selectedSport} Games ({renderTomorrowGames().length} games)
                             </h1>
                             <p className="mt-2 text-slate-500">
