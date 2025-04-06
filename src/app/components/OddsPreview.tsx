@@ -52,7 +52,9 @@ export default function OddsPreview({
           console.log("Fetching odds for:", {
             gameId,
             homeTeam: homeTeam.name,
-            awayTeam: awayTeam.name
+            awayTeam: awayTeam.name,
+            homeTeamOdds: homeTeam.spread,
+            awayTeamOdds: awayTeam.spread
           });
 
           // Calculate the correct date based on the 'day' prop
@@ -166,7 +168,18 @@ export default function OddsPreview({
                 <div className="text-xl font-bold text-gray-400">VS</div>
                 <div className="mt-2 px-3 py-1 bg-blue-100 rounded-full">
                   <span className="text-xs font-medium text-blue-800">
-                    {gameData.status || "Scheduled"}
+                  {(() => {
+                    switch (gameData.status?.toLowerCase()) {
+                      case 'status_final':
+                        return 'Final';
+                      case 'status_in_progress':
+                        return 'In Progress';
+                      case 'status_halftime':
+                        return 'Halftime';
+                      default:
+                        return 'Scheduled';
+                    }
+                  })()}
                   </span>
                 </div>
               </div>
@@ -191,26 +204,29 @@ export default function OddsPreview({
             </div>
 
             {/* Spread Information */}
-            <div className="w-full bg-gray-100 rounded-lg p-4 mb-4">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-sm text-gray-500">Spread</div>
-                  <div className="font-bold text-blue-600">{gameData.awayTeam.spread}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Prediction</div>
-                  <div className="font-bold text-gray-800">
-                    {parseFloat(gameData.awayTeam.spread) < parseFloat(gameData.homeTeam.spread)
-                      ? gameData.awayTeam.name
-                      : gameData.homeTeam.name}
+              <div className="w-full bg-gray-100 rounded-lg p-4 mb-4">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-sm text-gray-500">Spread</div>
+                    <div className="font-bold text-blue-600">{gameData.awayTeam.spread}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Prediction</div>
+                    <div className="font-bold text-gray-800">
+                      {parseFloat(gameData.awayTeam.spread) < parseFloat(gameData.homeTeam.spread)
+                        ? gameData.awayTeam.name
+                        : gameData.homeTeam.name}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Spread</div>
+                    <div className="font-bold text-blue-600">{gameData.homeTeam.spread}</div>
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-500">Spread</div>
-                  <div className="font-bold text-blue-600">{gameData.homeTeam.spread}</div>
-                </div>
+                <p className="text-center text-xs italic text-gray-500 mt-1">
+                Provided by ESPN
+                </p>
               </div>
-            </div>
 
             {/* Favorite and Underdog Information */}
             {favorite && underdog && (

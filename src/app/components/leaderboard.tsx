@@ -152,10 +152,10 @@ const Leaderboard: React.FC = () => {
                     <h1 className='leaderboard-title text-black dark:text-white'>
                     {selectedSport === "SELECT" || selectedWeek === -1 || selectedWeek === 0? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
                     </h1>
-                    <div className='leaderboard-container'>
+                    <div className='leaderboard-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950'>
                         <div className='leaderboard-controls'>
                             <select
-                                className='select'
+                                className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800'
                                 value={selectedSport}
                                 onChange={handleSportChange}>
                                 <option value='SELECT' disabled>Select Sport</option>
@@ -164,7 +164,7 @@ const Leaderboard: React.FC = () => {
                                 <option value="MLB">MLB</option>
                                 <option value="NHL">NHL</option>
 
-                                <optgroup label="Soccer" className='pt-2 pb-2 font-bold text-gray-100 bg-gray-600'>
+                                <optgroup label="Soccer" className='pt-2 pb-2 font-bold text-black bg-gray-300/90 dark:text-white dark:bg-gray-800/10'>
                                     <option value="MLS">MLS</option>
                                     <option value="EPL">English Premier League</option>
                                     <option value="LALIGA">La Liga</option>
@@ -175,7 +175,7 @@ const Leaderboard: React.FC = () => {
                             </select>
 
                             <select 
-                                className='select' 
+                                className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800' 
                                 value={selectedWeek ?? 0}
                                 onChange={handleWeekChange}>
                                 <option value='-1' disabled>Select Week</option>
@@ -192,10 +192,10 @@ const Leaderboard: React.FC = () => {
                             ) : (
                                 <div className='leaderboard-table'>
                                     <div className='leaderboard-header'>
-                                        <div className='rank'>Rank</div>
-                                        <div className='username'>User</div>
-                                        <div className='performance'>Performance</div>
-                                        <div className='points'>Points</div>
+                                        <div className='rank text-black dark:text-white'>Rank</div>
+                                        <div className='username text-black dark:text-white'>User</div>
+                                        <div className='performance text-black dark:text-white'>Performance</div>
+                                        <div className='points text-black dark:text-white'>Points</div>
                                     </div>
                                         {leaderboard.length <= 0 ? (
                                                 <div>No rankings available for the selected sport and week. Please choose a different option.</div>
@@ -248,7 +248,6 @@ const Leaderboard: React.FC = () => {
                 }
                  
                 .leaderboard-container {
-                    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
                     padding: 20px;
                     border-radius: 8px;
                     max-width: 90vw;
@@ -269,14 +268,7 @@ const Leaderboard: React.FC = () => {
                     padding: 8px;
                     border-radius: 5px;
                     width: 48%;
-                    background-color: rgba(255, 255, 255, 0.1);
-                    color: white;
                     border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-
-                .select option {
-                    background-color: #1f2937;
-                    color: white;
                 }
 
                 .leaderboard-table {

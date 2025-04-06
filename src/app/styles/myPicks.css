@@ -72,19 +72,20 @@
     margin-bottom: 20px;
 }
 
+
 .select {
     padding: 8px;
     border-radius: 5px;
     width: 48%;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/*
 .select option {
     background-color: #1f2937;
     color: white;
 }
+*/
 
 .stats-table {
     width: 100%;
@@ -185,18 +186,11 @@
 
 .team-name {
     font-weight: 500;
-    color: #e5e7eb;
 }
 
 .selected-team .team-name {
     color: #3b82f6;
     font-weight: 600;
-}
-
-.vs {
-    color: #6b7280;
-    font-weight: 500;
-    margin: 0 8px;
 }
 
 .team-logo {

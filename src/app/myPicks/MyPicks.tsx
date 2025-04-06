@@ -758,15 +758,15 @@ export default function MyPicksPage() {
 
                         {/* Conditional rendering for History or Picks */}
                         {isHistoryActive ? (
-                        <div className="picks-container bg-gradient-to-r from-gray-900 to-black text-white">
-                            <h2 className="history-title text-white">History</h2>
+                        <div className="picks-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950">
+                            <h2 className="history-title text-black dark:text-white">History</h2>
                             <table className="history-table w-full">
                                 <thead>
                                     <tr>
-                                        <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Date</th>
-                                        <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Sport</th>
-                                        <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Week</th>
-                                        <th className="bg-gray-800/50 text-white p-4 border border-gray-700">Result</th>
+                                        <th className="bg-gray-800/50 text-black dark:text-white p-4 border border-gray-700">Date</th>
+                                        <th className="bg-gray-800/50 text-black dark:text-white p-4 border border-gray-700">Sport</th>
+                                        <th className="bg-gray-800/50 text-black dark:text-white p-4 border border-gray-700">Week</th>
+                                        <th className="bg-gray-800/50 text-black dark:text-white p-4 border border-gray-700">Result</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -780,7 +780,7 @@ export default function MyPicksPage() {
                             </table>
                         </div>
                     ) : (
-                        <div className="picks-container bg-gradient-to-r from-gray-900 to-black text-white">
+                        <div className="picks-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950">
                             <div className="picks-controls flex flex-wrap gap-4 mb-6">
                                 <Skeleton className="h-10 w-full rounded-md bg-gray-600" />
                                 <h2 className="picks-subtitle">Picks</h2>
@@ -831,11 +831,11 @@ export default function MyPicksPage() {
             <div className={`content-wrapper ${isSignedIn ? 'centered' : ''}`}>
                 <div className="main-content">
                     <h1 className="picks-title text-black dark:text-white">My Picks</h1>
-                    <div className="picks-container bg-gradient-to-r from-gray-900 to-black text-white">
+                    <div className="picks-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950">
                         {/* Sport and Week Selection Dropdowns */}
                         <div className="picks-controls">
                         <select 
-                                    className="select" 
+                                    className="select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800" 
                                     onChange={(e) => setSelectedSport(e.target.value === "" ? null : e.target.value as Sport)} 
                                     value={selectedSport || ''}
                                 >
@@ -845,7 +845,7 @@ export default function MyPicksPage() {
                                 <option value="MLB">MLB</option>
                                 <option value="NHL">NHL</option>
 
-                                <optgroup label="Soccer" className='pt-2 pb-2 font-bold text-gray-100 bg-gray-600'>
+                                <optgroup label="Soccer" className='pt-2 pb-2 font-bold text-black bg-gray-300/90 dark:text-white dark:bg-gray-800/10'>
                                     <option value="MLS">MLS</option>
                                     <option value="EPL">English Premier League</option>
                                     <option value="LALIGA">La Liga</option>
@@ -855,7 +855,7 @@ export default function MyPicksPage() {
                                 </optgroup>
                             </select>
                             <select
-                                className="select"
+                                className="select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800"
                                 onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
                                 value={selectedWeek}
                             >
@@ -880,19 +880,19 @@ export default function MyPicksPage() {
 
                         {/* Add this debugging section right after your picks-subtitle section */}
                         <div className="debug-section p-4 mb-4 bg-red-800/30 rounded-lg">
-                            <h3 className="text-lg font-semibold text-white mb-4">
+                            <h3 className="text-lg font-semibold text-black dark:text-white mb-4">
                                 Debug Information
                             </h3>
                             <div>
-                                <p className="text-white">Total picks: {userPicks.length}</p>
-                                <p className="text-white">Filtered picks: {weekFilteredPicks.length}</p>
-                                <p className="text-white">Unique dates: {sortedDates.length}</p>
-                                <p className="text-white">Dates: {sortedDates.join(', ')}</p>
+                                <p className="text-black dark:text-white">Total picks: {userPicks.length}</p>
+                                <p className="text-black dark:text-white">Filtered picks: {weekFilteredPicks.length}</p>
+                                <p className="text-black dark:text-white">Unique dates: {sortedDates.length}</p>
+                                <p className="text-black dark:text-white">Dates: {sortedDates.join(', ')}</p>
 
                                 {weekFilteredPicks.length > 0 && (
                                     <div className="mt-4">
-                                        <h4 className="text-white font-semibold">Sample Game Dates:</h4>
-                                        <ul className="text-white">
+                                        <h4 className="text-black dark:text-white font-semibold">Sample Game Dates:</h4>
+                                        <ul className="text-black dark:text-white">
                                             {weekFilteredPicks.slice(0, 5).map((pick, index) => (
                                                 <li key={index}>
                                                     Game ID: {pick.gameId},
@@ -914,7 +914,7 @@ export default function MyPicksPage() {
                             </div>
                         </div>
 
-                        {/* Replace your existing picks display with this simplified version */}
+                        {/* Display all the users picks */}
                         <div className="days-container space-y-6">
                             {loading ? (
                                 // Skeleton Loader
@@ -951,15 +951,15 @@ export default function MyPicksPage() {
                                 </div>
                             ) : userPicks.length > 0 ? (
                                 sortedDates.map(date => (
-                                    <div key={date} className="date-group p-4 bg-gray-800/30 rounded-lg">
-                                        <h3 className="text-lg font-semibold text-white mb-4 border-b border-gray-700 pb-2">
+                                    <div key={date} className="date-group p-4 bg-gray-300/30 dark:bg-gray-800/30 rounded-lg">
+                                        <h3 className="text-lg font-semibold text-black dark:text-white mb-4 border-b border-gray-700 pb-2">
                                             {date}
                                         </h3>
 
                                         <div className="space-y-4">
                                             {groupedPicks[date].map((pick, index) => (
                                                 <div key={`${pick.gameId}-${index}`}
-                                                    className="pick-item bg-gray-800/50 p-4 rounded-lg">
+                                                    className="pick-item bg-gray-300/50 dark:bg-gray-800/50 p-4 rounded-lg">
                                                     <div className="pick-details flex items-center justify-between">
                                                         {/* Team 1 */}
                                                         <div className={`team flex items-center gap-3 ${pick.teamIndex === 0 ? 'selected-team' : ''}`}>
@@ -970,14 +970,14 @@ export default function MyPicksPage() {
                                                                     className="team-logo w-8 h-8 object-contain"
                                                                 />
                                                             )}
-                                                            <span className="team-name text-white">{pick.Game.team1Name}</span>
+                                                            <span className="team-name text-gray-700 dark:text-gray-400 ">{pick.Game.team1Name}</span>
                                                             {/*For best pick star on team 0*/}
                                                             {pick.bestPick && pick.teamIndex === 0 && (
                                                                 <span className="best-pick font-medium text-yellow-500">★</span>
                                                             )}
                                                         </div>
 
-                                                        <span className="vs text-gray-400 mx-4">VS</span>
+                                                        <span className="text-gray-700 dark:text-gray-500 font-medium mx-4">VS</span>
 
                                                         {/* Team 2 */}
                                                         <div className={`team flex items-center gap-3 ${pick.teamIndex === 1 ? 'selected-team' : ''}`}>
@@ -988,7 +988,7 @@ export default function MyPicksPage() {
                                                                     className="team-logo w-8 h-8 object-contain"
                                                                 />
                                                             )}
-                                                            <span className="team-name text-white">{pick.Game.team2Name}</span>
+                                                            <span className="team-name text-gray-700 dark:text-gray-400">{pick.Game.team2Name}</span>
                                                             {/*For best pick star on team 1*/}
                                                             {pick.bestPick && pick.teamIndex === 1 && (
                                                                 <span className="best-pick font-medium text-yellow-500">★</span>
@@ -1006,7 +1006,7 @@ export default function MyPicksPage() {
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center text-white text-xl font-bold bg-gray-800/50 p-4 rounded-lg">
+                                <div className="text-center text-text-black dark:text-white text-xl font-bold bg-gray-800/50 p-4 rounded-lg">
                                     {isSignedIn
                                         ? `No picks made for ${selectedSport || 'this sport'}.`
                                         : "Sign in to make picks."}
@@ -1036,117 +1036,7 @@ export default function MyPicksPage() {
                 )}
             </div>
 
-            <style jsx>{`
-                .picks-page {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    position: relative;
-                }
-
-                .content-wrapper {
-                    display: flex;
-                    flex-direction: row; /* Align elements side by side */
-                    gap: 24px;
-                    justify-content: center;
-                    align-items: flex-start; /* Align items to the top */
-                    width: 100%;
-                    max-width: 1200px;
-                }
-
-                .picks-container {
-                    width: 100%; /* Ensure the picks container takes full width */
-                    max-width: 1000px; /* Limit max width for larger screens */
-                }
-
-                .auth-container {
-                    background: linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0));
-                    padding: 24px;
-                    border-radius: 8px;
-                    text-align: center;
-                    width: 300px; /* Default width for larger screens */
-                    height: fit-content;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-                    margin-top: 0; /* Remove top margin to align with table */
-                    align-self: flex-start; /* Align to the top */
-                    border: 1px solid rgba(78, 29, 29, 0.1);
-                }
-
-                .sign-up-button, .sign-in-button {
-                    margin-top: 10px; /* Add some space between buttons */
-                    padding: 10px 20px; /* Add padding for better button size */
-                    color: white; /* Button text color */
-                    background-color: #0070f3; /* Button background color */
-                    border: none; /* Remove default border */
-                    border-radius: 5px; /* Rounded corners */
-                    cursor: pointer; /* Pointer cursor on hover */
-                }
-
-                .sign-up-button:hover, .sign-in-button:hover {
-                    background-color: #005bb5; /* Darker shade on hover */
-                }
-
-                @media (max-width: 768px) {
-                    .content-wrapper {
-                        flex-direction: column; /* Stack elements vertically on small screens */
-                    }
-
-                    .auth-container {
-                        width: 100%; /* Make auth container full width on small screens */
-                        max-width: 1000px; /* Match the picks container width */
-                        margin-top: 20px; /* Add margin for spacing */
-                    }
-                }
-
-                .pick-result {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-weight: 500;
-                    text-align: center;
-                    min-width: 80px;
-                }
-
-                .win {
-                    background-color: #22c55e;
-                    color: white;
-                }
-
-                .loss {
-                    background-color: #ef4444;
-                    color: white;
-                }
-
-                .in-progress {
-                    background-color: #3b82f6;
-                    color: white;
-                }
-
-                .upcoming {
-                    background-color: #6b7280;
-                    color: white;
-                }
-                
-                .finished {
-                    background-color: #4b5563;
-                    color: white;
-                }
-                
-                .selected-team {
-                    font-weight: bold;
-                    position: relative;
-                }
-                
-                .selected-team::after {
-                    content: '';
-                    position: absolute;
-                    bottom: -4px;
-                    left: 0;
-                    width: 100%;
-                    height: 2px;
-                    background-color: #3b82f6;
-                }
-            `}</style>
+            
         </div>
     );
 }
