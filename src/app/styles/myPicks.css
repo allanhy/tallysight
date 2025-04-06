@@ -313,7 +313,6 @@
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 20px;
-    color: white;
 }
 
 .sign-up-button {
@@ -337,7 +336,7 @@
 .sign-in-button {
     width: 100%;
     padding: 12px;
-    background-color: transparent;
+    background-color: #2563eb;
     color: white;
     border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;

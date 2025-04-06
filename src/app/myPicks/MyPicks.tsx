@@ -1006,7 +1006,7 @@ export default function MyPicksPage() {
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center text-text-black dark:text-white text-xl font-bold bg-gray-800/50 p-4 rounded-lg">
+                                <div className="text-center text-white text-xl font-bold bg-gray-800/50 p-4 rounded-lg">
                                     {isSignedIn
                                         ? `No picks made for ${selectedSport || 'this sport'}.`
                                         : "Sign in to make picks."}
@@ -1019,7 +1019,7 @@ export default function MyPicksPage() {
                 {/* New to TallySight section */}
                 {!isSignedIn && (
                     <div className="auth-container">
-                        <h2 className="auth-title">New to TallySight?</h2>
+                        <h2 className="auth-title  text-black dark:text-white">New to TallySight?</h2>
                         <button
                             onClick={handleSignUp}
                             className="sign-up-button"
