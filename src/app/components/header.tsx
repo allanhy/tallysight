@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { useTheme } from '@/context/ThemeContext';
 import CarouselWithGames from './carouselWithGames';
 import { usePathname } from 'next/navigation';
+import { useSport } from '@/context/SportContext';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,10 +18,14 @@ const Header = () => {
     const [error, setError] = useState('');
     const { theme } = useTheme();
     const pathname = usePathname();
-    const [selectedSport, setSelectedSport] = useState('NBA');
+    const { carouselSport, setCarouselSport, selectedSoccerLeague } = useSport();
 
     const handleSportChange = (sport: string) => {
-        setSelectedSport(sport);
+        if (sport === 'Soccer') {
+            setCarouselSport(selectedSoccerLeague === '' ? 'Soccer' : selectedSoccerLeague);  // Show all soccer leagues
+        } else {
+            setCarouselSport(sport);
+        }
     };
 
     useEffect(() => {
@@ -61,6 +66,7 @@ const Header = () => {
                                     height={40}
                                     priority
                                     className="object-contain"
+                                    onClick={() => setIsMenuOpen(false)}
                                 />
                             </Link>
 
@@ -86,7 +92,7 @@ const Header = () => {
                             <div className="hidden md:block">
                                 <SignedOut>
                                     <div className='flex gap-2'>
-                                    <SignInButton mode='redirect'>
+                                        <SignInButton mode='redirect'>
                                             <button className='flex justify-end p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white hover:scale-105'>
                                                 Log in
                                             </button>
@@ -152,12 +158,14 @@ const Header = () => {
                                 <SignedOut>
                                     <div className='space-y-2'>
                                         <SignInButton mode='redirect'>
-                                            <button className='p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full hover:scale-105'>
+                                            <button className='p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full hover:scale-105'
+                                            onClick={() => setIsMenuOpen(false)}>
                                                 Log in
                                             </button>
                                         </SignInButton>
                                         <SignUpButton mode='redirect'>
-                                            <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'>
+                                            <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'
+                                            onClick={() => setIsMenuOpen(false)}>
                                                 Sign up
                                             </button>
                                         </SignUpButton>
@@ -179,7 +187,7 @@ const Header = () => {
                 <div className="pt-20">
                     <div className="max-w-7xl mx-auto px-4 pl-4">
                         <select
-                            value={selectedSport}
+                            value={carouselSport}
                             onChange={(e) => handleSportChange(e.target.value)}
                             className="px-2 py-2 mx-2 rounded bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-300 dark:border-gray-600"
                         >
@@ -190,6 +198,7 @@ const Header = () => {
                             <option value="NHL">NHL</option>
 
                             <optgroup label="Soccer" className='pt-2 pb-2 font-bold'>
+                                <option value="Soccer">All Soccer Leagues</option>
                                 <option value="MLS">MLS</option>
                                 <option value="EPL">English Premier League</option>
                                 <option value="LALIGA">La Liga</option>
@@ -199,7 +208,7 @@ const Header = () => {
                             </optgroup>
                         </select>
                     </div>
-                    <CarouselWithGames selectedSport={selectedSport} />
+                    <CarouselWithGames />
                 </div>
             )}
             {pathname === '/profile' && (

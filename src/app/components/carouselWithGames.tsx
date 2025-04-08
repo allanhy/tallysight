@@ -6,6 +6,7 @@ import 'react-multi-carousel/lib/styles.css';
 import GameCard from '../components/GameCard';
 import { Game } from '../types/game';
 import { Skeleton } from './ui/skeleton';
+import { useSport } from '@/context/SportContext';
 
 const responsive = {
   superLargeDesktop: {
@@ -53,21 +54,49 @@ const CustomLeftArrow = ({ onClick }: { onClick?: () => void }) => (
   </button>
 );
 
-const carouselWithGames = ({ selectedSport }: { selectedSport: string }) => {
+const carouselWithGames = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const carouselRef = useRef<any>(null);
+  const { carouselSport, selectedSoccerLeague } = useSport();
+  const [userTimeZone, setUserTimeZone] = useState('America/New_York');
 
+  useEffect(() => {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setUserTimeZone(timezone);
+  }, []);
+  
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const response = await fetch(`/api/all-espn-games?sport=${selectedSport}`);
-        const data = await response.json();
-        console.log(`Fetched data for ${selectedSport}:`, data); // Debugging
+        setLoading(true);
 
-        if (data.games) {
-          const duplicatedGames = [...data.games, ...data.games, ...data.games];
-          setGames(duplicatedGames);
+        if (carouselSport === 'Soccer' && selectedSoccerLeague === '') {
+          // Fetch all soccer games when "All Soccer Leagues" is selected
+          const leagueUrls = [
+            '/api/all-espn-games?sport=MLS&day=today',
+            '/api/all-espn-games?sport=EPL&day=today',
+            '/api/all-espn-games?sport=LALIGA&day=today',
+            '/api/all-espn-games?sport=BUNDESLIGA&day=today',
+            '/api/all-espn-games?sport=SERIE_A&day=today',
+            '/api/all-espn-games?sport=LIGUE_1&day=today'
+          ];
+
+          const responses = await Promise.all(leagueUrls.map(url => fetch(url)));
+          const data = await Promise.all(responses.map(res => res.json()));
+
+          // Combine games from all leagues
+          const combinedGames = data.flatMap(response => response.games || []);
+          setGames(combinedGames);
+        } else {
+          const response = await fetch(`/api/all-espn-games?sport=${carouselSport}`);
+          const data = await response.json();
+          // console.log(`Fetched data for ${carouselSport}:`, data); // Debugging
+
+          if (data.games) {
+            const duplicatedGames = [...data.games, ...data.games, ...data.games];
+            setGames(duplicatedGames);
+          }
         }
       } catch (error) {
         console.error('Error fetching games:', error);
@@ -76,7 +105,7 @@ const carouselWithGames = ({ selectedSport }: { selectedSport: string }) => {
       }
     };
     fetchGames();
-  }, [selectedSport]);
+  }, [carouselSport, selectedSoccerLeague]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-12">
@@ -87,7 +116,7 @@ const carouselWithGames = ({ selectedSport }: { selectedSport: string }) => {
             // Skeleton Loader (Show while fetching)
             <div className="flex space-x-4">
               <Skeleton className="h-48 w-full rounded-lg bg-gray-300" />
-            </div>   
+            </div>
           ) : (
             <Carousel
               ref={carouselRef}
@@ -110,11 +139,19 @@ const carouselWithGames = ({ selectedSport }: { selectedSport: string }) => {
               customLeftArrow={<CustomLeftArrow />}
               removeArrowOnDeviceType={[]}
             >
-              {games.map((game, index) => (
+              {games.length > 0 ? (
+              games.map((game, index) => (
                 <div key={`${game.id}-${index}`} className="h-full">
-                  <GameCard game={game} />
+                  <GameCard game={game} userTimeZone={userTimeZone}/>
                 </div>
-              ))}
+              ))
+            ) : (
+              <div className="no-games-card flex justify-center items-center text-center rounded-lg shadow-md h-48 border">
+                <p className="text-gray-500 dark:text-gray-300 text-lg font-semibold">
+                  No games are available for today.
+                </p>
+              </div>
+            )}
             </Carousel>
           )}
         </div>

@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../components/ui/skeleton';
+import { useSport } from '@/context/SportContext';
 
 interface Game {
     id: string;
@@ -46,8 +47,7 @@ export default function ContestsPage() {
     const [ligue1TodayGames, setLigue1TodayGames] = useState<Game[]>([]);
     const [ligue1TomorrowGames, setLigue1TomorrowGames] = useState<Game[]>([]);
 
-    const [selectedSport, setSelectedSport] = useState<'NBA' | 'MLB' | 'NFL' | 'NHL' | 'Soccer' | null>(null);
-    const [selectedSoccerLeague, setSelectedSoccerLeague] = useState<string | null>(null);
+    const { selectedSport, setSelectedSport, setCarouselSport, selectedSoccerLeague, setSelectedSoccerLeague } = useSport();
 
     useEffect(() => {
         const fetchGames = async () => {
@@ -211,6 +211,20 @@ export default function ContestsPage() {
         return today.length > 0 || tomorrow.length > 0;
     };
 
+    const handleSportButtonClick = (sport: string) => {
+        setSelectedSport(sport);   // Update the page sport
+        setCarouselSport(sport);   // Update the carousel sport
+        if (sport === 'Soccer') {
+            setSelectedSoccerLeague('');  // Default league when Soccer is selected
+            setCarouselSport('Soccer');         // Sync the carousel with the default league
+        }
+    };
+
+    const handleSoccerLeagueChange = (league: string) => {
+        setSelectedSoccerLeague(league);  
+        setCarouselSport(league === '' ? 'Soccer' : league);   // Update carousel to reflect the new league
+    };
+
     const sortedSports = [
         {
             sport: 'NBA',
@@ -265,6 +279,13 @@ export default function ContestsPage() {
         }
     }, [sortedSports, selectedSport]);
 
+    useEffect(() => {
+        if (!selectedSport) {
+            setSelectedSport('NBA');
+            setCarouselSport('NBA');
+        }
+    }, [selectedSport, setSelectedSport, setCarouselSport]);
+
     if (loading) {
         return (
             <div className="p-4 sm:p-8 min-h-screen">
@@ -313,9 +334,9 @@ export default function ContestsPage() {
                     <button
                         key={sport}
                         onClick={() => {
-                            setSelectedSport(sport as 'NBA' | 'MLB' | 'NFL' | 'NHL' | 'Soccer');
+                            handleSportButtonClick(sport as 'NBA' | 'MLB' | 'NFL' | 'NHL' | 'Soccer');
                             if (sport !== 'Soccer') {
-                                setSelectedSoccerLeague(null);
+                                setSelectedSoccerLeague('');
                             }
                         }}
                         className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg w-24 text-center
@@ -341,8 +362,8 @@ export default function ContestsPage() {
                     <select
                         id="soccer-league"
                         value={selectedSoccerLeague || ''}
-                        onChange={(e) => setSelectedSoccerLeague(e.target.value)}
-                        className="p-2 bg-gray-700 text-white rounded-lg w-full"
+                        onChange={(e) => handleSoccerLeagueChange(e.target.value)}
+                        className="p-2 bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg w-full"
                     >
                         <option value="">All Soccer Leagues</option>
                         <option value="MLS">MLS</option>
@@ -376,7 +397,7 @@ export default function ContestsPage() {
 
                     if (allToday.length === 0 && allTomorrow.length === 0) {
                         return (
-                            <div className="text-center text-gray-400 text-lg mt-8">
+                            <div className="text-center text-black dark:text-white text-lg mt-8">
                                 No soccer games available today or tomorrow. ⚽ Come back soon!
                             </div>
                         );
@@ -401,14 +422,13 @@ export default function ContestsPage() {
                                 games.length > 0 && (
                                     <div
                                         key={title}
-                                        className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden"
-                                        style={{ background: 'linear-gradient(to right, rgb(17, 24, 39), rgb(0, 0, 0))' }}
+                                        className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950"
                                     >
                                         <div className="p-4 sm:p-8">
-                                            <div className="uppercase tracking-wide text-sm text-white font-semibold">
+                                            <div className="uppercase tracking-wide text-sm text-black dark:text-white font-semibold">
                                                 {tomorrow ? 'Upcoming Contest' : 'Featured Contest'}
                                             </div>
-                                            <h1 className="block mt-1 text-lg leading-tight font-medium text-white">
+                                            <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
                                                 {title} ({games.length} games)
                                             </h1>
                                             <p className="mt-2 text-slate-500">

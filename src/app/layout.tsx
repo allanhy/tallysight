@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import Navigation from '@/app/components/header';
 import './globals.css';
 import { Montserrat } from 'next/font/google';
+import { SportProvider } from '@/context/SportContext';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -28,12 +29,14 @@ export default function RootLayout({
       <body suppressHydrationWarning={true} className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
         <ClerkProvider dynamic>
           <ThemeProvider>
-            <div className="flex flex-col min-h-screen">
-              <NavigationWrapper /> 
-              <main className="flex-1">
-                {children}
-              </main>
-            </div>
+            <SportProvider>
+              <div className="flex flex-col min-h-screen">
+                <NavigationWrapper />
+                <main className="flex-1">
+                  {children}
+                </main>
+              </div>
+            </SportProvider>
           </ThemeProvider>
         </ClerkProvider>
       </body>
