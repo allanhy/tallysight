@@ -63,7 +63,7 @@ const Profile = () => {
         firstName: data.firstName,
         lastName: data.lastName,
       });
-      router.push("/profile");
+      setSelectedSection("Profile");
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -271,39 +271,61 @@ const Profile = () => {
               <div>
                   <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-gray-100">Edit Profile</h2>
                   <form onSubmit={handleSubmit(onSubmit)}>
-                      <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6" htmlFor="username">
-                          *Username:
-                      </label>
-                      <input 
-                          defaultValue={user?.username!}
-                          {...register("username", { required: true })}
-                          className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
-                      {errors.username && <span className="text-sm text-red-600">This field is required</span>}
-
-                      <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6" htmlFor="firstName">
-                          *First Name:
-                      </label>
-                      <input 
-                          defaultValue={user?.firstName!}
-                          {...register("firstName", { required: true })}
-                          className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
-                      {errors.firstName && <span className="text-sm text-red-600">This field is required</span>}
-
-                      <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6" htmlFor="lastName">
-                          *Last Name:
-                      </label>
-                      <input 
-                          defaultValue={user?.lastName!}
-                          {...register("lastName", { required: true })}
-                          className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
-                      {errors.lastName && <span className="text-sm text-red-600">This field is required</span>}
-
+                      <div className="mb-4">
+                          <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6" htmlFor="username">
+                              *Username:
+                          </label>
+                          {errors.username?.type === "required" && (
+                            <div className="text-sm text-red-600 mb-1 px-4">This field is required</div>
+                          )}
+                          {errors.username?.type === "minLength" && (
+                            <div className="text-sm text-red-600 mb-1 px-4">Username must be at least 4 characters</div>
+                          )}
+                          {errors.username?.type === "maxLength" && (
+                            <div className="text-sm text-red-600 mb-1 px-4">Username must be no more than 64 characters</div>
+                          )}
+                          <input 
+                              defaultValue={user?.username!}
+                              {...register("username", { 
+                                required: true,
+                                minLength: 4,
+                                maxLength: 64
+                              })}
+                              className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
+                      </div>
+    
+                      <div className="mb-4">
+                          <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6" htmlFor="firstName">
+                              *First Name:
+                          </label>
+                          {errors.firstName && (
+                            <div className="text-sm text-red-600 mb-1 px-4">This field is required</div>
+                          )}
+                          <input 
+                              defaultValue={user?.firstName!}
+                              {...register("firstName", { required: true })}
+                              className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
+                      </div>
+    
+                      <div className="mb-4">
+                          <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6" htmlFor="lastName">
+                              *Last Name:
+                          </label>
+                          {errors.lastName && (
+                            <div className="text-sm text-red-600 mb-1 px-4">This field is required</div>
+                          )}
+                          <input 
+                              defaultValue={user?.lastName!}
+                              {...register("lastName", { required: true })}
+                              className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
+                      </div>
+    
                       <div className="space-x-2 py-2 space-between">
                           <button onClick={() => setSelectedSection("Profile")}
                               className="w-s text-left px-4 py-2 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold shadow-sm">
                               Back
                           </button>
-
+    
                           <button type="submit"
                               className="w-s text-left px-4 py-2 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold shadow-sm">
                               Submit Changes

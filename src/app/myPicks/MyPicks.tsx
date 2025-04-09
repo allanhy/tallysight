@@ -782,7 +782,7 @@ export default function MyPicksPage() {
                     ) : (
                         <div className="picks-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950">
                             <div className="picks-controls flex flex-wrap gap-4 mb-6">
-                                <Skeleton className="h-10 w-full rounded-md bg-gray-600" />
+                                <Skeleton className="h-10 w-full rounded-md sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950" />
                                 <h2 className="picks-subtitle">Picks</h2>
                             </div>
 

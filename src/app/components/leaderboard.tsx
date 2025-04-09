@@ -198,7 +198,7 @@ const Leaderboard: React.FC = () => {
                                         <div className='points text-black dark:text-white'>Points</div>
                                     </div>
                                         {leaderboard.length <= 0 ? (
-                                                <div>No rankings available for the selected sport and week. Please choose a different option.</div>
+                                                <div className='text-black dark:text-white'>No rankings available for the selected sport and week. Please choose a different option.</div>
                                         ) : (
                                             <div className='hover:cursor-pointer'><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
                                         )}
@@ -214,7 +214,6 @@ const Leaderboard: React.FC = () => {
                     flex-wrap: no-wrap;
                     align-items: center;
                     justify-content: center;
-                    position: relative;
                 }
 
                 .content-wrapper {
