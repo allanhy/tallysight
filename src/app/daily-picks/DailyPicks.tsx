@@ -876,7 +876,7 @@ export default function DailyPicks() {
             {/* Enhanced Status Bar with more prominent lock indication */}
             <div className="text-center py-2 text-sm">
                 <div className="text-gray-300">
-                    Spread finalized | Picks lock: At the start of each game
+                    Spread finalized | Picks lock at the start of each game
                 </div>
                 {firstGameLocked && !isLocked && (
                     <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">

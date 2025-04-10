@@ -31,6 +31,11 @@ const responsive = {
   }
 };
 
+interface CarouselWithGamesProps {
+  refreshKey?: boolean;
+  onDataLoaded?: () => void;
+}
+
 // Add custom arrow components
 const CustomRightArrow = ({ onClick }: { onClick?: () => void }) => (
   <button
@@ -54,19 +59,16 @@ const CustomLeftArrow = ({ onClick }: { onClick?: () => void }) => (
   </button>
 );
 
-const carouselWithGames = () => {
+const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDataLoaded }) => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const carouselRef = useRef<any>(null);
   const { carouselSport, selectedSoccerLeague } = useSport();
   const [userTimeZone, setUserTimeZone] = useState('America/New_York');
-
-  useEffect(() => {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      setUserTimeZone(timezone);
-  }, []);
   
   useEffect(() => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setUserTimeZone(timezone);
     const fetchGames = async () => {
       try {
         setLoading(true);
@@ -102,10 +104,11 @@ const carouselWithGames = () => {
         console.error('Error fetching games:', error);
       } finally {
         setLoading(false);
+        if (onDataLoaded) onDataLoaded();
       }
     };
     fetchGames();
-  }, [carouselSport, selectedSoccerLeague]);
+  }, [carouselSport, selectedSoccerLeague, refreshKey]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-12">

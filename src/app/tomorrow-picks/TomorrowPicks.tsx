@@ -94,7 +94,13 @@ export default function TomorrowPicks() {
     const searchParams = useSearchParams();
     const selectedSport = searchParams.get('sport') || 'NBA';
     const [showAuthDialog, setShowAuthDialog] = useState(false);
-    
+
+    const spreads = games.map(game => [game.homeTeam.spread, game.awayTeam.spread]).flat();
+    const totalSpreads = spreads.length;
+    const spreadsAvailable = spreads.filter(s => s !== 'TBD' && s !== 'N/A').length;
+
+    let spreadStatus = "Picks lock at the start of each game";
+
     const { data: selectionData } = useSWR('/api/userPickPercentage', fetcher, {
         refreshInterval: 0, // Disable polling
     });
@@ -145,16 +151,16 @@ export default function TomorrowPicks() {
                         'Pragma': 'no-cache'
                     }
                 });
-    
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch games');
                 }
-    
+
                 const data = await response.json();
                 console.log('Received games:', data.games); // Debug log
-    
+
                 setGames(data.games);
-                
+
                 if (data.games && data.games.length > 0) {
                     fetchPreviousPicks(data.games);
                 }
@@ -165,7 +171,7 @@ export default function TomorrowPicks() {
                 setLoading(false);
             }
         };
-    
+
         const fetchPickPercentages = async () => {
             try {
                 const response = await fetch('/api/userPickPercentage');
@@ -189,7 +195,7 @@ export default function TomorrowPicks() {
                 setLoadingPercentages(false);
             }
         };
-    
+
         // Sets selected picks as previous picks if a user is redo-ing their picks
         const fetchPreviousPicks = async (tomorrowGames: any[]) => {
             try {
@@ -210,29 +216,29 @@ export default function TomorrowPicks() {
                     // No picks found - this is a valid state
                     return;
                 }
-                
+
                 if (response.status === 401) {
                     console.warn('User not authorized to fetch picks');
                     return;
                 }
-                
+
                 if (!response.ok) {
                     throw new Error(`Failed to fetch user picks: ${response.statusText}`);
                 }
-                
+
                 const picks = await response.json();
-                
+
                 // If picks is empty or not an array, return early
                 if (!Array.isArray(picks) || picks.length === 0) {
                     return;
                 }
-                
+
                 // Create a Set of tomorrow's game IDs for quick lookup
                 const tomorrowGameIds = new Set(tomorrowGames.map(game => game.id));
-                
+
                 // Initialize selectedPicks only with picks that match tomorrow's games
                 const initialSelectedPicks = new Set<string>();
-                
+
                 picks.forEach((pick: any) => {
                     // Only process picks for tomorrow's games
                     if (tomorrowGameIds.has(pick.gameId)) {
@@ -241,7 +247,7 @@ export default function TomorrowPicks() {
                         initialSelectedPicks.add(`${pick.gameId}-${teamType}`);
                     }
                 });
-    
+
                 // Set the selectedPicks state with users previous picks
                 setSelectedPicks(initialSelectedPicks);
             } catch (error) {
@@ -251,7 +257,7 @@ export default function TomorrowPicks() {
                 setError('Unable to load previous picks. You can still make new picks.');
             }
         };
-    
+
         fetchTomorrowGames();
         fetchPickPercentages();
     }, []);
@@ -261,7 +267,7 @@ export default function TomorrowPicks() {
             const newPicks = new Set(prevPicks);
             const pickId = `${gameId}-${teamType}`;
             const oppositePick = `${gameId}-${teamType === 'home' ? 'away' : 'home'}`;
-    
+
             if (newPicks.has(pickId)) {
                 newPicks.delete(pickId);
             } else {
@@ -284,7 +290,7 @@ export default function TomorrowPicks() {
                 className={`text-gray-400 hover:text-gray-600 ${isSelected ? "font-medium text-yellow-500" : ""}`}>
                 Best Pick ★
             </button>
-        </div>                                
+        </div>
     );
 
     const handleGetSpread = (gameId: string) => {
@@ -294,6 +300,12 @@ export default function TomorrowPicks() {
             setPreviewGame(game);
         }
     };
+
+    if (spreadsAvailable === totalSpreads && totalSpreads > 0) {
+        spreadStatus = "Spread finalized | Picks lock at the start of each game";
+    } else if (spreadsAvailable > 0) {
+        spreadStatus = "Spread available | Picks lock at the start of each game";
+    }
 
     const handleSubmitPicks = async () => {
         if (!userId) {
@@ -310,7 +322,7 @@ export default function TomorrowPicks() {
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
-                
+
                 // Use the full date information from the game object
                 return {
                     gameId,
@@ -450,7 +462,7 @@ export default function TomorrowPicks() {
 
             {/* Info Bar */}
             <div className="accent-bg-light p-2 text-center text-sm text-accent">
-                Picks lock at the start of each game
+                {spreadStatus}
             </div>
 
             {/* Games Grid */}
@@ -658,8 +670,8 @@ export default function TomorrowPicks() {
                                     </div>
                                     <div className="px-4 pb-3 flex justify-between items-center">
                                         <BestPickButton
-                                            gameId={ game.id }
-                                            isSelected={ bestPick === game.id }/>
+                                            gameId={game.id}
+                                            isSelected={bestPick === game.id} />
                                     </div>
                                 </div>
                             )
@@ -700,18 +712,18 @@ export default function TomorrowPicks() {
                             <div className="flex items-center gap-2 text-white">
                                 <span>{selectedPicks.size}/{games.length} picks made</span>
                                 <span className="px-10">
-                                    <strong>Total Points Possible:</strong> {selectedPicks.size * MAXPOINTSPERGAME} 
-                                    {selectedPicks.size === games.length && ` + ${BONUSPOINTS}`} 
+                                    <strong>Total Points Possible:</strong> {selectedPicks.size * MAXPOINTSPERGAME}
+                                    {selectedPicks.size === games.length && ` + ${BONUSPOINTS}`}
                                     {bestPick && ` + ${BESTPICKPOINTS}`}
-                                    
+
                                     {/* Showing total only when all picks made or has best pick */}
                                     {(selectedPicks.size === games.length || bestPick) && " = "}
-                                    
+
                                     {(selectedPicks.size === games.length || bestPick) && (
                                         <>
-                                            {selectedPicks.size * MAXPOINTSPERGAME + 
-                                            (selectedPicks.size === games.length ? BONUSPOINTS : 0) + 
-                                            (bestPick ? BESTPICKPOINTS : 0)}
+                                            {selectedPicks.size * MAXPOINTSPERGAME +
+                                                (selectedPicks.size === games.length ? BONUSPOINTS : 0) +
+                                                (bestPick ? BESTPICKPOINTS : 0)}
                                             <br />
                                             {"("}
                                             {selectedPicks.size === games.length && (
@@ -787,7 +799,7 @@ export default function TomorrowPicks() {
                             </DialogClose>
                         </DialogHeader>
                         <div className="p-0">
-                            <OddsPreview 
+                            <OddsPreview
                                 gameId={previewGame.id}
                                 homeTeam={previewGame.homeTeam}
                                 awayTeam={previewGame.awayTeam}
@@ -802,8 +814,8 @@ export default function TomorrowPicks() {
                 </Dialog>
             )}
 
-            <AuthDialog 
-                isOpen={showAuthDialog} 
+            <AuthDialog
+                isOpen={showAuthDialog}
                 onClose={() => setShowAuthDialog(false)}
             />
         </div>

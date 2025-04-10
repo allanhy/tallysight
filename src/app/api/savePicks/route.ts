@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
                 : pick.homeTeam.logo.includes('/epl/') ? 'EPL' 
                 : pick.homeTeam.logo.includes('/laliga/') ? 'LALIGA' 
                 : pick.homeTeam.logo.includes('/bundesliga/') ? 'BUNDESLIGA' 
-                : pick.homeTeam.logo.includes('/series_a/') ? 'SERIE_A' 
+                : pick.homeTeam.logo.includes('/serie_a/') ? 'SERIE_A' 
                 : pick.homeTeam.logo.includes('/ligue_1/') ? 'LIGUE_1'
                 : null
       );
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
         : pick.homeTeam.logo.includes('/epl/') ? 'EPL'
         : pick.homeTeam.logo.includes('/laliga/') ? 'LALIGA'
         : pick.homeTeam.logo.includes('/bundesliga/') ? 'BUNDESLIGA'
-        : pick.homeTeam.logo.includes('/series_a/') ? 'SERIE_A'
+        : pick.homeTeam.logo.includes('/serie_a/') ? 'SERIE_A'
         : pick.homeTeam.logo.includes('/ligue_1/') ? 'LIGUE_1'
         : null
     );

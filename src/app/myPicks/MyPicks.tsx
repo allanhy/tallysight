@@ -879,6 +879,7 @@ export default function MyPicksPage() {
                         </div>
 
                         {/* Add this debugging section right after your picks-subtitle section */}
+                        {/*
                         <div className="debug-section p-4 mb-4 bg-red-800/30 rounded-lg">
                             <h3 className="text-lg font-semibold text-black dark:text-white mb-4">
                                 Debug Information
@@ -913,6 +914,7 @@ export default function MyPicksPage() {
                                 )}
                             </div>
                         </div>
+                        */}
 
                         {/* Display all the users picks */}
                         <div className="days-container space-y-6">

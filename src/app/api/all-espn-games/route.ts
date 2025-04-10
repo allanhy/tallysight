@@ -216,7 +216,7 @@ export async function GET(request: Request) {
 
           const awayTeamOdds = competition.odds?.[0]?.awayTeamOdds || {};
           const homeTeamOdds = competition.odds?.[0]?.homeTeamOdds || {};
-    
+
           return {
             id: game.id,
             homeTeam: {
@@ -279,9 +279,12 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching games:", error);
-    return NextResponse.json({
-      games: [],
-      message: "Error fetching games",
-    });
+    return NextResponse.json(
+      {
+        games: [],
+        message: "Error fetching games",
+      },
+      { status: 500 }
+    );
   }
 }
