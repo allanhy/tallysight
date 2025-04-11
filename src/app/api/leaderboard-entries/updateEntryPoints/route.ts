@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { db } from '@vercel/postgres';
+import { flushAllTraces } from 'next/dist/trace';
 import { NextResponse } from 'next/server';
 
 const MAXPOINTSPERGAME = 1;
@@ -16,7 +18,7 @@ export async function POST(req: Request) {
 
         if (!sport || !week) {
             return NextResponse.json(
-                { success: false, message: 'Required Fields: sport, week, winners'},
+                { success: false, message: 'Required Fields: sport, week'},
                 { status: 400}
             );
         }
@@ -73,12 +75,14 @@ export async function POST(req: Request) {
         for (const user of enteredUsers.rows){
             let gainedPoints = 0; // Points gained from picking correct team
             let gamesWon = 0; // Number of games won overall
+            let maxPoints = 0;
+            let bestPicked = false;
 
             for(const picked of usersPicked.rows){
                 const game = gameResults.find(g => g.gameId.toString() === picked.gameId.toString());  // Get the first row
-            
                 // Only update if the right user and game.won is not null
                 if (game && game.won !== null && game.won !== undefined && user.clerk_id === picked.userId) {
+                    maxPoints += MAXPOINTSPERGAME;
                     if (game.won.toString() === picked.teamIndex.toString()) {
                         gainedPoints += MAXPOINTSPERGAME; // Point for picking correct team
                         gamesWon += 1;
@@ -86,11 +90,21 @@ export async function POST(req: Request) {
                             gainedPoints += BESTPICKPOINTS; // Add best pick points
                     }
                 }
+
+                // Update max points if best picks made
+                if(picked.bestPick)
+                    bestPicked = true;
             }
+
+            if(bestPicked)
+                maxPoints += BONUSPOINTS;
 
             // 3 Bonus points for getting all correct
             if (gamesWon === games.rows.length)
                 gainedPoints += BONUSPOINTS;
+
+            // Bonus max point add
+            maxPoints += BESTPICKPOINTS;
 
             const totalPoints = user.points+gainedPoints;
 
@@ -115,6 +129,18 @@ export async function POST(req: Request) {
 
             if (!res.ok) {
                 return NextResponse.json({ success: false, message: data.message || 'Failed to update user total points after entry points update'}, { status: res.status });
+            }
+
+            const res2 = await fetch(`${BASE_URL}/api/user/updateMaxPoints`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ clerk_id: user.clerk_id, max_points: maxPoints })
+            });
+
+            if (!res2.ok) {
+                return NextResponse.json({ success: false, message: data.message || 'Failed to update user total points after entry points update'}, { status: res2.status });
             }
         }
 

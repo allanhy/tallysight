@@ -275,7 +275,7 @@ export default function DailyPicks() {
         };
         fetchTodayGames();
         fetchPickPercentages();
-    }, [selectedSport]);
+    }, [selectedSport, userId]);
 
     useEffect(() => {
         /*console.log("Current state:", {
@@ -682,7 +682,7 @@ export default function DailyPicks() {
             const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clerk_id: userId, sport: 'NBA', week: getCurrentWeek() }),
+                body: JSON.stringify({ clerk_id: userId, sport: selectedSport, week: getCurrentWeek() }),
             });
 
             const updateEntryData = await updateEntryResponse.json();
@@ -690,32 +690,14 @@ export default function DailyPicks() {
                 throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
             }
 
-            // Update Max Points for User
-            let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
-
-            // If best pick made add to total
-            if (bestPick !== null) {
-                maxPoints += BESTPICKPOINTS;
-            }
-
-            // Execute max points and leaderboard updates in parallel
-            const [updateMaxPointsResponse, updateUserPointsResponse] = await Promise.all([
-                fetch('/api/user/updateMaxPoints', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clerk_id: userId, max_points: maxPoints }),
-                }),
+            // Execute points updates
+            const [updateUserPointsResponse] = await Promise.all([
                 fetch('/api/leaderboard-entries/updateEntryPoints', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sport: 'NBA', week: getCurrentWeek() }),
+                    body: JSON.stringify({ sport: selectedSport, week: getCurrentWeek() }),
                 }),
             ]);
-
-            const updateMaxPointsData = await updateMaxPointsResponse.json();
-            if (!updateMaxPointsResponse.ok) {
-                throw new Error(updateMaxPointsData.message || 'Failed to update max points');
-            }
 
             const updateUserPointsData = await updateUserPointsResponse.json();
             if (!updateUserPointsResponse.ok) {
@@ -724,7 +706,7 @@ export default function DailyPicks() {
         } catch (error) {
             //console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
         }
-    }, [userId, selectedPicks, games, bestPick]);
+    }, [selectedPicks, userId, selectedSport, games]);
 
     useEffect(() => {
         if (allGamesEnded) {
