@@ -166,22 +166,6 @@ export default function OddsPreview({
               {/* VS */}
               <div className="flex flex-col items-center justify-center">
                 <div className="text-xl font-bold text-gray-400">VS</div>
-                <div className="mt-2 px-3 py-1 bg-blue-100 rounded-full">
-                  <span className="text-xs font-medium text-blue-800">
-                  {(() => {
-                    switch (gameData.status?.toLowerCase()) {
-                      case 'status_final':
-                        return 'Final';
-                      case 'status_in_progress':
-                        return 'In Progress';
-                      case 'status_halftime':
-                        return 'Halftime';
-                      default:
-                        return 'Scheduled';
-                    }
-                  })()}
-                  </span>
-                </div>
               </div>
 
               {/* Home Team */}
@@ -205,10 +189,40 @@ export default function OddsPreview({
 
             {/* Spread Information */}
               <div className="w-full bg-gray-100 rounded-lg p-4 mb-4">
+                <div className="text-center mb-2">
+                  <span className="text-xs font-medium text-blue-800 bg-blue-100 px-3 py-1 rounded-full inline-block">
+                    {(() => {
+                      switch (gameData.status?.toLowerCase()) {
+                        case 'status_final':
+                          return 'Final';
+                        case 'status_in_progress':
+                          return 'In Progress';
+                        case 'status_halftime':
+                          return 'Halftime';
+                        default:
+                          return 'Scheduled';
+                      }
+                    })()}
+                  </span>
+                </div>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-sm text-gray-500">Spread</div>
                     <div className="font-bold text-blue-600">{gameData.awayTeam.spread}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {(() => {
+                        switch (gameData.status?.toLowerCase()) {
+                          case 'status_final':
+                            return '(Final)';
+                          case 'status_in_progress':
+                            return '(In Progress)';
+                          case 'status_halftime':
+                            return '(Halftime)';
+                          default:
+                            return '(Scheduled)';
+                        }
+                      })()}
+                    </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500">Prediction</div>
@@ -221,6 +235,20 @@ export default function OddsPreview({
                   <div>
                     <div className="text-sm text-gray-500">Spread</div>
                     <div className="font-bold text-blue-600">{gameData.homeTeam.spread}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {(() => {
+                        switch (gameData.status?.toLowerCase()) {
+                          case 'status_final':
+                            return '(Final)';
+                          case 'status_in_progress':
+                            return '(In Progress)';
+                          case 'status_halftime':
+                            return '(Halftime)';
+                          default:
+                            return '(Scheduled)';
+                        }
+                      })()}
+                    </div>
                   </div>
                 </div>
                 <p className="text-center text-xs italic text-gray-500 mt-1">
