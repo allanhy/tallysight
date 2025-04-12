@@ -51,6 +51,8 @@ interface Game {
     dbTime?: string;
     estDate?: string;
     odds?: any;
+    isInProgress: boolean;
+    isFinished: boolean;
 }
 const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
@@ -342,14 +344,16 @@ export default function DailyPicks() {
             const newStartedGames = new Set<string>();
 
             games.forEach(game => {
-                // Check if game has started based on time
-                if (shouldGameBeLocked(game.gameTime)) {
+                // Check if game has started based on time or status
+                if (shouldGameBeLocked(game.gameTime) || 
+                    game.isInProgress || 
+                    game.isFinished) {
                     anyGameStarted = true;
                     newStartedGames.add(game.id);
                 }
             });
 
-            // Update state based on checks
+            // If any game has started, lock all games
             if (anyGameStarted) {
                 setFirstGameLocked(true);
                 setIsLocked(true);

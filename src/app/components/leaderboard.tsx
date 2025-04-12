@@ -155,6 +155,7 @@ const Leaderboard: React.FC = () => {
                     <div className='leaderboard-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950'>
                         <div className='leaderboard-controls'>
                             <select
+                                aria-label="Select sport"
                                 className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800'
                                 value={selectedSport}
                                 onChange={handleSportChange}>
@@ -175,6 +176,7 @@ const Leaderboard: React.FC = () => {
                             </select>
 
                             <select 
+                                aria-label="Select week"
                                 className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800' 
                                 value={selectedWeek ?? 0}
                                 onChange={handleWeekChange}>
