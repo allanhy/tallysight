@@ -43,6 +43,7 @@
     text-align: left;
     flex-shrink: 0;
     width: 15%;
+    margin-right: 2em;
 }
 
 .points {
@@ -117,7 +118,7 @@
     .performance{
         text-align: left;
         margin-bottom: 5px;
-        margin-right: 5em;
+        margin-right: 7em;
         font-size: 14px;
         width: 40px;
     }
