@@ -105,14 +105,19 @@ export async function GET(request: Request) {
             (t: any) => t.homeAway === "away"
           )?.team;
 
+          // Debug logging for status
+          console.log('Raw status data for game:', {
+            gameId: game.id,
+            teams: `${homeTeam?.name} vs ${awayTeam?.name}`,
+            statusType: competition.status?.type,
+            statusDetail: competition.status,
+          });
+
           // Get the full date string in ISO format
           const gameDate = game.date;
 
           // Convert UTC date to EST for display
           const utcDate = new Date(gameDate);
-
-          // Add debug logging to see the original times
-          //console.log(`Game ${homeTeam?.name} vs ${awayTeam?.name} - Original UTC time: ${utcDate.toISOString()}`);
 
           // Format the time for display in EST
           const displayTime = utcDate.toLocaleTimeString("en-US", {
@@ -121,8 +126,6 @@ export async function GET(request: Request) {
             hour12: true,
             timeZone: "America/New_York",
           });
-
-          //console.log(`Converted to EST display time: ${displayTime}`);
 
           // Get the EST date string for proper date grouping
           const estDateString = utcDate.toLocaleDateString("en-US", {
@@ -163,8 +166,6 @@ export async function GET(request: Request) {
             hour12: true,
           });
 
-          // console.log(`Forced date with original time: ${forcedDate.toISOString()}, display time: ${forcedDisplayTime}`);
-
           const forcedDateString = forcedDate.toLocaleDateString("en-US", {
             year: "numeric",
             month: "2-digit",
@@ -174,8 +175,6 @@ export async function GET(request: Request) {
           const forcedDbDate = targetDate;
           const forcedDbTime = originalTime;
 
-          // Add debug logging to see what's being saved
-          //console.log(`Game ${homeTeam?.name} vs ${awayTeam?.name} - Saving with dbTime: ${forcedDbTime}`);
           const homeAbbreviation = await getTeamAbbreviation(
             homeTeam?.name,
             selectedSport
@@ -186,11 +185,47 @@ export async function GET(request: Request) {
           );
           const spreadDetails = competition.odds?.[0]?.details || "N/A";
 
+          // Add debug logging for odds data
+          console.log('Odds data for game:', {
+            gameId: game.id,
+            teams: `${homeTeam?.name} vs ${awayTeam?.name}`,
+            rawOdds: competition.odds,
+            spreadDetails,
+            homeTeamOdds: competition.odds?.[0]?.homeTeamOdds,
+            awayTeamOdds: competition.odds?.[0]?.awayTeamOdds,
+            allOddsDetails: competition.odds?.map((odd: any) => ({
+              details: odd.details,
+              homeTeamOdds: odd.homeTeamOdds,
+              awayTeamOdds: odd.awayTeamOdds,
+              drawOdds: odd.drawOdds
+            }))
+          });
+
           // Default spreads
           let homeTeamSpread = "N/A";
           let awayTeamSpread = "N/A";
 
-          if (spreadDetails !== "N/A") {
+          // Check if this is a soccer match
+          const isSoccer = selectedSport.toLowerCase().includes('soccer') || 
+                          ['MLS', 'EPL', 'LALIGA', 'BUNDESLIGA', 'SERIE_A', 'LIGUE_1'].includes(selectedSport);
+
+          // Determine game status
+          const gameStatus = competition.status?.type?.name || "Scheduled";
+          const isGameFinished = gameStatus === "STATUS_FINAL" || 
+                               gameStatus === "STATUS_FULL_TIME" || 
+                               gameStatus === "STATUS_ENDED" ||
+                               gameStatus === "STATUS_COMPLETED";
+
+          // Check if game is in progress
+          const isGameInProgress = gameStatus === "STATUS_IN_PROGRESS" || 
+                                 gameStatus === "STATUS_HALFTIME" || 
+                                 gameStatus === "STATUS_LIVE" ||
+                                 gameStatus === "STATUS_ACTIVE";
+
+          // If game is finished, update the schedule to show "Final"
+          const displaySchedule = isGameFinished ? "Final" : forcedDisplayTime;
+
+          if (!isSoccer && spreadDetails !== "N/A") {
             const spreadParts = spreadDetails
               .split(",")
               .map((s: string) => s.trim());
@@ -212,6 +247,71 @@ export async function GET(request: Request) {
                 }
               }
             );
+          } else if (isSoccer) {
+            // For soccer matches, use team form and statistics
+            const homeTeamData = competition.competitors.find((t: any) => t.homeAway === "home");
+            const awayTeamData = competition.competitors.find((t: any) => t.homeAway === "away");
+            
+            // Get team forms (e.g., "WWDLW")
+            const homeForm = homeTeamData?.form || '';
+            const awayForm = awayTeamData?.form || '';
+            
+            // Calculate form score (W=3, D=1, L=0)
+            const calculateFormScore = (form: string) => {
+              return form.split('').reduce((score, result) => {
+                if (result === 'W') return score + 3;
+                if (result === 'D') return score + 1;
+                return score;
+              }, 0);
+            };
+            
+            const homeFormScore = calculateFormScore(homeForm);
+            const awayFormScore = calculateFormScore(awayForm);
+            
+            // Get team positions if available
+            const homePosition = parseInt(homeTeamData?.stats?.find((s: any) => s.name === 'rank')?.value || '0');
+            const awayPosition = parseInt(awayTeamData?.stats?.find((s: any) => s.name === 'rank')?.value || '0');
+            
+            // Calculate spread based on form difference
+            const formDifference = homeFormScore - awayFormScore;
+            const positionDifference = awayPosition - homePosition; // Higher position number means lower rank
+            
+            // Combine form and position differences to determine spread
+            // Form difference has more weight (0.5 goals per 3 points difference)
+            // Position difference has less weight (0.25 goals per 5 positions difference)
+            const formSpread = (formDifference / 6);
+            const positionSpread = (positionDifference / 20);
+            const totalSpread = formSpread + positionSpread;
+            
+            // Round to nearest 0.5 and ensure minimum 0.5 spread
+            const roundedSpread = Math.max(0.5, Math.round(Math.abs(totalSpread) * 2) / 2);
+            
+            if (totalSpread > 0) {
+              // Home team is favorite
+              homeTeamSpread = `-${roundedSpread}`;
+              awayTeamSpread = `+${roundedSpread}`;
+            } else {
+              // Away team is favorite
+              homeTeamSpread = `+${roundedSpread}`;
+              awayTeamSpread = `-${roundedSpread}`;
+            }
+            
+            // Add form to the debug log
+            console.log('Soccer match spread calculation:', {
+              gameId: game.id,
+              teams: `${homeTeam?.name} vs ${awayTeam?.name}`,
+              homeForm,
+              awayForm,
+              homeFormScore,
+              awayFormScore,
+              homePosition,
+              awayPosition,
+              formDifference,
+              positionDifference,
+              totalSpread,
+              roundedSpread,
+              finalSpreads: { home: homeTeamSpread, away: awayTeamSpread }
+            });
           }
 
           const awayTeamOdds = competition.odds?.[0]?.awayTeamOdds || {};
@@ -221,7 +321,7 @@ export async function GET(request: Request) {
             id: game.id,
             homeTeam: {
               name: homeTeam?.name || "TBD",
-              score: "0",
+              score: competition.competitors.find((t: any) => t.homeAway === "home")?.score || "0",
               spread: homeTeamSpread || "N/A",
               isFavorite: homeTeamOdds.favorite || false,
               isUnderdog: homeTeamOdds.underdog || false,
@@ -229,7 +329,7 @@ export async function GET(request: Request) {
             },
             awayTeam: {
               name: awayTeam?.name || "TBD",
-              score: "0",
+              score: competition.competitors.find((t: any) => t.homeAway === "away")?.score || "0",
               spread: awayTeamSpread || "N/A",
               isFavorite: awayTeamOdds.favorite || false,
               isUnderdog: awayTeamOdds.underdog || false,
@@ -243,13 +343,15 @@ export async function GET(request: Request) {
               awayTeam?.name,
               selectedSport
             ),
-            gameTime: forcedDisplayTime, // This should now have the correct original time
-            fullDate: gameDate, // Original ISO date string
-            estDate: forcedDateString, // Forced to target date
-            dbDate: forcedDbDate, // Forced to target date
-            dbTime: forcedDbTime, // Original time preserved
+            gameTime: displaySchedule,
+            fullDate: gameDate,
+            estDate: forcedDateString,
+            dbDate: forcedDbDate,
+            dbTime: forcedDbTime,
             status: competition.status?.type?.name || "N/A",
-            forcedDate: true, // Flag to indicate date was forced
+            isFinished: isGameFinished,
+            isInProgress: isGameInProgress,
+            forcedDate: true,
             venue: competition.venue?.fullName || "TBD",
             broadcast: competition.broadcasts?.[0]?.names?.[0] || "TBD",
             homeScore:
