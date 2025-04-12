@@ -17,6 +17,8 @@ interface Team {
   logo?: string;
   spread?: string;
   record?: string;
+  isFavorite?: boolean;
+  isUnderdog?: boolean;
 }
 
 interface OddsPreviewProps {
@@ -169,6 +171,12 @@ export default function OddsPreview({
                   {gameData.awayTeam.record && (
                     <div className="text-xs text-gray-500">{gameData.awayTeam.record}</div>
                   )}
+                  {gameData.awayTeam.isFavorite && (
+                    <div className="text-xs text-blue-600 font-medium mt-1">Favorite</div>
+                  )}
+                  {gameData.awayTeam.isUnderdog && (
+                    <div className="text-xs text-green-600 font-medium mt-1">Underdog</div>
+                  )}
                 </div>
               </div>
 
@@ -191,6 +199,12 @@ export default function OddsPreview({
                   <div className="font-medium text-black">{gameData.homeTeam.name}</div>
                   {gameData.homeTeam.record && (
                     <div className="text-xs text-gray-500">{gameData.homeTeam.record}</div>
+                  )}
+                  {gameData.homeTeam.isFavorite && (
+                    <div className="text-xs text-blue-600 font-medium mt-1">Favorite</div>
+                  )}
+                  {gameData.homeTeam.isUnderdog && (
+                    <div className="text-xs text-green-600 font-medium mt-1">Underdog</div>
                   )}
                 </div>
               </div>
