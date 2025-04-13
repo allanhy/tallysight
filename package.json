@@ -58,10 +58,6 @@
     "tallysight": "file:"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.10",
-    "@babel/preset-env": "^7.26.9",
-    "@babel/preset-react": "^7.26.3",
-    "@babel/preset-typescript": "^7.27.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/jest": "^29.5.14",
@@ -70,7 +66,6 @@
     "@types/pg": "^8.11.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "babel-jest": "^29.7.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "^13.5.7",
     "jest": "^29.7.0",

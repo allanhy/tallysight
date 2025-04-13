@@ -141,32 +141,4 @@ const getCroppedImg = async (imageSrc: string, croppedAreaPixels: { width: numbe
     });
 };
 
-//check if the image file is validjpeg, or jpg, and is less than 5mb to prevent bad stuff coming through.
-export const isValidImageFile = (file: File): boolean => {
-    // Check if file is an image and specifically jpg/jpeg
-    const validTypes = ['image/jpeg', 'image/jpg'];
-    
-    // Check MIME type
-    if (!validTypes.includes(file.type)) {
-        alert('Only JPG/JPEG images are allowed');
-        return false;
-    }
-    
-    // Check file extension
-    const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-        alert('File must have a .jpg or .jpeg extension');
-        return false;
-    }
-    
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-        alert('Image file is too large. Maximum size is 5MB');
-        return false;
-    }
-    
-    return true;
-};
-
 export default ImageCropper;

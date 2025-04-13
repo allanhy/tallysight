@@ -1,7 +1,9 @@
 module.exports = {
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
   transform: {
-    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+    }],
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
