@@ -39,14 +39,14 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
 
   return (
     <div className="h-[180px] w-full max-w-[400px] mx-auto">
-      <div className="bg-white rounded-lg border border-gray-200 p-4 h-full flex flex-col">
+      <div className="bg-white dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-500 p-4 h-full flex flex-col">
         {/* Date and Time */}
-        <div className="text-sm text-gray-600 mb-1">
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
           {isValidDate
             ? formatDateWithTimezone(gameDate, userTimeZone, 'EEEE, MMM d')
             : 'Date TBD'}
         </div>
-        <div className="text-lg font-bold text-black mb-2">
+        <div className="text-lg font-bold text-black dark:text-white mb-2">
           {isValidDate
             ? formatDateWithTimezone(gameDate, userTimeZone, 'h:mm a')
             : 'Time TBD'}
@@ -66,15 +66,17 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
               )}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-black truncate hidden md:block">
+              <span className="text-sm font-medium text-black dark:text-white truncate hidden md:block">
                 {shortenTeamName(game.awayTeam.name)}
               </span>
-              <span className="text-sm font-medium text-black truncate block md:hidden">
+              <span className="text-sm font-medium text-black dark:text-white truncate block md:hidden">
                 {game.awayTeamAbbreviation.toUpperCase()}
               </span>
-              <span className="text-lg text-gray-600 font-bold h-6">
+              <span className="text-lg text-gray-600 dark:text-gray-400 font-bold h-6">
                 {(game.status === 'STATUS_IN_PROGRESS' ||
+                  game.status === 'STATUS_FIRST_HALF' ||
                   game.status === 'STATUS_HALFTIME' ||
+                  game.status === 'STATUS_SECOND_HALF' ||
                   game.status === 'STATUS_FINAL' ||
                   game.status === 'STATUS_FULL_TIME' ||
                   game.status === 'IN_PROGRESS') &&
@@ -89,15 +91,17 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
           {/* Home Team */}
           <div className="flex items-center space-x-2 inset-y-1 right-1 flex-1 min-w-0 justify-end">
             <div className="flex flex-col items-end">
-              <span className="text-sm font-medium text-black truncate hidden md:block">
+              <span className="text-sm font-medium text-black dark:text-white truncate hidden md:block">
                 {shortenTeamName(game.homeTeam.name)}
               </span>
-              <span className="text-sm font-medium text-black truncate block md:hidden">
+              <span className="text-sm font-medium text-black dark:text-white truncate block md:hidden">
                 {game.homeTeamAbbreviation.toUpperCase()}
               </span>
-              <span className="text-lg text-gray-600 font-bold h-6">
+              <span className="text-lg text-gray-600 dark:text-gray-400 font-bold h-6">
                 {(game.status === 'STATUS_IN_PROGRESS' ||
+                  game.status === 'STATUS_FIRST_HALF' ||
                   game.status === 'STATUS_HALFTIME' ||
+                  game.status === 'STATUS_SECOND_HALF' ||
                   game.status === 'STATUS_FINAL' ||
                   game.status === 'STATUS_FULL_TIME' ||
                   game.status === 'IN_PROGRESS') &&
@@ -126,10 +130,20 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
                 return 'Final';
               case 'status_in_progress':
                 return 'In Progress';
+              case 'status_first_half':
+                return 'First Half';
               case 'status_halftime':
                 return 'Halftime';
+              case 'status_second_half':
+                return 'Second Half';
               case 'status_full_time':
                 return 'Full Time';
+              case 'status_delayed':
+                return 'Delayed';
+              case 'status_postponed':
+                return 'Postponed';
+              case 'status_canceled':
+                return 'Canceled';
               default:
                 return 'Scheduled';
             }

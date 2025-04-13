@@ -144,10 +144,10 @@ export default function OddsPreview({
             {/* Only show game time if it's valid */}
             {gameData.gameTime && gameData.gameTime !== "Invalid Date ET" && (
               <div className="text-sm text-gray-500 mb-2">
-                {gameData.status?.toLowerCase() === 'status_final' || 
-                 gameData.status?.toLowerCase() === 'status_full_time' || 
-                 gameData.status?.toLowerCase() === 'status_ended' || 
-                 gameData.status?.toLowerCase() === 'status_completed' ? (
+                {gameData.status?.toLowerCase() === 'status_final' ||
+                  gameData.status?.toLowerCase() === 'status_full_time' ||
+                  gameData.status?.toLowerCase() === 'status_ended' ||
+                  gameData.status?.toLowerCase() === 'status_completed' ? (
                   <span className="text-red-500 font-medium">Final</span>
                 ) : (
                   gameData.gameTime
@@ -211,135 +211,142 @@ export default function OddsPreview({
             </div>
 
             {/* Spread Information */}
-              <div className="w-full bg-gray-100 rounded-lg p-4 mb-4">
-                <div className="text-center mb-2">
-                  <span className={`text-xs font-medium px-3 py-1 rounded-full inline-block ${
-                    gameData.status?.toLowerCase() === 'status_final' || 
-                    gameData.status?.toLowerCase() === 'status_full_time' || 
-                    gameData.status?.toLowerCase() === 'status_ended' || 
-                    gameData.status?.toLowerCase() === 'status_completed' 
-                      ? 'text-red-800 bg-red-100' 
-                      : gameData.status?.toLowerCase() === 'status_in_progress'
-                      ? 'text-blue-800 bg-blue-100'
-                      : gameData.status?.toLowerCase() === 'status_halftime'
+            <div className="w-full bg-gray-100 rounded-lg p-4 mb-4">
+              <div className="text-center mb-2">
+                <span className={`text-xs font-medium px-3 py-1 rounded-full inline-block ${gameData.status?.toLowerCase() === 'status_final' ||
+                  gameData.status?.toLowerCase() === 'status_full_time' ||
+                  gameData.status?.toLowerCase() === 'status_ended' ||
+                  gameData.status?.toLowerCase() === 'status_completed'
+                  ? 'text-red-800 bg-red-100'
+                  : gameData.status?.toLowerCase() === 'status_in_progress' ||
+                    gameData.status?.toLowerCase() === 'status_first_half' ||
+                    gameData.status?.toLowerCase() === 'status_second_half'
+                    ? 'text-blue-800 bg-blue-100'
+                    : gameData.status?.toLowerCase() === 'status_halftime'
                       ? 'text-yellow-800 bg-yellow-100'
                       : 'text-gray-800 bg-gray-100'
                   }`}>
+                  {(() => {
+                    switch (gameData.status?.toLowerCase()) {
+                      case 'status_final':
+                      case 'status_full_time':
+                      case 'status_ended':
+                      case 'status_completed':
+                        return 'Final';
+                      case 'status_in_progress':
+                      case 'status_first_half':
+                      case 'status_second_half':
+                        return 'In Progress';
+                      case 'status_halftime':
+                        return 'Halftime';
+                      default:
+                        return 'Scheduled';
+                    }
+                  })()}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-sm text-gray-500">
+                    {gameData.status?.toLowerCase() === 'status_final' ||
+                      gameData.status?.toLowerCase() === 'status_full_time' ||
+                      gameData.status?.toLowerCase() === 'status_ended' ||
+                      gameData.status?.toLowerCase() === 'status_completed'
+                      ? 'Score'
+                      : 'Spread'}
+                  </div>
+                  <div className="font-bold text-blue-600">
+                    {gameData.status?.toLowerCase() === 'status_final' ||
+                      gameData.status?.toLowerCase() === 'status_full_time' ||
+                      gameData.status?.toLowerCase() === 'status_ended' ||
+                      gameData.status?.toLowerCase() === 'status_completed'
+                      ? gameData.awayScore
+                      : gameData.awayTeam.spread}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
                     {(() => {
                       switch (gameData.status?.toLowerCase()) {
                         case 'status_final':
                         case 'status_full_time':
                         case 'status_ended':
                         case 'status_completed':
-                          return 'Final';
+                          return '(Final)';
                         case 'status_in_progress':
-                          return 'In Progress';
+                        case 'status_first_half':
+                        case 'status_second_half':
+                          return '(In Progress)';
                         case 'status_halftime':
-                          return 'Halftime';
+                          return '(Halftime)';
                         default:
-                          return 'Scheduled';
+                          return '(Scheduled)';
                       }
                     })()}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-sm text-gray-500">
-                      {gameData.status?.toLowerCase() === 'status_final' || 
-                       gameData.status?.toLowerCase() === 'status_full_time' || 
-                       gameData.status?.toLowerCase() === 'status_ended' || 
-                       gameData.status?.toLowerCase() === 'status_completed' 
-                        ? 'Score' 
-                        : 'Spread'}
-                    </div>
-                    <div className="font-bold text-blue-600">
-                      {gameData.status?.toLowerCase() === 'status_final' || 
-                       gameData.status?.toLowerCase() === 'status_full_time' || 
-                       gameData.status?.toLowerCase() === 'status_ended' || 
-                       gameData.status?.toLowerCase() === 'status_completed' 
-                        ? gameData.awayScore 
-                        : gameData.awayTeam.spread}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {(() => {
-                        switch (gameData.status?.toLowerCase()) {
-                          case 'status_final':
-                          case 'status_full_time':
-                          case 'status_ended':
-                          case 'status_completed':
-                            return '(Final)';
-                          case 'status_in_progress':
-                            return '(In Progress)';
-                          case 'status_halftime':
-                            return '(Halftime)';
-                          default:
-                            return '(Scheduled)';
-                        }
-                      })()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500">
-                      {gameData.status?.toLowerCase() === 'status_final' || 
-                       gameData.status?.toLowerCase() === 'status_full_time' || 
-                       gameData.status?.toLowerCase() === 'status_ended' || 
-                       gameData.status?.toLowerCase() === 'status_completed' 
-                        ? 'Winner' 
-                        : 'Prediction'}
-                    </div>
-                    <div className="font-bold text-gray-800">
-                      {gameData.status?.toLowerCase() === 'status_final' || 
-                       gameData.status?.toLowerCase() === 'status_full_time' || 
-                       gameData.status?.toLowerCase() === 'status_ended' || 
-                       gameData.status?.toLowerCase() === 'status_completed' 
-                        ? (parseInt(gameData.homeScore) > parseInt(gameData.awayScore) 
-                            ? gameData.homeTeam.name 
-                            : gameData.awayTeam.name)
-                        : (parseFloat(gameData.awayTeam.spread) < parseFloat(gameData.homeTeam.spread)
-                            ? gameData.awayTeam.name
-                            : gameData.homeTeam.name)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500">
-                      {gameData.status?.toLowerCase() === 'status_final' || 
-                       gameData.status?.toLowerCase() === 'status_full_time' || 
-                       gameData.status?.toLowerCase() === 'status_ended' || 
-                       gameData.status?.toLowerCase() === 'status_completed' 
-                        ? 'Score' 
-                        : 'Spread'}
-                    </div>
-                    <div className="font-bold text-blue-600">
-                      {gameData.status?.toLowerCase() === 'status_final' || 
-                       gameData.status?.toLowerCase() === 'status_full_time' || 
-                       gameData.status?.toLowerCase() === 'status_ended' || 
-                       gameData.status?.toLowerCase() === 'status_completed' 
-                        ? gameData.homeScore 
-                        : gameData.homeTeam.spread}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {(() => {
-                        switch (gameData.status?.toLowerCase()) {
-                          case 'status_final':
-                          case 'status_full_time':
-                          case 'status_ended':
-                          case 'status_completed':
-                            return '(Final)';
-                          case 'status_in_progress':
-                            return '(In Progress)';
-                          case 'status_halftime':
-                            return '(Halftime)';
-                          default:
-                            return '(Scheduled)';
-                        }
-                      })()}
-                    </div>
                   </div>
                 </div>
-                <p className="text-center text-xs italic text-gray-500 mt-1">
-                Provided by ESPN
-                </p>
+                <div>
+                  <div className="text-sm text-gray-500">
+                    {gameData.status?.toLowerCase() === 'status_final' ||
+                      gameData.status?.toLowerCase() === 'status_full_time' ||
+                      gameData.status?.toLowerCase() === 'status_ended' ||
+                      gameData.status?.toLowerCase() === 'status_completed'
+                      ? 'Winner'
+                      : 'Prediction'}
+                  </div>
+                  <div className="font-bold text-gray-800">
+                    {gameData.status?.toLowerCase() === 'status_final' ||
+                      gameData.status?.toLowerCase() === 'status_full_time' ||
+                      gameData.status?.toLowerCase() === 'status_ended' ||
+                      gameData.status?.toLowerCase() === 'status_completed'
+                      ? (parseInt(gameData.homeScore) > parseInt(gameData.awayScore)
+                        ? gameData.homeTeam.name
+                        : gameData.awayTeam.name)
+                      : (parseFloat(gameData.awayTeam.spread) < parseFloat(gameData.homeTeam.spread)
+                        ? gameData.awayTeam.name
+                        : gameData.homeTeam.name)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">
+                    {gameData.status?.toLowerCase() === 'status_final' ||
+                      gameData.status?.toLowerCase() === 'status_full_time' ||
+                      gameData.status?.toLowerCase() === 'status_ended' ||
+                      gameData.status?.toLowerCase() === 'status_completed'
+                      ? 'Score'
+                      : 'Spread'}
+                  </div>
+                  <div className="font-bold text-blue-600">
+                    {gameData.status?.toLowerCase() === 'status_final' ||
+                      gameData.status?.toLowerCase() === 'status_full_time' ||
+                      gameData.status?.toLowerCase() === 'status_ended' ||
+                      gameData.status?.toLowerCase() === 'status_completed'
+                      ? gameData.homeScore
+                      : gameData.homeTeam.spread}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {(() => {
+                      switch (gameData.status?.toLowerCase()) {
+                        case 'status_final':
+                        case 'status_full_time':
+                        case 'status_ended':
+                        case 'status_completed':
+                          return '(Final)';
+                        case 'status_in_progress':
+                        case 'status_first_half':
+                        case 'status_second_half':
+                          return '(In Progress)';
+                        case 'status_halftime':
+                          return '(Halftime)';
+                        default:
+                          return '(Scheduled)';
+                      }
+                    })()}
+                  </div>
+                </div>
               </div>
+              <p className="text-center text-xs italic text-gray-500 mt-1">
+                Provided by ESPN
+              </p>
+            </div>
 
             {/* Favorite and Underdog Information */}
             {favorite && underdog && (

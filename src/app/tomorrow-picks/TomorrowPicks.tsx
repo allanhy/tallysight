@@ -135,6 +135,17 @@ export default function TomorrowPicks() {
             mutate('/api/userPickPercentage');
         });
 
+        channel.bind("bulk-update", (payload: {
+            updates: { gameId: string; homeTeamPercentage: string; awayTeamPercentage: string }[];
+        }) => {
+            const newPercentages = { ...pickPercentages };
+            payload.updates.forEach(({ gameId, homeTeamPercentage, awayTeamPercentage }) => {
+                newPercentages[gameId] = { home: homeTeamPercentage, away: awayTeamPercentage };
+            });
+            setPickPercentages(newPercentages);
+            mutate('/api/userPickPercentage');
+        });
+
         return () => {
             channel.unsubscribe();
             pusher.disconnect();
@@ -142,7 +153,7 @@ export default function TomorrowPicks() {
     }, []);
 
     useEffect(() => {
-        const fetchTomorrowGames = async () => {
+        const fetchTomorrowGames = async (): Promise<void> => {
             try {
                 const response = await fetch(`/api/all-espn-games?sport=${selectedSport.toLowerCase()}&day=tomorrow`, {
                     method: 'GET',
@@ -162,7 +173,7 @@ export default function TomorrowPicks() {
                 setGames(data.games);
 
                 if (data.games && data.games.length > 0) {
-                    fetchPreviousPicks(data.games);
+                    await fetchPreviousPicks(data.games);
                 }
             } catch (error) {
                 console.error('Error fetching games:', error);
@@ -258,9 +269,12 @@ export default function TomorrowPicks() {
             }
         };
 
-        fetchTomorrowGames();
-        fetchPickPercentages();
-    }, []);
+        (async () => {
+            await fetchTomorrowGames();
+            fetchPickPercentages();
+            setLoading(false); 
+          })();
+    }, [selectedSport]);
 
     const handleTeamSelect = (gameId: string, teamType: 'home' | 'away') => {
         setSelectedPicks(prevPicks => {
@@ -360,17 +374,18 @@ export default function TomorrowPicks() {
             if (data.message === "There is not enough data") {
                 console.warn("Not enough user data to update percentages.");
             } else {
-                for (const game of data.data) {
-                    await fetch('/api/pusher', {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            gameId: game.gameId,
-                            homeTeamPercentage: game.homeTeamPercentage,
-                            awayTeamPercentage: game.awayTeamPercentage
-                        }),
-                    });
-                }
+                await fetch('/api/pusher', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      type: "bulk-update",
+                      updates: data.data.map((game: any) => ({
+                        gameId: game.gameId,
+                        homeTeamPercentage: game.homeTeamPercentage,
+                        awayTeamPercentage: game.awayTeamPercentage,
+                      })),
+                    }),
+                  });
             }
 
             router.push(`/myPicks?sport=${selectedSport}`);

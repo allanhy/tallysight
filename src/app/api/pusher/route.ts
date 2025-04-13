@@ -10,18 +10,32 @@ const pusher = new Pusher({
 });
 
 export async function POST(req: Request) {
-    try {
-      const { gameId, homeTeamPercentage, awayTeamPercentage } = await req.json();
-  
-      await pusher.trigger("selection-updates", "update", {
-        gameId,
-        homeTeamPercentage,
-        awayTeamPercentage
+  try {
+    const body = await req.json();
+
+    if (body.type === "bulk-update" && Array.isArray(body.updates)) {
+      await pusher.trigger("selection-updates", "bulk-update", {
+        updates: body.updates,
       });
-  
-      return NextResponse.json({ message: "Update sent" }, { status: 200 });
-    } catch (error) {
-      console.error("Error triggering Pusher:", error);
-      return NextResponse.json({ error: "Failed to send update" }, { status: 500 });
+
+      return NextResponse.json({ message: "Bulk update sent" }, { status: 200 });
     }
+
+    const { gameId, homeTeamPercentage, awayTeamPercentage } = body;
+
+    if (!gameId || homeTeamPercentage === undefined || awayTeamPercentage === undefined) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    await pusher.trigger("selection-updates", "update", {
+      gameId,
+      homeTeamPercentage,
+      awayTeamPercentage
+    });
+
+    return NextResponse.json({ message: "Update sent" }, { status: 200 });
+  } catch (error) {
+    console.error("Error triggering Pusher:", error);
+    return NextResponse.json({ error: "Failed to send update" }, { status: 500 });
   }
+}
