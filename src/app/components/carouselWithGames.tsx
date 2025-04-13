@@ -31,11 +31,16 @@ const responsive = {
   }
 };
 
+interface CarouselWithGamesProps {
+  refreshKey?: boolean;
+  onDataLoaded?: () => void;
+}
+
 // Add custom arrow components
 const CustomRightArrow = ({ onClick }: { onClick?: () => void }) => (
   <button
     onClick={onClick}
-    className="absolute right-0 md:right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/55 p-2 rounded-full shadow-md z-10"
+    className="absolute right-0 md:right-2 top-1/2 transform -translate-y-1/2 bg-black/40 dark:bg-white/25 hover:bg-black/55 dark:hover:bg-white/45 p-2 rounded-full shadow-md z-10"
   >
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <path d="M9 6l6 6-6 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -46,7 +51,7 @@ const CustomRightArrow = ({ onClick }: { onClick?: () => void }) => (
 const CustomLeftArrow = ({ onClick }: { onClick?: () => void }) => (
   <button
     onClick={onClick}
-    className="absolute left-0 md:left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/55 p-2 rounded-full shadow-md z-10"
+    className="absolute left-0 md:left-2 top-1/2 transform -translate-y-1/2 bg-black/40 dark:bg-white/25 hover:bg-black/55  dark:hover:bg-white/45 p-2 rounded-full shadow-md z-10"
   >
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <path d="M15 18l-6-6 6-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -54,19 +59,16 @@ const CustomLeftArrow = ({ onClick }: { onClick?: () => void }) => (
   </button>
 );
 
-const carouselWithGames = () => {
+const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDataLoaded }) => {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const carouselRef = useRef<any>(null);
   const { carouselSport, selectedSoccerLeague } = useSport();
   const [userTimeZone, setUserTimeZone] = useState('America/New_York');
-
-  useEffect(() => {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      setUserTimeZone(timezone);
-  }, []);
   
   useEffect(() => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setUserTimeZone(timezone);
     const fetchGames = async () => {
       try {
         setLoading(true);
@@ -87,6 +89,11 @@ const carouselWithGames = () => {
 
           // Combine games from all leagues
           const combinedGames = data.flatMap(response => response.games || []);
+          combinedGames.sort((a, b) => {
+            const dateA = new Date(a.fullDate).getTime(); // use fullDate from the API
+            const dateB = new Date(b.fullDate).getTime();
+            return dateA - dateB;
+          });
           setGames(combinedGames);
         } else {
           const response = await fetch(`/api/all-espn-games?sport=${carouselSport}`);
@@ -102,10 +109,11 @@ const carouselWithGames = () => {
         console.error('Error fetching games:', error);
       } finally {
         setLoading(false);
+        if (onDataLoaded) onDataLoaded();
       }
     };
     fetchGames();
-  }, [carouselSport, selectedSoccerLeague]);
+  }, [carouselSport, selectedSoccerLeague, refreshKey]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-12">
@@ -146,7 +154,7 @@ const carouselWithGames = () => {
                 </div>
               ))
             ) : (
-              <div className="no-games-card flex justify-center items-center text-center rounded-lg shadow-md h-48 border">
+              <div className="no-games-card flex dark:bg-gray-700/30 dark:border-gray-500 justify-center items-center text-center rounded-lg shadow-md h-48 border">
                 <p className="text-gray-500 dark:text-gray-300 text-lg font-semibold">
                   No games are available for today.
                 </p>

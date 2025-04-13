@@ -4,21 +4,29 @@
 import React, { useEffect, useState } from 'react';
 import './header.css'
 import Image from 'next/image';
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignInButton, SignUpButton, useClerk, useUser } from '@clerk/nextjs';
 import Link from 'next/link'
 import { useTheme } from '@/context/ThemeContext';
 import CarouselWithGames from './carouselWithGames';
 import { usePathname } from 'next/navigation';
 import { useSport } from '@/context/SportContext';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../components/dropdown-menu";
+import { Loader2, LogOut, RefreshCw, Settings } from 'lucide-react';
+import { Skeleton } from './ui/skeleton';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { isLoaded, isSignedIn, user } = useUser();
     const [points, setPoints] = useState<number | null>(null);
+    const [loadingPoints, setLoadingPoints] = useState(true);
     const [error, setError] = useState('');
+    const { carouselSport, setCarouselSport, selectedSoccerLeague } = useSport();
+    const [refreshCarousel, setRefreshCarousel] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
     const { theme } = useTheme();
     const pathname = usePathname();
-    const { carouselSport, setCarouselSport, selectedSoccerLeague } = useSport();
+    const { signOut } = useClerk();
 
     const handleSportChange = (sport: string) => {
         if (sport === 'Soccer') {
@@ -33,6 +41,8 @@ const Header = () => {
             try {
                 if (!isLoaded || !isSignedIn || !user?.id) return;
 
+                setLoadingPoints(true);
+
                 // Getting User points
                 const res = await fetch(`/api/user/getPoints?clerk_id=${user.id}`);
                 const points = await res.json();
@@ -45,11 +55,18 @@ const Header = () => {
 
             } catch (error) {
                 setError(`Network error fetching user points: ${error}`);
+            } finally {
+                setLoadingPoints(false);
             }
         }
 
         getPoints();
     }, [isLoaded, isSignedIn, user?.id]);
+
+    const handleRefreshClick = () => {
+        setRefreshing(true);
+        setRefreshCarousel(prev => !prev); // Toggle boolean to trigger re-render
+    };
 
     return (
         <div>
@@ -104,9 +121,70 @@ const Header = () => {
                                 </SignedOut>
                                 <SignedIn>
                                     <div className='flex justify-end p-3'>
-                                        <UserButton userProfileUrl='/profile' />
+                                        {!user || !user.imageUrl ? (
+                                            <Skeleton className="h-10 w-10 rounded-full" />
+                                        ) : (
+                                            <DropdownMenu modal={false}>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button className="flex items-center gap-2 focus:outline-none active:outline-none active:ring-0 focus:ring-0">
+                                                        <Image
+                                                            src={user.imageUrl}
+                                                            alt="User profile"
+                                                            width={40}
+                                                            height={40}
+                                                            className="rounded-full"
+                                                        />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-50 p-2`}
+                                                >
+                                                    <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 cursor-default select-none hover:bg-transparent focus:bg-transparent dark:hover:bg-transparent dark:focus:bg-transparent">
+                                                        <div className="flex items-center gap-2">
+                                                            {!user.imageUrl ? (
+                                                                <Skeleton className="h-10 w-10 rounded-full" />
+                                                            ) : (
+                                                                <Image
+                                                                    src={user.imageUrl}
+                                                                    alt="User profile"
+                                                                    width={30}
+                                                                    height={30}
+                                                                    className="rounded-full"
+                                                                />
+                                                            )}
+                                                            <div className='pl-2'>
+                                                                <div className="font-bold">{user.fullName}</div>
+                                                                <div className="text-s text-gray-500 dark:text-gray-400">@{user.username}</div>
+                                                            </div>
+                                                        </div>
+                                                    </DropdownMenuItem>
+                                                    <hr className="border-gray-300 dark:border-gray-600 my-1" />
+                                                    <DropdownMenuItem asChild
+                                                        onClick={() => setIsMenuOpen(false)}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        <Link href="/profile" ><Settings />Manage Account</Link>
+                                                    </DropdownMenuItem>
+                                                    <hr className="border-gray-300 dark:border-gray-600 my-1" />
+                                                    <DropdownMenuItem
+                                                        onClick={() => signOut({ redirectUrl: '/' })}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        <LogOut /> Sign out
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+
                                         {/*show user points*/}
-                                        <div className="hidden md:flex ml-10 space-x-8 font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 px-3 py-2"> Points: {points}</div>
+                                        <div className="hidden md:flex ml-10 space-x-8 font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 px-3 py-2">
+                                            Points:&nbsp;
+                                            {loadingPoints ? (
+                                                <Loader2 className="animate-spin h-5 w-5 text-gray-600 dark:text-gray-300" />
+                                            ) : (
+                                                <span>{points}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </SignedIn>
                             </div>
@@ -159,13 +237,13 @@ const Header = () => {
                                     <div className='space-y-2'>
                                         <SignInButton mode='redirect'>
                                             <button className='p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full hover:scale-105'
-                                            onClick={() => setIsMenuOpen(false)}>
+                                                onClick={() => setIsMenuOpen(false)}>
                                                 Log in
                                             </button>
                                         </SignInButton>
                                         <SignUpButton mode='redirect'>
                                             <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'
-                                            onClick={() => setIsMenuOpen(false)}>
+                                                onClick={() => setIsMenuOpen(false)}>
                                                 Sign up
                                             </button>
                                         </SignUpButton>
@@ -173,7 +251,53 @@ const Header = () => {
                                 </SignedOut>
                                 <SignedIn>
                                     <div className='p-3'>
-                                        <UserButton userProfileUrl='/profile' />
+                                        {!user || !user.imageUrl ? (
+                                            <Skeleton className="h-10 w-10 rounded-full" />
+                                        ) : (
+                                            <DropdownMenu modal={false}>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button className="flex items-center gap-2 focus:outline-none active:outline-none active:ring-0 focus:ring-0">
+                                                        <Image
+                                                            src={user.imageUrl}
+                                                            alt="User profile"
+                                                            width={40}
+                                                            height={40}
+                                                            className="rounded-full"
+                                                        />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    side="bottom"
+                                                    align="start"
+                                                    className={`mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 p-2
+                                                                ${typeof window !== "undefined" && window.innerWidth < 768 ? 'translate-x-4' : ''}`}
+                                                >
+                                                    <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 cursor-default select-none hover:bg-transparent focus:bg-transparent">
+                                                        <div className="flex items-center gap-2">
+                                                            <Image
+                                                                src={user.imageUrl}
+                                                                alt="User profile"
+                                                                width={30}
+                                                                height={30}
+                                                                className="rounded-full"
+                                                            />
+                                                            <div className='pl-2'>
+                                                                <div className="font-bold">{user.fullName}</div>
+                                                                <div className="text-s text-gray-500 dark:text-gray-400">@{user.username}</div>
+                                                            </div>
+                                                        </div>
+                                                    </DropdownMenuItem>
+                                                    <hr className="border-gray-300 dark:border-gray-700 my-1" />
+                                                    <DropdownMenuItem asChild onClick={() => setIsMenuOpen(false)}>
+                                                        <Link href="/profile"> <Settings /> Manage Account</Link>
+                                                    </DropdownMenuItem>
+                                                    <hr className="border-gray-300 dark:border-gray-700 my-1" />
+                                                    <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
+                                                        <LogOut /> Sign out
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
                                         {/*show user points*/}
                                         <div className="font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2"> Points: {points}</div>
                                     </div>
@@ -185,7 +309,7 @@ const Header = () => {
             </nav>
             {pathname !== '/profile' && (
                 <div className="pt-20">
-                    <div className="max-w-7xl mx-auto px-4 pl-4">
+                    <div className="max-w-7xl mx-auto px-4 pl-4 flex items-center gap-2">
                         <select
                             value={carouselSport}
                             onChange={(e) => handleSportChange(e.target.value)}
@@ -207,8 +331,16 @@ const Header = () => {
                                 <option value="LIGUE_1">Ligue 1</option>
                             </optgroup>
                         </select>
+                        <button
+                            onClick={handleRefreshClick}
+                            disabled={refreshing}
+                            className="p-2 border rounded bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+                            title="Refresh Games"
+                        >
+                            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                        </button>
                     </div>
-                    <CarouselWithGames />
+                    <CarouselWithGames refreshKey={refreshCarousel} onDataLoaded={() => setRefreshing(false)}/>
                 </div>
             )}
             {pathname === '/profile' && (

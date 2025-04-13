@@ -20,16 +20,61 @@ export async function GET(req: Request) {
 
     let users;
 
-    if( sport === 'SELECT' || week === '-1'){
-      const query = 
-        `SELECT u.user_id, u.clerk_id, u.username, u.points, u.rank, u.performance, u.bio, u.fav_team, u.max_points
-        FROM users u
-        ORDER BY u.rank ASC, u.points DESC;`;
-        users = await client.query(query);
+    if(sport === 'SELECT'){
+      if(week === '0'){
+        // Update total points add all points from all leaderboards
+        await client.query(`
+          UPDATE users u
+          SET points = subquery.points
+          FROM (
+            SELECT 
+              u.user_id, 
+              SUM(le.points) AS points
+            FROM 
+              users u
+            JOIN 
+              leaderboard_entries le ON u.user_id = le.user_id
+            JOIN 
+              leaderboards l ON le.leaderboard_id = l.leaderboard_id
+            GROUP BY 
+              u.user_id
+          ) AS subquery
+          WHERE u.user_id = subquery.user_id;
+        `);
 
-    } 
-    // Handle All Time (week = 0) case
-    else if (week === '0') {
+        const query = 
+          `SELECT u.user_id, u.clerk_id, u.username, u.points, u.rank, u.performance, u.bio, u.fav_team, u.max_points
+          FROM users u
+          ORDER BY u.rank ASC, u.points DESC;`;
+        users = await client.query(query);
+    
+      } else {
+        const query = 
+        `SELECT 
+        u.user_id, 
+        u.clerk_id, 
+        u.username, 
+        SUM(le.points) AS points,
+        DENSE_RANK() OVER (ORDER BY SUM(le.points) DESC) AS rank,
+        u.performance, 
+        u.bio, 
+        u.fav_team, 
+        u.max_points
+        FROM 
+          users u
+        JOIN 
+          leaderboard_entries le ON u.user_id = le.user_id
+        JOIN 
+          leaderboards l ON le.leaderboard_id = l.leaderboard_id
+        WHERE 
+          l.week = $1
+        GROUP BY 
+          u.user_id, u.clerk_id, u.username, u.performance, u.bio, u.fav_team, u.max_points
+        ORDER BY 
+          rank ASC, points DESC;`;
+        users = await client.query(query, [week]);
+      }
+    } else if (week === '0') { // Handle All Time (week = 0) case
       // First update ranks for all-time data (if needed)
       await client.query(`
         UPDATE users u
@@ -60,9 +105,9 @@ export async function GET(req: Request) {
           u.max_points
         FROM 
           users u
-        LEFT JOIN 
+        JOIN 
           leaderboard_entries le ON u.user_id = le.user_id
-        LEFT JOIN 
+        JOIN 
           leaderboards l ON le.leaderboard_id = l.leaderboard_id AND l.sport = $1
         GROUP BY 
           u.user_id, u.clerk_id, u.username, u.performance, u.bio, u.fav_team, u.max_points

@@ -17,7 +17,7 @@ const Leaderboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentWeek, setCurrentWeek] = useState<number | null>(null);
-    const [selectedSport, setSelectedSport] = useState<Sport>("NBA"); // Default to nba can be changed if needed
+    const [selectedSport, setSelectedSport] = useState<Sport>("SELECT"); // Default to nba can be changed if needed
     const [selectedWeek, setSelectedWeek] = useState<number | null>(0); // Defaults to all time
     const [isInitialRender] = useState(true);
 
@@ -40,7 +40,6 @@ const Leaderboard: React.FC = () => {
             }
             const fetchLeaderboard = async () => {
             
-
             setLoading(true);
             setError('');
 
@@ -150,15 +149,18 @@ const Leaderboard: React.FC = () => {
             <div className='content-wrapper'>
                 <div className='main-content'>
                     <h1 className='leaderboard-title text-black dark:text-white'>
-                    {selectedSport === "SELECT" || selectedWeek === -1 || selectedWeek === 0? "Overall Leaderboard" : `${selectedSport} Week ${selectedWeek} Leaderboard`}
+                    {selectedWeek === 0 ? 
+                        (selectedSport === "SELECT" ? "Overall Leaderboard" : `${selectedSport} All Time Leaderboard`) : 
+                        (selectedSport === "SELECT" ? `Overall Week ${selectedWeek}` : `${selectedSport} Week ${selectedWeek} Leaderboard`)}
                     </h1>
                     <div className='leaderboard-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950'>
                         <div className='leaderboard-controls'>
                             <select
+                                aria-label="Select sport"
                                 className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800'
                                 value={selectedSport}
                                 onChange={handleSportChange}>
-                                <option value='SELECT' disabled>Select Sport</option>
+                                <option value='SELECT'>All Sports</option>
                                 <option value="NBA">NBA</option>
                                 <option value="NFL">NFL</option>
                                 <option value="MLB">MLB</option>
@@ -175,6 +177,7 @@ const Leaderboard: React.FC = () => {
                             </select>
 
                             <select 
+                                aria-label="Select week"
                                 className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800' 
                                 value={selectedWeek ?? 0}
                                 onChange={handleWeekChange}>

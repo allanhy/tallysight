@@ -51,6 +51,8 @@ interface Game {
     dbTime?: string;
     estDate?: string;
     odds?: any;
+    isInProgress: boolean;
+    isFinished: boolean;
 }
 const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
@@ -125,8 +127,6 @@ export default function DailyPicks() {
         const channel = pusher.subscribe("selection-updates");
 
         channel.bind("update", (newData: { gameId: string; homeTeamPercentage: string; awayTeamPercentage: string }) => {
-            //console.log("Received live update:", newData);
-
             // Update pickPercentages with new data
             setPickPercentages(prev => ({
                 ...prev,
@@ -137,6 +137,17 @@ export default function DailyPicks() {
             }));
 
             // Update SWR cache if needed
+            mutate('/api/userPickPercentage');
+        });
+
+        channel.bind("bulk-update", (payload: {
+            updates: { gameId: string; homeTeamPercentage: string; awayTeamPercentage: string }[];
+        }) => {
+            const newPercentages = { ...pickPercentages };
+            payload.updates.forEach(({ gameId, homeTeamPercentage, awayTeamPercentage }) => {
+                newPercentages[gameId] = { home: homeTeamPercentage, away: awayTeamPercentage };
+            });
+            setPickPercentages(newPercentages);
             mutate('/api/userPickPercentage');
         });
 
@@ -156,7 +167,7 @@ export default function DailyPicks() {
     const { userId } = useAuth();
 
     useEffect(() => {
-        const fetchTodayGames = async () => {
+        const fetchTodayGames = async (): Promise<void> => {
             try {
                 const response = await fetch(`/api/all-espn-games?sport=${selectedSport.toLowerCase()}`, {
                     method: 'GET',
@@ -177,7 +188,7 @@ export default function DailyPicks() {
                 setGames(data.games);
 
                 if (data.games && data.games.length > 0) {
-                    fetchPreviousPicks(data.games);
+                    await fetchPreviousPicks(data.games);
                 }
             } catch (error) {
                 //console.error('Error fetching games:', error);
@@ -273,8 +284,11 @@ export default function DailyPicks() {
                 setLoadingPercentages(false);
             }
         };
-        fetchTodayGames();
-        fetchPickPercentages();
+        (async () => {
+            await fetchTodayGames();
+            fetchPickPercentages();
+            setLoading(false);
+        })();
     }, [selectedSport, userId]);
 
     useEffect(() => {
@@ -342,14 +356,16 @@ export default function DailyPicks() {
             const newStartedGames = new Set<string>();
 
             games.forEach(game => {
-                // Check if game has started based on time
-                if (shouldGameBeLocked(game.gameTime)) {
+                // Check if game has started based on time or status
+                if (shouldGameBeLocked(game.gameTime) ||
+                    game.isInProgress ||
+                    game.isFinished) {
                     anyGameStarted = true;
                     newStartedGames.add(game.id);
                 }
             });
 
-            // Update state based on checks
+            // If any game has started, lock all games
             if (anyGameStarted) {
                 setFirstGameLocked(true);
                 setIsLocked(true);
@@ -646,20 +662,21 @@ export default function DailyPicks() {
             if (data.message === "There is not enough data") {
                 //console.warn("Not enough user data to update percentages.");
             } else {
-                for (const game of data.data) {
-                    await fetch('/api/pusher', {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
+                await fetch('/api/pusher', {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        type: "bulk-update",
+                        updates: data.data.map((game: any) => ({
                             gameId: game.gameId,
                             homeTeamPercentage: game.homeTeamPercentage,
-                            awayTeamPercentage: game.awayTeamPercentage
-                        }),
-                    });
-                }
+                            awayTeamPercentage: game.awayTeamPercentage,
+                        })),
+                    }),
+                });
             }
 
-            router.push('/myPicks');
+            router.push(`/myPicks?sport=${selectedSport}`);
         } catch (error) {
             //console.error('Error submitting picks:', error);
             setSubmitError(error instanceof Error ? error.message : 'Failed to submit picks');
@@ -858,7 +875,7 @@ export default function DailyPicks() {
             {/* Enhanced Status Bar with more prominent lock indication */}
             <div className="text-center py-2 text-sm">
                 <div className="text-gray-300">
-                    Spread finalized | Picks lock: At the start of each game
+                    Spread finalized | Picks lock at the start of each game
                 </div>
                 {firstGameLocked && !isLocked && (
                     <div className="py-3 mt-1 text-white bg-red-600 flex items-center justify-center font-bold text-lg animate-pulse">
