@@ -3,8 +3,7 @@
 "use client"
 
 import { useUser } from '@clerk/nextjs';
-import Image, { ImageLoaderProps }from 'next/image';
-import { ImageLoader } from "next/image"
+import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 import { useForm, FieldValues } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
@@ -26,6 +25,34 @@ interface SocialLinks {
   facebook: string;
   snapchat: string;
 }
+
+// Enhanced validation function for JPG/JPEG files
+const isValidImageFile = (file: File): boolean => {
+    // Check if file is an image and specifically jpg/jpeg
+    const validTypes = ['image/jpeg', 'image/jpg'];
+    
+    // Check MIME type
+    if (!validTypes.includes(file.type)) {
+        alert('Only JPG/JPEG images are allowed');
+        return false;
+    }
+    
+    // Check file extension
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+        alert('File must have a .jpg or .jpeg extension');
+        return false;
+    }
+    
+    // Check file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+        alert('Image file is too large. Maximum size is 5MB');
+        return false;
+    }
+    
+    return true;
+};
 
 const Profile = () => {
   const router = useRouter();
@@ -70,7 +97,7 @@ const Profile = () => {
   }
 
   // Loader implementation for profile picture
-  const contentfulImageLoader: ImageLoader = ({ src, width }: ImageLoaderProps) => {
+  const contentfulImageLoader = ({ src, width }: { src: string, width: number }) => {
     return `${src}?w=${width}`
   }
 
@@ -81,12 +108,18 @@ const Profile = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("Handling profile picture change.");
     const file = event.target.files?.[0];
-    if (file && ["image/jpg", "image/jpeg", "image/png"].includes(file.type)) {
-      setSelectedFile(file);
-      setShowCropper(true);
-    } else {
-      alert("Please upload a JPEG or PNG image.");
+    
+    if (!file) return;
+    
+    // Validate the file is a JPG/JPEG
+    if (!isValidImageFile(file)) {
+        event.target.value = ''; // Clear the input
+        return;
     }
+    
+    // If validation passes, show the cropper
+    setSelectedFile(file);
+    setShowCropper(true);
   };
 
   // Handles the cropped image and updates user profile image
@@ -100,6 +133,34 @@ const Profile = () => {
       console.log("Successfully changed user profile picture.");
     } catch (error) {
       console.error("Error uploading cropped image:", error);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!isValidImageFile(file)) {
+        e.target.value = ''; // Clear the input
+        return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Upload image to Clerk
+      const uploadResponse = await user?.setProfileImage({
+        file: file,
+      });
+
+      if (uploadResponse) {
+        console.log('Profile image updated successfully');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image. Please try again.');
     }
   };
 
@@ -320,6 +381,21 @@ const Profile = () => {
                               className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
                       </div>
     
+                      <div className="mb-4">
+                          <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200" htmlFor="profilePicture">
+                              Profile Picture (JPG/JPEG only):
+                          </label>
+                          <input
+                              id="profilePicture"
+                              type="file"
+                              accept=".jpg,.jpeg"
+                              onChange={handleFileChange}
+                              aria-label="Upload profile picture"
+                              className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"
+                          />
+                          <p className="text-xs text-gray-500 mt-1 px-4">Only JPG/JPEG files up to 5MB are allowed</p>
+                      </div>
+    
                       <div className="space-x-2 py-2 space-between">
                           <button onClick={() => setSelectedSection("Profile")}
                               className="w-s text-left px-4 py-2 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold shadow-sm">
@@ -442,7 +518,14 @@ const Profile = () => {
               <p className="select-none cursor-pointer text-white text-4xl">&#9998;</p>
             </div>
           </div>
-          <input type="file" ref={fileInputRef} onClick={event => event.currentTarget.value = ""} onChange={handleFileChange} style={{ display: "none" }} />
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onClick={event => event.currentTarget.value = ""} 
+            onChange={handleFileChange} 
+            className="hidden" 
+            aria-label="Profile picture upload"
+          />
           {renderNavigationButtons()}
         </div>
         {/* Right Section of profile screen */}
