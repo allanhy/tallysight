@@ -3,22 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleAllGamesDone } from '@/lib/handleAllGamesDone/handleAllGamesDone';
 
 export async function GET(req: NextRequest) {
-  try {
-          await handleAllGamesDone();
-          console.log('Cron for auto update points: success');
-          //return NextResponse.json({ message: 'Points updated successfully' });
-    } catch (error) {
-        console.error('Cron for auto update points failed:', error);
-        /*return NextResponse.json(
-            { 
-                success: false, 
-                message: 'Failed to update points', 
-                error: error instanceof Error ? error.message : String(error),
-            }, 
-            { status: 500 }
-        );
-        */
-    }
   // Authorization check
   const authHeader = req.headers.get("Authorization");
   const expectedToken = `Bearer ${process.env.CRON_SECRET}`;
@@ -35,8 +19,13 @@ export async function GET(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ gameIds: [] }), // or any actual value
-      });    
-      const syncResult = await syncRes.json();
+    });    
+    const syncResult = await syncRes.json();
+
+
+    // for point handling
+    await handleAllGamesDone();
+    console.log('Cron for auto update points: success');
 
     return NextResponse.json({
       success: true,
@@ -44,15 +33,14 @@ export async function GET(req: NextRequest) {
       sync: syncResult,
     });
   } catch (error) {
-    console.error("Automated sync error:", error);
+    console.error("Automated sync/points update error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to run automated sync",
+        message: "Failed to run automated sync/points update",
         error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
   }
-  
 }
