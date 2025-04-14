@@ -32,9 +32,7 @@ model Game {
   won           Boolean?
   final_score   String?
   winner        Boolean?
-  favorite_team_id String?
   underdog_team_id String?
-  spread        String?
   is_underdog_win Boolean?
   picks         Pick[]
 }
