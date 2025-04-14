@@ -189,6 +189,64 @@ const Header = () => {
                                 </SignedIn>
                             </div>
 
+                            {/* Mobile Auth - Moved outside hamburger menu */}
+                            <div className="md:hidden flex items-center">
+                                <SignedIn>
+                                    <div className='flex items-center gap-2'>
+                                        {!user || !user.imageUrl ? (
+                                            <Skeleton className="h-10 w-10 rounded-full" />
+                                        ) : (
+                                            <DropdownMenu modal={false}>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button className="flex items-center gap-2 focus:outline-none active:outline-none active:ring-0 focus:ring-0">
+                                                        <Image
+                                                            src={user.imageUrl}
+                                                            alt="User profile"
+                                                            width={40}
+                                                            height={40}
+                                                            className="rounded-full"
+                                                        />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    side="bottom"
+                                                    align="end"
+                                                    className={`mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 p-2`}
+                                                >
+                                                    <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 cursor-default select-none hover:bg-transparent focus:bg-transparent">
+                                                        <div className="flex items-center gap-2">
+                                                            <Image
+                                                                src={user.imageUrl}
+                                                                alt="User profile"
+                                                                width={30}
+                                                                height={30}
+                                                                className="rounded-full"
+                                                            />
+                                                            <div className='pl-2'>
+                                                                <div className="font-bold">{user.fullName}</div>
+                                                                <div className="text-s text-gray-500 dark:text-gray-400">@{user.username}</div>
+                                                            </div>
+                                                        </div>
+                                                    </DropdownMenuItem>
+                                                    <hr className="border-gray-300 dark:border-gray-700 my-1" />
+                                                    <DropdownMenuItem asChild onClick={() => setIsMenuOpen(false)}>
+                                                        <Link href="/profile"> <Settings /> Manage Account</Link>
+                                                    </DropdownMenuItem>
+                                                    <hr className="border-gray-300 dark:border-gray-700 my-1" />
+                                                    <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
+                                                        <LogOut /> Sign out
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                        {/*show user points*/}
+                                        <div className="font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600">
+                                            Points: {points}
+                                        </div>
+                                    </div>
+                                </SignedIn>
+                            </div>
+
                             {/* Hamburger Menu Button */}
                             <button
                                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -231,78 +289,6 @@ const Header = () => {
                             >
                                 My Picks
                             </Link>
-                            {/* Mobile Auth */}
-                            <div className="mt-4">
-                                <SignedOut>
-                                    <div className='space-y-2'>
-                                        <SignInButton mode='redirect'>
-                                            <button className='p-3 text-black rounded-lg bg-white text-black border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full hover:scale-105'
-                                                onClick={() => setIsMenuOpen(false)}>
-                                                Log in
-                                            </button>
-                                        </SignInButton>
-                                        <SignUpButton mode='redirect'>
-                                            <button className='p-3 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'
-                                                onClick={() => setIsMenuOpen(false)}>
-                                                Sign up
-                                            </button>
-                                        </SignUpButton>
-                                    </div>
-                                </SignedOut>
-                                <SignedIn>
-                                    <div className='p-3'>
-                                        {!user || !user.imageUrl ? (
-                                            <Skeleton className="h-10 w-10 rounded-full" />
-                                        ) : (
-                                            <DropdownMenu modal={false}>
-                                                <DropdownMenuTrigger asChild>
-                                                    <button className="flex items-center gap-2 focus:outline-none active:outline-none active:ring-0 focus:ring-0">
-                                                        <Image
-                                                            src={user.imageUrl}
-                                                            alt="User profile"
-                                                            width={40}
-                                                            height={40}
-                                                            className="rounded-full"
-                                                        />
-                                                    </button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    side="bottom"
-                                                    align="start"
-                                                    className={`mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 p-2
-                                                                ${typeof window !== "undefined" && window.innerWidth < 768 ? 'translate-x-4' : ''}`}
-                                                >
-                                                    <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 cursor-default select-none hover:bg-transparent focus:bg-transparent">
-                                                        <div className="flex items-center gap-2">
-                                                            <Image
-                                                                src={user.imageUrl}
-                                                                alt="User profile"
-                                                                width={30}
-                                                                height={30}
-                                                                className="rounded-full"
-                                                            />
-                                                            <div className='pl-2'>
-                                                                <div className="font-bold">{user.fullName}</div>
-                                                                <div className="text-s text-gray-500 dark:text-gray-400">@{user.username}</div>
-                                                            </div>
-                                                        </div>
-                                                    </DropdownMenuItem>
-                                                    <hr className="border-gray-300 dark:border-gray-700 my-1" />
-                                                    <DropdownMenuItem asChild onClick={() => setIsMenuOpen(false)}>
-                                                        <Link href="/profile"> <Settings /> Manage Account</Link>
-                                                    </DropdownMenuItem>
-                                                    <hr className="border-gray-300 dark:border-gray-700 my-1" />
-                                                    <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/' })}>
-                                                        <LogOut /> Sign out
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                        {/*show user points*/}
-                                        <div className="font-montserrat font-semibold text-gray-600 dark:text-gray-300 hover:text-blue-600 py-2"> Points: {points}</div>
-                                    </div>
-                                </SignedIn>
-                            </div>
                         </div>
                     </div>
                 </div>
