@@ -21,18 +21,20 @@ model Pick {
 }
 
 model Game {
-  id          String    @id(map: "game_pkey")
-  team1Name   String
-  team2Name   String
-  team1Logo   String?
-  team2Logo   String?
-  won         Int?
-  final_score String?
-  winner      Boolean?
-  gameDate    DateTime? @db.Date
-  sport       String
-  gameTime    DateTime? @db.Time(6)
-  Pick        Pick[]
+  id            String   @id(map: "game_pkey")
+  team1Name     String
+  team2Name     String
+  team1Logo     String?
+  team2Logo     String?
+  gameDate      DateTime @db.Date
+  gameTime      DateTime @db.Time
+  sport         String
+  won           Boolean?
+  final_score   String?
+  winner        Boolean?
+  underdog_team_id String?
+  is_underdog_win Boolean?
+  picks         Pick[]
 }
 
 model admins {

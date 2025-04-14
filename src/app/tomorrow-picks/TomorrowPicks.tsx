@@ -495,10 +495,16 @@ export default function TomorrowPicks() {
                                 <div key={game.id} className="bg-white rounded-lg shadow border border-gray-200">
                                     <div className="flex justify-between items-center p-3 border-b">
                                         <div className="text-sm text-gray-500">
-                                            <span>{game.gameTime} ET</span>
+                                            <span>{game.gameTime}</span>
                                             <span className="mx-2">•</span>
                                             <span>
                                                 {(() => {
+                                                    if (game.status === 'STATUS_FINAL' || 
+                                                        game.status === 'STATUS_FULL_TIME' || 
+                                                        game.status === 'STATUS_ENDED' ||
+                                                        game.status === 'STATUS_COMPLETED') {
+                                                        return 'Final PT';
+                                                    }
                                                     const [time, period] = game.gameTime.split(' ');
                                                     const [hours, minutes] = time.split(':');
                                                     let etHours = parseInt(hours);
