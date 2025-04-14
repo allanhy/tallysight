@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import LeaderboardProfiles from '../components/leaderboardProfiles';
 
-type Sport = 'NFL' | 'MLB' | 'NBA' | 'SELECT';
+type Sport = 'NBA' | 'NFL' | 'MLB' | 'NHL' | 'MLS' | 'EPL' | 'LALIGA' | 'LIGUE_1' | 'BUNDESLIGA' | 'SERIE_A' | 'SELECT';
 
 type LeaderboardEntry = {
     user_id: number;

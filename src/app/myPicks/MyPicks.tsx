@@ -51,7 +51,7 @@ interface TeamDetails {
     logo: string;
 }
 
-type Sport = 'NFL' | 'MLB' | 'NBA';
+type Sport = 'NBA' | 'NFL' | 'MLB' | 'NHL' | 'MLS' | 'EPL' | 'LALIGA' | 'LIGUE_1' | 'BUNDESLIGA' | 'SERIE_A';
 
 // Interface for week options
 interface WeekOption {

@@ -175,11 +175,11 @@ export default function AdminPage() {
             // Run immediately when enabled
             syncGames();
             
-            // Set up interval for every 30 minutes
-            intervalId = setInterval(syncGames, 30 * 60 * 1000);
+            // Set up interval for every 6 hours
+            intervalId = setInterval(syncGames, 6 * 60 * 60 * 1000);
             
             // Log next sync time
-            const nextSync = new Date(Date.now() + 30 * 60 * 1000);
+            const nextSync = new Date(Date.now() + 6 * 60 * 60 * 1000);
             console.log('Next sync scheduled for:', nextSync.toLocaleString());
         }
         

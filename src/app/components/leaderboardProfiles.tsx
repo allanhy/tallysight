@@ -27,7 +27,7 @@ interface SocialLinks {
     snapchat?: string;
 }
 
-type Sport = 'NFL' | 'MLB' | 'NBA' | 'SELECT';
+type Sport = 'NBA' | 'NFL' | 'MLB' | 'NHL' | 'MLS' | 'EPL' | 'LALIGA' | 'LIGUE_1' | 'BUNDESLIGA' | 'SERIE_A' | 'SELECT';
 
 interface leaderboardProfileProps{
     sport: Sport;

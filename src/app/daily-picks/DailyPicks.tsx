@@ -58,7 +58,7 @@ const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
 const BESTPICKPOINTS = 3;
 
-type Sport = 'NBA' | 'NFL' | 'MLB' | 'NHL' | 'MLS' | 'EPL' | 'LALIGA' | 'LIGUE_1' | 'BUNDESLIGA' | 'SERIE_A'
+type Sport = 'NBA' | 'NFL' | 'MLB' | 'NHL' | 'MLS' | 'EPL' | 'LALIGA' | 'LIGUE_1' | 'BUNDESLIGA' | 'SERIE_A';
 
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {

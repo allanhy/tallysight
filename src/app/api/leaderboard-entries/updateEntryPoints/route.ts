@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { db } from '@vercel/postgres';
-import { flushAllTraces } from 'next/dist/trace';
 import { NextResponse } from 'next/server';
 
 const MAXPOINTSPERGAME = 1;
@@ -46,10 +45,12 @@ export async function POST(req: Request) {
                 END);`
         , [sport]);
 
+        /*
         console.log("games to update?");
         for(let i = 0; i < games.rows.length; i++){
             console.log(games.rows[i]);
         }
+            */
 
         if(games.rows.length === 0){
             return NextResponse.json(
@@ -67,10 +68,12 @@ export async function POST(req: Request) {
             WHERE "gameId" = ANY($1)`
         , [gamesIds]);
 
+        /*
         console.log("games to update?; users who made picks for these");
         for(let i = 0; i < usersPicked.rows.length; i++){
             console.log(usersPicked.rows[i]);
         }
+            */
 
         // No users made picks for the games
         if (usersPicked.rows.length === 0 ){
@@ -136,7 +139,7 @@ export async function POST(req: Request) {
             , [totalPoints, user.entry_id]);
 
             if(leUpdate.rowCount === 0){
-                console.warn(`Couldn't update leaderboard entry found for entry_id ${user.entry_id}`);
+                console.warn(`Couldn't update leaderboard entry for entry_id ${user.entry_id}`);
             }
 
            //console.log(`Updating points for entry_id: ${user.entry_id}, totalPoints: ${totalPoints}`);
