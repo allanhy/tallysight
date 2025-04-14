@@ -1,4 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/*goes into vercel.json
+      {
+        "path": "/api/automated-updatePoints",
+        "schedule": "*<removethisspace>/5 * * * *``,
+        "timezone": "America/Los_Angeles"
+      }
+*/
 import { NextRequest, NextResponse } from 'next/server';
 import { handleAllGamesDone } from '@/lib/handleAllGamesDone/handleAllGamesDone';
 

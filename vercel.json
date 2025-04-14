@@ -7,11 +7,6 @@
       {
         "path": "/api/automated-reminders",
         "schedule": "0 9 * * *"
-      },
-      {
-        "path": "/api/automated-updatePoints",
-        "schedule": "*/5 * * * *",
-        "timezone": "America/Los_Angeles"
       }
     ]
   }
