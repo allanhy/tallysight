@@ -328,10 +328,11 @@ export default function ContestsPage() {
     }
     
     return (
-        <div className="p-4 sm:p-8 min-h-screen" >
-            <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{ letterSpacing: '1.5px', fontSize: '65px' }}
-            >Contests</h1>
-            <div className="flex gap-4 mb-6 overflow-x-auto whitespace-nowrap scrollbar w-full sm:justify-center">
+        <div className="p-2 sm:p-4 md:p-8 min-h-screen" >
+            <h1 className="text-black dark:text-white font-semibold mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style={{ letterSpacing: '1.5px' }}>
+                Contests
+            </h1>
+            <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap scrollbar w-full justify-center">
                 {sortedSports.map(({ sport, logo }) => (
                     <button
                         key={sport}
@@ -341,31 +342,31 @@ export default function ContestsPage() {
                                 setSelectedSoccerLeague('');
                             }
                         }}
-                        className={`flex flex-col items-center gap-2 px-4 py-4 rounded-lg w-24 text-center
+                        className={`flex flex-col items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-4 rounded-lg w-16 sm:w-20 md:w-24 text-center
                         hover:bg-gray-500/20 transition duration-200
                         ${selectedSport === sport ? 'border accent-border text-white' : 'text-gray-300'}`}
                     >
-                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-gray-500/40">
+                        <div className="flex items-center justify-center h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gray-500/40">
                             <img
                                 src={logo}
                                 alt={`${sport} logo`}
                                 className="h-full w-full object-contain p-1"
                             />
                         </div>
-                        <span className="text-black dark:text-white text-s font-bold">{sport}</span>
+                        <span className="text-black dark:text-white text-xs sm:text-sm font-bold">{sport}</span>
                     </button>
                 ))}
             </div>
 
             {/* Show Dropdown for Soccer Leagues */}
             {selectedSport === 'Soccer' && selectedSport !== null && (
-                <div className="mb-6 max-w-4xl mx-auto w-full p-1">
-                    <label htmlFor="soccer-league" className="block text-black dark:text-white font-bold text-lg mb-2">Select a Soccer League:</label>
+                <div className="mb-4 sm:mb-6 max-w-4xl mx-auto w-full p-1">
+                    <label htmlFor="soccer-league" className="block text-black dark:text-white font-bold text-base sm:text-lg mb-1 sm:mb-2">Select a Soccer League:</label>
                     <select
                         id="soccer-league"
                         value={selectedSoccerLeague || ''}
                         onChange={(e) => handleSoccerLeagueChange(e.target.value)}
-                        className="p-2 bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg w-full"
+                        className="p-2 bg-white dark:bg-gray-700 text-black dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg w-full text-sm sm:text-base"
                     >
                         <option value="">All Soccer Leagues</option>
                         <option value="MLS">MLS</option>
@@ -399,14 +400,14 @@ export default function ContestsPage() {
 
                     if (allToday.length === 0 && allTomorrow.length === 0) {
                         return (
-                            <div className="text-center text-black dark:text-white text-lg mt-8">
+                            <div className="text-center text-black dark:text-white text-base sm:text-lg mt-4 sm:mt-8">
                                 No soccer games available today or tomorrow. ⚽ Come back soon!
                             </div>
                         );
                     }
 
                     return (
-                        <div className="flex flex-col gap-6 max-w-4xl mx-auto">
+                        <div className="flex flex-col gap-4 sm:gap-6 max-w-4xl mx-auto">
                             {[
                                 { title: "Today's MLS Games", games: mlsTodayGames, sport: 'MLS' },
                                 { title: "Today's EPL Games", games: eplTodayGames, sport: 'EPL' },
@@ -426,14 +427,14 @@ export default function ContestsPage() {
                                         key={title}
                                         className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950"
                                     >
-                                        <div className="p-4 sm:p-8">
-                                            <div className="uppercase tracking-wide text-sm text-black dark:text-white font-semibold">
+                                        <div className="p-3 sm:p-4 md:p-8">
+                                            <div className="uppercase tracking-wide text-xs sm:text-sm text-black dark:text-white font-semibold">
                                                 {tomorrow ? 'Upcoming Contest' : 'Featured Contest'}
                                             </div>
-                                            <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
+                                            <h1 className="block mt-1 text-base sm:text-lg leading-tight font-medium text-black dark:text-white">
                                                 {title} ({games.length} games)
                                             </h1>
-                                            <p className="mt-2 text-slate-500">
+                                            <p className="mt-2 text-sm sm:text-base text-slate-500">
                                                 {tomorrow
                                                     ? `Get ready for tomorrow's ${sport} matchups!`
                                                     : `Make your picks for today's ${sport} matchups!`}
@@ -444,7 +445,7 @@ export default function ContestsPage() {
                                                         `${tomorrow ? '/tomorrow-picks' : '/daily-picks'}?sport=${sport}`
                                                     )
                                                 }
-                                                className="mt-4 w-full accent-button text-white py-2 px-4 rounded-lg transition duration-200"
+                                                className="mt-3 sm:mt-4 w-full accent-button text-white py-2 px-4 rounded-lg transition duration-200 text-sm sm:text-base"
                                             >
                                                 {tomorrow ? 'Preview Games' : 'Play Now'}
                                             </button>
@@ -456,21 +457,21 @@ export default function ContestsPage() {
                     );
                 })()
             ) : (
-                <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
+                <div className="flex flex-col gap-3 sm:gap-4 md:gap-8 max-w-4xl mx-auto">
                     <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950">
-                        <div className="p-4 sm:p-8">
-                            <div className="uppercase tracking-wide text-sm text-black dark:text-white font-semibold">
+                        <div className="p-3 sm:p-4 md:p-8">
+                            <div className="uppercase tracking-wide text-xs sm:text-sm text-black dark:text-white font-semibold">
                                 Featured Contest
                             </div>
-                            <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
+                            <h1 className="block mt-1 text-base sm:text-lg leading-tight font-medium text-black dark:text-white">
                                 Today&apos;s {selectedSoccerLeague} {selectedSport} Games ({renderTodayGames().length} games)
                             </h1>
-                            <p className="mt-2 text-slate-500">
+                            <p className="mt-2 text-sm sm:text-base text-slate-500">
                                 Make your picks for today&apos;s {selectedSport} matchups!
                             </p>
                             <button
                                 onClick={handleTodayPlayNow}
-                                className="mt-4 w-full accent-button text-white py-2 px-4 rounded-lg transition duration-200"
+                                className="mt-3 sm:mt-4 w-full accent-button text-white py-2 px-4 rounded-lg transition duration-200 text-sm sm:text-base"
                             >
                                 Play Now
                             </button>
@@ -478,19 +479,19 @@ export default function ContestsPage() {
                     </div>
 
                     <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950">
-                        <div className="p-4 sm:p-8">
-                            <div className="uppercase tracking-wide text-sm text-black dark:text-white font-semibold">
+                        <div className="p-3 sm:p-4 md:p-8">
+                            <div className="uppercase tracking-wide text-xs sm:text-sm text-black dark:text-white font-semibold">
                                 Upcoming Contest
                             </div>
-                            <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
+                            <h1 className="block mt-1 text-base sm:text-lg leading-tight font-medium text-black dark:text-white">
                                 Tomorrow&apos;s {selectedSoccerLeague} {selectedSport} Games ({renderTomorrowGames().length} games)
                             </h1>
-                            <p className="mt-2 text-slate-500">
+                            <p className="mt-2 text-sm sm:text-base text-slate-500">
                                 Get ready for tomorrow&apos;s {selectedSport} matchups!
                             </p>
                             <button
                                 onClick={handleTomorrowPlayNow}
-                                className="mt-4 w-full accent-button text-white py-2 px-4 rounded-lg transition duration-200"
+                                className="mt-3 sm:mt-4 w-full accent-button text-white py-2 px-4 rounded-lg transition duration-200 text-sm sm:text-base"
                             >
                                 Preview Games
                             </button>
