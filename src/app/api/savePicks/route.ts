@@ -25,6 +25,9 @@ interface Pick {
   fullDate?: string;
   dbDate?: string;
   dbTime?: string;
+  favorite_team_id?: string;
+  underdog_team_id?: string;
+  spread?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -114,13 +117,14 @@ export async function POST(req: NextRequest) {
                 : null
       );
 
-    if (!sport) {
+      if (!sport) {
         console.error(`Could not determine sport for gameId ${pick.gameId}`);
         return NextResponse.json({ 
-            success: false,
-            message: `Failed to determine sport for gameId ${pick.gameId}`
+          success: false,
+          message: `Failed to determine sport for gameId ${pick.gameId}`
         }, { status: 400 });
-    }
+      }
+
       // Check if game exists
       const gameExists = await sql`
         SELECT id FROM "Game" WHERE id = ${pick.gameId}
@@ -172,7 +176,10 @@ export async function POST(req: NextRequest) {
             "team2Logo",
             "gameDate",
             "gameTime",
-            "sport"
+            "sport",
+            "favorite_team_id",
+            "underdog_team_id",
+            "spread"
           ) VALUES (
             ${pick.gameId},
             ${pick.homeTeam.name},
@@ -181,8 +188,20 @@ export async function POST(req: NextRequest) {
             ${pick.awayTeam.logo || ''},
             ${gameDate}::date,
             ${gameTime}::time,
-            ${sport}
+            ${sport},
+            ${pick.favorite_team_id || null},
+            ${pick.underdog_team_id || null},
+            ${pick.spread || null}
           )
+        `;
+      } else if (pick.favorite_team_id && pick.underdog_team_id && pick.spread) {
+        // Update underdog information if available
+        await sql`
+          UPDATE "Game"
+          SET "favorite_team_id" = ${pick.favorite_team_id},
+              "underdog_team_id" = ${pick.underdog_team_id},
+              "spread" = ${pick.spread}
+          WHERE id = ${pick.gameId}
         `;
       }
     }

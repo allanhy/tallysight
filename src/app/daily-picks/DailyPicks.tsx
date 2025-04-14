@@ -38,6 +38,8 @@ interface Team {
     spread: string;
     logo?: string;
     record?: string;
+    favorite_team_id?: string;
+    underdog_team_id?: string;
 }
 
 interface Game {
@@ -53,10 +55,14 @@ interface Game {
     odds?: any;
     isInProgress: boolean;
     isFinished: boolean;
+    favorite_team_id?: string;
+    underdog_team_id?: string;
+    spread?: string;
 }
 const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
 const BESTPICKPOINTS = 3;
+const UNDERDOGPOINTS = 2;
 
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {
@@ -567,22 +573,21 @@ export default function DailyPicks() {
             const picksArray = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
-
-                // Use the full date information from the game object, matching tomorrow-picks
                 return {
                     gameId,
                     teamIndex: teamType === 'home' ? 0 : 1,
                     homeTeam: game?.homeTeam,
                     awayTeam: game?.awayTeam,
-                    // Pass all date-related fields
-                    fullDate: game?.fullDate,
                     dbDate: game?.dbDate,
                     dbTime: game?.dbTime,
                     estDate: game?.estDate,
                     gameTime: game?.gameTime,
                     status: game?.status,
                     bestPick: gameId === bestPick,
-                    sport: selectedSport.toUpperCase()
+                    sport: selectedSport.toUpperCase(),
+                    favorite_team_id: game?.favorite_team_id,
+                    underdog_team_id: game?.underdog_team_id,
+                    spread: game?.spread
                 };
             });
 
@@ -675,6 +680,21 @@ export default function DailyPicks() {
                     }),
                 });
             }
+
+            // Update Max Points for User
+            let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
+
+            // If best pick made add to total
+            if (bestPick !== null) {
+                maxPoints += BESTPICKPOINTS;
+            }
+
+            // Add potential underdog points
+            const underdogPicks = picksArray.filter(pick => 
+                pick.underdog_team_id && 
+                pick.teamIndex.toString() === pick.underdog_team_id
+            );
+            maxPoints += underdogPicks.length * UNDERDOGPOINTS;
 
             router.push(`/myPicks?sport=${selectedSport}`);
         } catch (error) {
