@@ -256,6 +256,9 @@ export default function TomorrowPicks() {
                         // Convert the API data to the format used in selectedPicks
                         const teamType = pick.teamIndex === 0 ? 'home' : 'away';
                         initialSelectedPicks.add(`${pick.gameId}-${teamType}`);
+
+                        if(pick.bestPick)
+                            setBestPick(pick.gameId);
                     }
                 });
 

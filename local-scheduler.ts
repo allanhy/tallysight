@@ -15,5 +15,5 @@ cron.schedule('*/1 * * * *', async () => {
   }
 });
 
-// Optional: keep process alive if needed
+// keep process alive 
 console.log('Local scheduler is running...');
