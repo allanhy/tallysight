@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
 const BESTPICKPOINTS = 3;
+const UNDERDOGPOINTS = 2; // New constant for underdog bonus points
 
 // Will update all user who entered that day's contest
 export async function POST(req: Request) {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
                                     WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW())) 
             `, [sport , week]);
         
-        // Get the games from yesterday
+        // Get the games from yesterday with underdog information
         const games = await client.query(`
             SELECT * 
             FROM "Game"
@@ -62,7 +63,9 @@ export async function POST(req: Request) {
         // Make based on won column
         const gameResults = (games.rows || games).map(game => ({
             gameId: game.id,
-            won: game.won
+            won: game.won,
+            is_underdog_win: game.is_underdog_win,
+            underdog_team_id: game.underdog_team_id
         }));
 
         console.log(gameResults);
@@ -82,6 +85,12 @@ export async function POST(req: Request) {
                     if (game.won.toString() === picked.teamIndex.toString()) {
                         gainedPoints += MAXPOINTSPERGAME; // Point for picking correct team
                         gamesWon += 1;
+
+                        // Check if this was an underdog pick that won
+                        if (game.is_underdog_win && game.underdog_team_id === picked.teamIndex.toString()) {
+                            gainedPoints += UNDERDOGPOINTS; // Add underdog bonus points
+                        }
+
                         if (picked.bestPick) // Game was their best pick
                             gainedPoints += BESTPICKPOINTS; // Add best pick points
                     }
