@@ -2,7 +2,7 @@
     "crons": [
       {
         "path": "/api/automated-syncing",
-        "schedule": "45 23 * *",
+        "schedule": "45 23 * * *",
         "timezone": "America/Los_Angeles"
       },
       {
