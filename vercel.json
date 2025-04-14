@@ -2,7 +2,8 @@
     "crons": [
       {
         "path": "/api/automated-syncing",
-        "schedule": "*/30 * * * *"
+        "schedule": "45 23 * *",
+        "timezone": "America/Los_Angeles"
       },
       {
         "path": "/api/automated-reminders",
