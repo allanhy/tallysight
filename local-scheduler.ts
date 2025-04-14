@@ -1,0 +1,19 @@
+import cron from 'node-cron';
+import fetch from 'node-fetch';
+
+// Runs ever min
+cron.schedule('*/1 * * * *', async () => {
+  console.log('Triggering /api/automated-updatePoints');
+
+  try {
+    const res = await fetch('http://localhost:3000/api/automated-updatePoints');
+
+    const data = await res.json();
+    console.log(`Job completed:`, data);
+  } catch (error) {
+    console.error('Failed to run scheduled job:', error);
+  }
+});
+
+// Optional: keep process alive if needed
+console.log('Local scheduler is running...');

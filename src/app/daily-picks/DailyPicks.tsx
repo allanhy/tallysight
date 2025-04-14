@@ -58,6 +58,8 @@ const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
 const BESTPICKPOINTS = 3;
 
+type Sport = 'NBA' | 'NFL' | 'MLB' | 'NHL' | 'MLS' | 'EPL' | 'LALIGA' | 'LIGUE_1' | 'BUNDESLIGA' | 'SERIE_A'
+
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {
         return (
@@ -101,7 +103,7 @@ export default function DailyPicks() {
     const [isLocked, setIsLocked] = useState(false);
     const [startedGames, setStartedGames] = useState<Set<string>>(new Set());
     const [firstGameLocked, setFirstGameLocked] = useState(false);
-    const [allGamesEnded, setAllGamesEnded] = useState(false);
+    const [allGamesEnded, setAllGamesEnded] = useState(false); // TODO:
     const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [previewGame, setPreviewGame] = useState<Game | null>(null);
     const searchParams = useSearchParams();
@@ -301,6 +303,7 @@ export default function DailyPicks() {
          });*/
     }, [isLocked, firstGameLocked, startedGames, selectedPicks, games]);
 
+    
     // This function checks if a specific game should be locked based on its start time
     const shouldGameBeLocked = useCallback((gameTime: string) => {
         // Get current time in EST/EDT
@@ -385,7 +388,7 @@ export default function DailyPicks() {
             clearInterval(intervalId);
         };
     }, [games, shouldGameBeLocked]);
-
+    
     // This is the ONLY useEffect that should handle timing
     useEffect(() => {
         // Function to update the countdown timer
@@ -604,53 +607,40 @@ export default function DailyPicks() {
                 alert('You have already made your picks for today.');
                 router.push('/myPicks');
             } else if (response.ok) {
+                // add user to leaderboard entry
+                try{
+                    // Check if each user has leaderboard entry, if not create one
+                    const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ clerk_id: userId, sport: selectedSport, week: getCurrentWeek() }),
+                    });
+
+                    const updateEntryData = await updateEntryResponse.json();
+                    if (!updateEntryResponse.ok) {
+                        throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
+                    }
+                } catch(error){
+                    console.error('Error in verifying/creating leaderboard entry', error instanceof Error ? error.message : 'Failed to verify/create user leaderboard entry');
+                }
+
                 /* for testing (DON"T REMOVE)
                 // Submitted picks, no previous picks from the day:
 
-                // Check if user has leaderboard entry, if not create one
-                const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clerk_id: userId, sport: 'NBA', week: getCurrentWeek() }),
-                });
-        
-                const updateEntryData = await updateEntryResponse.json();
-                if (!updateEntryResponse.ok) {
-                    throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
-                }
-        
-                // Update Max Points for User
-                let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
-
-                // If best pick made add to total
-                if(bestPick !== null){
-                    maxPoints += BESTPICKPOINTS;
-                }
-
-                // Execute max points and leaderboard updates in parallel
-                const [updateMaxPointsResponse, updateUserPointsResponse] = await Promise.all([
-                    fetch('/api/user/updateMaxPoints', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ clerk_id: userId, max_points: maxPoints }),
-                    }),
+                // Execute points updates
+                const [updateUserPointsResponse] = await Promise.all([
                     fetch('/api/leaderboard-entries/updateEntryPoints', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sport: 'NBA', week: getCurrentWeek() }),
+                        body: JSON.stringify({ sport: selectedSport, week: getCurrentWeek() }),
                     }),
                 ]);
-        
-                const updateMaxPointsData = await updateMaxPointsResponse.json();
-                if (!updateMaxPointsResponse.ok) {
-                    throw new Error(updateMaxPointsData.message || 'Failed to update max points');
-                }
-        
+
                 const updateUserPointsData = await updateUserPointsResponse.json();
                 if (!updateUserPointsResponse.ok) {
                     throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
                 }
-                    */
+                */
             } else {
                 // error in submitting picks
                 throw new Error('Failed to submit picks');
@@ -686,44 +676,68 @@ export default function DailyPicks() {
     };
 
     const handleAllGamesDone = useCallback(async () => {
-        // Submitted picks, no previous picks from the day:
-        try {
-            // Extract picks from selectedPicks
-            const picksArray = Array.from(selectedPicks).map(pick => {
-                const [gameId, teamType] = pick.split('-');
-                const game = games.find(g => g.id === gameId);
-                return { gameId, teamType, game }; // Return structured pick info
-            });
+        // Sports to cycle through
+        const sports: Sport[] = [
+            'NBA', 'NFL', 'MLB', 'NHL', 'MLS',
+            'EPL', 'LALIGA', 'LIGUE_1', 'BUNDESLIGA', 'SERIE_A'
+        ];
 
-            // Check if user has leaderboard entry, if not create one
-            const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clerk_id: userId, sport: selectedSport, week: getCurrentWeek() }),
-            });
+        // Update points for all sports
+        for(const currSport of sports){
+            try {
+                // Get list of users who made picks 
+                const usersMadePicksRes = await fetch(`/api/userPicks/getUsersMadePicks?sport=${currSport}`);
+                const madePicksClerkIds = await usersMadePicksRes.json();
 
-            const updateEntryData = await updateEntryResponse.json();
-            if (!updateEntryResponse.ok) {
-                throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
+                let clerkIds;
+                if(usersMadePicksRes.status !== 404 && !usersMadePicksRes.ok){
+                    throw new Error('Failed to get users who made picks this week');
+                } else if(usersMadePicksRes.status === 404) {
+                    console.warn("No users found who made picks for this sport and week");
+                    return;
+                } else {
+                    clerkIds = madePicksClerkIds.data;
+                }
+                
+
+                if(clerkIds.length !== 0){
+                    for(let i = 0; i < clerkIds.length; i++){
+                        try{
+                            // Check if each user has leaderboard entry, if not create one
+                            const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ clerk_id: clerkIds[i].clerkId, sport: currSport, week: getCurrentWeek() }),
+                            });
+
+                            const updateEntryData = await updateEntryResponse.json();
+                            if (!updateEntryResponse.ok) {
+                                throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
+                            }
+                        } catch(error){
+                            console.error('Error in verifying/creating leaderboard entries', error instanceof Error ? error.message : 'Failed to verify/create user leaderboard entry');
+                        }
+                    }
+                }
+
+                // Execute points updates
+                const [updateUserPointsResponse] = await Promise.all([
+                    fetch('/api/leaderboard-entries/updateEntryPoints', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sport: currSport, week: getCurrentWeek() }),
+                    }),
+                ]);
+
+                const updateUserPointsData = await updateUserPointsResponse.json();
+                if (!updateUserPointsResponse.ok) {
+                    throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
+                }
+            } catch (error) {
+                console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
             }
-
-            // Execute points updates
-            const [updateUserPointsResponse] = await Promise.all([
-                fetch('/api/leaderboard-entries/updateEntryPoints', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sport: selectedSport, week: getCurrentWeek() }),
-                }),
-            ]);
-
-            const updateUserPointsData = await updateUserPointsResponse.json();
-            if (!updateUserPointsResponse.ok) {
-                throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
-            }
-        } catch (error) {
-            //console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
         }
-    }, [selectedPicks, userId, selectedSport, games]);
+    }, []);
 
     useEffect(() => {
         if (allGamesEnded) {
@@ -737,7 +751,7 @@ export default function DailyPicks() {
         const nowPst = toZonedTime(nowUtc, "America/Los_Angeles");
 
         const targetTimePst = new Date(nowPst);
-        targetTimePst.setHours(23, 55, 0, 0);
+        targetTimePst.setHours(23, 50, 0, 0);
 
         if (nowPst >= targetTimePst) {
             targetTimePst.setDate(targetTimePst.getDate() + 1);
@@ -747,15 +761,21 @@ export default function DailyPicks() {
         const timeUntilNextRun = targetTimeUtc.getTime() - nowUtc.getTime();
         console.log(`Update points again in: ${timeUntilNextRun / 1000 / 60} minutes`);
 
-        // Schedule it to run
+        let intervalId: NodeJS.Timeout;
+        // Schedule it to run daily
         const timeoutId = setTimeout(() => {
             handleAllGamesDone();
 
-            const intervalId = setInterval(handleAllGamesDone, 24 * 60 * 60 * 1000);
+            intervalId = setInterval(handleAllGamesDone, 24 * 60 * 60 * 1000);
             return () => clearInterval(intervalId);
         }, timeUntilNextRun);
 
-        return () => clearTimeout(timeoutId);
+        return () => {
+            clearTimeout(timeoutId);
+            if(intervalId){
+                clearInterval(intervalId);
+            }
+        };
     }, [handleAllGamesDone]);
 
     // Add this function to check if a specific game is locked

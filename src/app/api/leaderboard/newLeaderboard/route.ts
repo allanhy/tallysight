@@ -2,7 +2,7 @@
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 
-const Sport = ['NFL', 'MLB', 'NBA'];
+const Sport = ['NBA', 'NFL', 'MLB', 'NHL', 'MLS', 'EPL', 'LALIGA', 'LIGUE_1', 'BUNDESLIGA', 'SERIE_A'];
  
 export async function POST(req: Request) {
   let client;

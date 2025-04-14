@@ -7,12 +7,14 @@ const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
 const BESTPICKPOINTS = 3;
 
-// Will update all user who entered that day's contest
+// Will update all user who entered that day's contest for specific sport and week
 export async function POST(req: Request) {
     let client;
 
     try{
         client = await db.connect();
+        await client.query('BEGIN'); // Make into atomic transaction for rollbacks
+
         const data = await req.json();
         const { sport, week } = data;
 
@@ -32,17 +34,29 @@ export async function POST(req: Request) {
                                     WHERE sport = $1 AND week = $2 AND year = EXTRACT(YEAR FROM NOW())) 
             `, [sport , week]);
         
-        // Get the games from yesterday
+        // Get the games from today/yesterday depending on UTC time
         const games = await client.query(`
             SELECT * 
             FROM "Game"
             WHERE sport = $1 AND "gameDate" = (
                 CASE 
-                    WHEN EXTRACT(HOUR FROM NOW()) BETWEEN 0 AND 3 
+                    WHEN EXTRACT(HOUR FROM NOW()) BETWEEN 0 AND 6 
                     THEN (CURRENT_DATE - INTERVAL '1 day') 
                     ELSE CURRENT_DATE 
                 END);`
         , [sport]);
+
+        console.log("games to update?");
+        for(let i = 0; i < games.rows.length; i++){
+            console.log(games.rows[i]);
+        }
+
+        if(games.rows.length === 0){
+            return NextResponse.json(
+                { success: false, message: 'No games found for the selected date.' },
+                { status: 404 }
+            );
+        }
 
         const gamesIds = games.rows.map(game => game.id);
 
@@ -53,10 +67,15 @@ export async function POST(req: Request) {
             WHERE "gameId" = ANY($1)`
         , [gamesIds]);
 
+        console.log("games to update?; users who made picks for these");
+        for(let i = 0; i < usersPicked.rows.length; i++){
+            console.log(usersPicked.rows[i]);
+        }
+
         // No users made picks for the games
         if (usersPicked.rows.length === 0 ){
             return NextResponse.json(
-                { success: false, message: 'No user picks found for yesterdays games'},
+                { success: false, message: `No user picks found for todays games ${games.rows[0].gameDate}`},
                 { status: 404}
             );
         }
@@ -77,6 +96,8 @@ export async function POST(req: Request) {
             let gamesWon = 0; // Number of games won overall
             let maxPoints = 0;
             let bestPicked = false;
+
+            console.log("user entry id: "+user.entry_id);
 
             for(const picked of usersPicked.rows){
                 const game = gameResults.find(g => g.gameId.toString() === picked.gameId.toString());  // Get the first row
@@ -108,9 +129,15 @@ export async function POST(req: Request) {
 
             const totalPoints = user.points+gainedPoints;
 
-            await client.query(
+            console.log(user.points + " " + gainedPoints);
+
+            const leUpdate = await client.query(
                 `UPDATE leaderboard_entries SET points = $1 WHERE entry_id = $2`
             , [totalPoints, user.entry_id]);
+
+            if(leUpdate.rowCount === 0){
+                console.warn(`Couldn't update leaderboard entry found for entry_id ${user.entry_id}`);
+            }
 
            //console.log(`Updating points for entry_id: ${user.entry_id}, totalPoints: ${totalPoints}`);
 
@@ -119,33 +146,33 @@ export async function POST(req: Request) {
 
             const res = await fetch(`${BASE_URL}/api/user/updatePoints`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: {'Content-Type': 'application/json' },
                 body: JSON.stringify({ clerk_id: user.clerk_id, points: gainedPoints })
             });
 
            //console.log(`User ${user.clerk_id} gained ${gainedPoints} points`);
 
             if (!res.ok) {
+                await client.query('ROLLBACK');
                 return NextResponse.json({ success: false, message: data.message || 'Failed to update user total points after entry points update'}, { status: res.status });
             }
 
             const res2 = await fetch(`${BASE_URL}/api/user/updateMaxPoints`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: {'Content-Type': 'application/json' },
                 body: JSON.stringify({ clerk_id: user.clerk_id, max_points: maxPoints })
             });
 
             if (!res2.ok) {
+                await client.query('ROLLBACK');
                 return NextResponse.json({ success: false, message: data.message || 'Failed to update user total points after entry points update'}, { status: res2.status });
             }
         }
-
+        
+        await client.query('COMMIT');
         return NextResponse.json({ success: true, message: 'Entry points for all users updated successfully'}, {status: 200 });
     } catch (error) {
+        if (client) await client.query('ROLLBACK');
         console.error(`Error updating entry points: `, error);
         return NextResponse.json({ success: false, error: 'Internal server error '}, { status: 500 });
     } finally {
