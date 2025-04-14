@@ -109,7 +109,7 @@ export default function DailyPicks() {
     const [isLocked, setIsLocked] = useState(false);
     const [startedGames, setStartedGames] = useState<Set<string>>(new Set());
     const [firstGameLocked, setFirstGameLocked] = useState(false);
-    const [allGamesEnded, setAllGamesEnded] = useState(false); // TODO:
+    const [allGamesEnded, setAllGamesEnded] = useState(false);
     const [nextDayTimeLeft, setNextDayTimeLeft] = useState<TimeLeft>({ hours: 0, minutes: 0, seconds: 0 });
     const [previewGame, setPreviewGame] = useState<Game | null>(null);
     const searchParams = useSearchParams();
@@ -632,7 +632,7 @@ export default function DailyPicks() {
                     console.error('Error in verifying/creating leaderboard entry', error instanceof Error ? error.message : 'Failed to verify/create user leaderboard entry');
                 }
 
-                /* for testing (DON"T REMOVE)
+                /* for testing (DONT REMOVE)
                 // Submitted picks, no previous picks from the day:
 
                 // Execute points updates
@@ -698,6 +698,8 @@ export default function DailyPicks() {
         }
     };
 
+    // moved to its own page for auto updates to points
+    /* 
     const handleAllGamesDone = useCallback(async () => {
         // Sports to cycle through
         const sports: Sport[] = [
@@ -761,14 +763,18 @@ export default function DailyPicks() {
             }
         }
     }, []);
+    */
 
+    /*
     useEffect(() => {
         if (allGamesEnded) {
             handleAllGamesDone();
         }
     }, [allGamesEnded, handleAllGamesDone]);
+    */
 
-    // Handle daily points updates
+    // Handle daily points updates (MOVED TO AUTO UPDATES)
+    /*
     useEffect(() => {
         const nowUtc = new Date();
         const nowPst = toZonedTime(nowUtc, "America/Los_Angeles");
@@ -800,6 +806,7 @@ export default function DailyPicks() {
             }
         };
     }, [handleAllGamesDone]);
+    */
 
     // Add this function to check if a specific game is locked
     const isGameLocked = useCallback((gameId: string) => {
