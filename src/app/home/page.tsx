@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '../components/ui/skeleton';
 import { useSport } from '@/context/SportContext';
+import UserMatch from '../components/UserMatch';
 
 interface Game {
     id: string;
@@ -289,6 +290,7 @@ export default function ContestsPage() {
     if (loading) {
         return (
             <div className="p-4 sm:p-8 min-h-screen">
+                <UserMatch/>
                 <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{ letterSpacing: '1.5px', fontSize: '65px' }}>
                     Contests
                 </h1>
@@ -461,10 +463,10 @@ export default function ContestsPage() {
                                 Featured Contest
                             </div>
                             <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
-                                Today's {selectedSoccerLeague} {selectedSport} Games ({renderTodayGames().length} games)
+                                Today&apos;s {selectedSoccerLeague} {selectedSport} Games ({renderTodayGames().length} games)
                             </h1>
                             <p className="mt-2 text-slate-500">
-                                Make your picks for today's {selectedSport} matchups!
+                                Make your picks for today&apos;s {selectedSport} matchups!
                             </p>
                             <button
                                 onClick={handleTodayPlayNow}
@@ -481,10 +483,10 @@ export default function ContestsPage() {
                                 Upcoming Contest
                             </div>
                             <h1 className="block mt-1 text-lg leading-tight font-medium text-black dark:text-white">
-                                Tomorrow's {selectedSoccerLeague} {selectedSport} Games ({renderTomorrowGames().length} games)
+                                Tomorrow&apos;s {selectedSoccerLeague} {selectedSport} Games ({renderTomorrowGames().length} games)
                             </h1>
                             <p className="mt-2 text-slate-500">
-                                Get ready for tomorrow's {selectedSport} matchups!
+                                Get ready for tomorrow&apos;s {selectedSport} matchups!
                             </p>
                             <button
                                 onClick={handleTomorrowPlayNow}

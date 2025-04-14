@@ -1,8 +1,8 @@
 import cron from 'node-cron';
 import fetch from 'node-fetch';
 
-// Runs ever min
-cron.schedule('*/1 * * * *', async () => {
+// Runs every min
+cron.schedule('45 23 * * *', async () => {
   console.log('Triggering /api/automated-updatePoints');
 
   try {

@@ -141,7 +141,7 @@ export async function POST(req: Request) {
 
             const totalPoints = user.points+gainedPoints;
 
-            console.log(user.points + " " + gainedPoints);
+            console.log("current amount: " + user.points + " gained:" + gainedPoints);
 
             const leUpdate = await client.query(
                 `UPDATE leaderboard_entries SET points = $1 WHERE entry_id = $2`
