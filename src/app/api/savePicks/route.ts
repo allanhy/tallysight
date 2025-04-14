@@ -25,9 +25,7 @@ interface Pick {
   fullDate?: string;
   dbDate?: string;
   dbTime?: string;
-  favorite_team_id?: string;
   underdog_team_id?: string;
-  spread?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -177,9 +175,7 @@ export async function POST(req: NextRequest) {
             "gameDate",
             "gameTime",
             "sport",
-            "favorite_team_id",
-            "underdog_team_id",
-            "spread"
+            "underdog_team_id"
           ) VALUES (
             ${pick.gameId},
             ${pick.homeTeam.name},
@@ -189,18 +185,14 @@ export async function POST(req: NextRequest) {
             ${gameDate}::date,
             ${gameTime}::time,
             ${sport},
-            ${pick.favorite_team_id || null},
-            ${pick.underdog_team_id || null},
-            ${pick.spread || null}
+            ${pick.underdog_team_id || null}
           )
         `;
-      } else if (pick.favorite_team_id && pick.underdog_team_id && pick.spread) {
+      } else if (pick.underdog_team_id) {
         // Update underdog information if available
         await sql`
           UPDATE "Game"
-          SET "favorite_team_id" = ${pick.favorite_team_id},
-              "underdog_team_id" = ${pick.underdog_team_id},
-              "spread" = ${pick.spread}
+          SET "underdog_team_id" = ${pick.underdog_team_id}
           WHERE id = ${pick.gameId}
         `;
       }

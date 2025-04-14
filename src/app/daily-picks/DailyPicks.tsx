@@ -255,10 +255,10 @@ export default function DailyPicks() {
                         // Convert the API data to the format used in selectedPicks
                         const teamType = pick.teamIndex === 0 ? 'home' : 'away';
                         initialSelectedPicks.add(`${pick.gameId}-${teamType}`);
-                    }
 
-                    if(pick.bestPick)
-                        setBestPick(pick.gameId);
+                        if(pick.bestPick)
+                            setBestPick(pick.gameId);
+                    }
                 });
 
                 // Set the selectedPicks state with users previous picks
