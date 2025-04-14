@@ -2,7 +2,7 @@
     "crons": [
       {
         "path": "/api/automated-syncing",
-        "schedule": "/30 * * * *"
+        "schedule": "*/30 * * * *"
       },
       {
         "path": "/api/automated-reminders",
@@ -10,7 +10,7 @@
       },
       {
         "path": "/api/automated-updatePoints",
-        "schedule": "*/1 * * * *",
+        "schedule": "*/5 * * * *",
         "timezone": "America/Los_Angeles"
       }
     ]
