@@ -38,6 +38,7 @@ interface Team {
     spread: string;
     logo?: string;
     record?: string;
+    isUnderdog: boolean;
 }
 
 interface Game {
@@ -54,9 +55,34 @@ interface Game {
     isInProgress: boolean;
     isFinished: boolean;
 }
+
+interface Pick {
+    gameId: string;
+    teamIndex: number;
+    homeTeam: {
+        name: string;
+        logo: string;
+        isUnderdog?: boolean;
+    };
+    awayTeam: {
+        name: string;
+        logo: string;
+        isUnderdog?: boolean;
+    };
+    fullDate?: string;
+    dbDate?: string;
+    dbTime?: string;
+    estDate?: string;
+    gameTime?: string;
+    status?: string;
+    bestPick?: boolean;
+    sport: string;
+}
+
 const MAXPOINTSPERGAME = 1;
 const BONUSPOINTS = 3;
 const BESTPICKPOINTS = 3;
+const UNDERDOGPOINTS = 2; // Bonus points for picking an underdog
 
 const SpreadDisplay = ({ spread, onClick }: { spread: string; onClick: () => void }) => {
     if (spread === 'TBD' || spread === 'N/A') {
@@ -564,17 +590,23 @@ export default function DailyPicks() {
         setSubmitError(null);
 
         try {
-            const picksArray = Array.from(selectedPicks).map(pick => {
+            const picksArray: Pick[] = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
 
-                // Use the full date information from the game object, matching tomorrow-picks
                 return {
                     gameId,
                     teamIndex: teamType === 'home' ? 0 : 1,
-                    homeTeam: game?.homeTeam,
-                    awayTeam: game?.awayTeam,
-                    // Pass all date-related fields
+                    homeTeam: {
+                        name: game?.homeTeam.name || '',
+                        logo: game?.homeTeam.logo || '',
+                        isUnderdog: game?.homeTeam.isUnderdog
+                    },
+                    awayTeam: {
+                        name: game?.awayTeam.name || '',
+                        logo: game?.awayTeam.logo || '',
+                        isUnderdog: game?.awayTeam.isUnderdog
+                    },
                     fullDate: game?.fullDate,
                     dbDate: game?.dbDate,
                     dbTime: game?.dbTime,
@@ -593,7 +625,7 @@ export default function DailyPicks() {
                 },
                 body: JSON.stringify({
                     picks: picksArray,
-                    pickDate: new Date().toISOString().split('T')[0] // Today's date for tracking purposes, matching tomorrow-picks
+                    pickDate: new Date().toISOString().split('T')[0]
                 }),
             });
 
@@ -604,8 +636,20 @@ export default function DailyPicks() {
                 alert('You have already made your picks for today.');
                 router.push('/myPicks');
             } else if (response.ok) {
-                /* for testing (DON"T REMOVE)
-                // Submitted picks, no previous picks from the day:
+                // Update maxPoints calculation
+                let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
+
+                // Add best pick points if selected
+                if (bestPick !== null) {
+                    maxPoints += BESTPICKPOINTS;
+                }
+
+                // Add underdog points for each underdog pick
+                const underdogPicks = picksArray.filter(pick => 
+                    (pick.teamIndex === 0 && pick.homeTeam.isUnderdog) || 
+                    (pick.teamIndex === 1 && pick.awayTeam.isUnderdog)
+                );
+                maxPoints += underdogPicks.length * UNDERDOGPOINTS;
 
                 // Check if user has leaderboard entry, if not create one
                 const updateEntryResponse = await fetch('/api/leaderboard-entries/verifyEntry', {
@@ -619,14 +663,6 @@ export default function DailyPicks() {
                     throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
                 }
         
-                // Update Max Points for User
-                let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
-
-                // If best pick made add to total
-                if(bestPick !== null){
-                    maxPoints += BESTPICKPOINTS;
-                }
-
                 // Execute max points and leaderboard updates in parallel
                 const [updateMaxPointsResponse, updateUserPointsResponse] = await Promise.all([
                     fetch('/api/user/updateMaxPoints', {
@@ -650,7 +686,6 @@ export default function DailyPicks() {
                 if (!updateUserPointsResponse.ok) {
                     throw new Error(updateUserPointsData.message || 'Failed to update user total & entry points');
                 }
-                    */
             } else {
                 // error in submitting picks
                 throw new Error('Failed to submit picks');
@@ -686,13 +721,34 @@ export default function DailyPicks() {
     };
 
     const handleAllGamesDone = useCallback(async () => {
-        // Submitted picks, no previous picks from the day:
         try {
             // Extract picks from selectedPicks
-            const picksArray = Array.from(selectedPicks).map(pick => {
+            const picksArray: Pick[] = Array.from(selectedPicks).map(pick => {
                 const [gameId, teamType] = pick.split('-');
                 const game = games.find(g => g.id === gameId);
-                return { gameId, teamType, game }; // Return structured pick info
+
+                return {
+                    gameId,
+                    teamIndex: teamType === 'home' ? 0 : 1,
+                    homeTeam: {
+                        name: game?.homeTeam.name || '',
+                        logo: game?.homeTeam.logo || '',
+                        isUnderdog: game?.homeTeam.isUnderdog
+                    },
+                    awayTeam: {
+                        name: game?.awayTeam.name || '',
+                        logo: game?.awayTeam.logo || '',
+                        isUnderdog: game?.awayTeam.isUnderdog
+                    },
+                    fullDate: game?.fullDate,
+                    dbDate: game?.dbDate,
+                    dbTime: game?.dbTime,
+                    estDate: game?.estDate,
+                    gameTime: game?.gameTime,
+                    status: game?.status,
+                    bestPick: gameId === bestPick,
+                    sport: selectedSport.toUpperCase()
+                };
             });
 
             // Check if user has leaderboard entry, if not create one
@@ -707,13 +763,20 @@ export default function DailyPicks() {
                 throw new Error(updateEntryData.message || 'Failed to update user entry in leaderboard');
             }
 
-            // Update Max Points for User
+            // Update maxPoints calculation
             let maxPoints = MAXPOINTSPERGAME * picksArray.length + BONUSPOINTS;
 
-            // If best pick made add to total
+            // Add best pick points if selected
             if (bestPick !== null) {
                 maxPoints += BESTPICKPOINTS;
             }
+
+            // Add underdog points for each underdog pick
+            const underdogPicks = picksArray.filter(pick => 
+                (pick.teamIndex === 0 && pick.homeTeam.isUnderdog) || 
+                (pick.teamIndex === 1 && pick.awayTeam.isUnderdog)
+            );
+            maxPoints += underdogPicks.length * UNDERDOGPOINTS;
 
             // Execute max points and leaderboard updates in parallel
             const [updateMaxPointsResponse, updateUserPointsResponse] = await Promise.all([
@@ -741,7 +804,7 @@ export default function DailyPicks() {
         } catch (error) {
             //console.error('Error in handleAllGamesDone:', error instanceof Error ? error.message : 'Failed to submit picks');
         }
-    }, [userId, selectedPicks, games, bestPick]);
+    }, [selectedPicks, games, bestPick, selectedSport, userId]);
 
     useEffect(() => {
         if (allGamesEnded) {
