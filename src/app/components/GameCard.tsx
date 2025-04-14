@@ -22,7 +22,9 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
 
   // Function to shorten team names
   const shortenTeamName = (name: string) => {
+    // Common abbreviations for teams
     const shortNames: { [key: string]: string } = {
+      // NFL Teams
       'Tampa Bay Buccaneers': 'TB Buccaneers',
       'San Francisco 49ers': 'SF 49ers',
       'New England Patriots': 'NE Patriots',
@@ -33,46 +35,102 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
       'Kansas City Chiefs': 'KC Chiefs',
       'Los Angeles Rams': 'LA Rams',
       'Los Angeles Chargers': 'LA Chargers',
+      'Las Vegas Raiders': 'LV Raiders',
+      'Jacksonville Jaguars': 'JAX Jaguars',
+      
+      // NBA Teams
+      'Golden State Warriors': 'GS Warriors',
+      'Los Angeles Lakers': 'LA Lakers',
+      'Los Angeles Clippers': 'LA Clippers',
+      'Portland Trail Blazers': 'POR Blazers',
+      'Oklahoma City Thunder': 'OKC Thunder',
+      'San Antonio Spurs': 'SA Spurs',
+      
+      // MLB Teams
+      'Boston Red Sox': 'BOS Red Sox',
+      'Chicago White Sox': 'CHW White Sox',
+      'Toronto Blue Jays': 'TOR Blue Jays',
+      'Los Angeles Angels': 'LA Angels',
+      'Los Angeles Dodgers': 'LA Dodgers',
+      
+      // Soccer Teams
+      'Manchester United': 'Man United',
+      'Manchester City': 'Man City',
+      'Tottenham Hotspur': 'Tottenham',
+      'Wolverhampton Wanderers': 'Wolves',
+      'Sheffield United': 'Sheffield Utd',
+      'Newcastle United': 'Newcastle',
+      'Nottingham Forest': 'Nottm Forest',
+      'Crystal Palace': 'Crystal Pal',
+      'Brighton & Hove Albion': 'Brighton',
+      'West Ham United': 'West Ham',
+      'Aston Villa': 'Villa',
+      
+      // European Soccer Teams
+      'Paris Saint-Germain': 'PSG',
+      'Borussia Dortmund': 'Dortmund',
+      'Bayern München': 'Bayern',
+      'RB Leipzig': 'Leipzig',
+      'Bayer Leverkusen': 'Leverkusen',
+      'Atlético Madrid': 'Atlético',
+      'Athletic Club': 'Athletic',
+      'Real Sociedad': 'La Real',
+      'Inter Milan': 'Inter',
+      'AC Milan': 'Milan',
+      'Napoli': 'Napoli',
     };
-    return shortNames[name] || name;
+
+    if (shortNames[name]) {
+      return shortNames[name];
+    }
+
+    if (name.length > 15 && name.includes(' ')) {
+      const words = name.split(' ');
+      if (words.length === 2) {
+        return name;
+      }
+      return `${words[0]} ${words[words.length - 1]}`;
+    }
+
+    return name;
   };
 
   return (
-    <div className="h-[180px] w-full max-w-[400px] mx-auto">
-      <div className="bg-white dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-500 p-4 h-full flex flex-col">
+    <div className="game-card">
+      <div className="game-card-inner bg-white dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-500">
         {/* Date and Time */}
-        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">
           {isValidDate
             ? formatDateWithTimezone(gameDate, userTimeZone, 'EEEE, MMM d')
             : 'Date TBD'}
         </div>
-        <div className="text-lg font-bold text-black dark:text-white mb-2">
+        <div className="text-base sm:text-lg font-bold text-black dark:text-white mb-2">
           {isValidDate
             ? formatDateWithTimezone(gameDate, userTimeZone, 'h:mm a')
             : 'Time TBD'}
         </div>
 
-        {/* Teams with Logos */}
+        {/* Teams Section */}
         <div className="flex items-center justify-between space-x-2 mb-auto">
           {/* Away Team */}
-          <div className="flex items-center space-x-2 flex-1 min-w-0">
+          <div className="team-container">
             <div className="flex-shrink-0 w-8 h-8">
               {game.awayTeam.logo && (
                 <img
                   src={game.awayTeam.logo}
-                  alt={`${game.awayTeam} logo`}
+                  alt={`${game.awayTeam.name} logo`}
                   className="w-full h-full object-contain"
                 />
               )}
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-black dark:text-white truncate hidden md:block">
+            <div className="team-info">
+              <span className="team-name font-medium text-black dark:text-white hidden md:block">
                 {shortenTeamName(game.awayTeam.name)}
               </span>
-              <span className="text-sm font-medium text-black dark:text-white truncate block md:hidden">
+              <span className="team-name font-medium text-black dark:text-white block md:hidden">
                 {game.awayTeamAbbreviation.toUpperCase()}
               </span>
-              <span className="text-lg text-gray-600 dark:text-gray-400 font-bold h-6">
+              <span className="text-base sm:text-lg text-gray-600 dark:text-gray-400 font-bold h-6">
                 {(game.status === 'STATUS_IN_PROGRESS' ||
                   game.status === 'STATUS_FIRST_HALF' ||
                   game.status === 'STATUS_HALFTIME' ||
@@ -80,24 +138,24 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
                   game.status === 'STATUS_FINAL' ||
                   game.status === 'STATUS_FULL_TIME' ||
                   game.status === 'IN_PROGRESS') &&
-                  game.awayScore ? game.awayScore : ''}
+                  game.awayScore}
               </span>
             </div>
           </div>
 
           {/* VS */}
-          <span className="text-sm text-gray-500 flex-shrink-0 px-1">@</span>
+          <span className="text-xs sm:text-sm text-gray-500 flex-shrink-0 px-1">@</span>
 
           {/* Home Team */}
-          <div className="flex items-center space-x-2 inset-y-1 right-1 flex-1 min-w-0 justify-end">
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-medium text-black dark:text-white truncate hidden md:block">
+          <div className="team-container justify-end">
+            <div className="team-info items-end">
+              <span className="team-name font-medium text-black dark:text-white text-right hidden md:block">
                 {shortenTeamName(game.homeTeam.name)}
               </span>
-              <span className="text-sm font-medium text-black dark:text-white truncate block md:hidden">
+              <span className="team-name font-medium text-black dark:text-white text-right block md:hidden">
                 {game.homeTeamAbbreviation.toUpperCase()}
               </span>
-              <span className="text-lg text-gray-600 dark:text-gray-400 font-bold h-6">
+              <span className="text-base sm:text-lg text-gray-600 dark:text-gray-400 font-bold h-6">
                 {(game.status === 'STATUS_IN_PROGRESS' ||
                   game.status === 'STATUS_FIRST_HALF' ||
                   game.status === 'STATUS_HALFTIME' ||
@@ -105,47 +163,39 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
                   game.status === 'STATUS_FINAL' ||
                   game.status === 'STATUS_FULL_TIME' ||
                   game.status === 'IN_PROGRESS') &&
-                  game.homeScore ? game.homeScore : ''}
+                  game.homeScore}
               </span>
             </div>
-            {game.homeTeam.logo && (
-              <img
-                src={game.homeTeam.logo}
-                alt={`${game.homeTeam} logo`}
-                className="w-8 h-8 object-contain ml-2"
-                onError={(e) => {
-                  console.error('Error loading home team logo:', e);
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            )}
+            <div className="flex-shrink-0 w-8 h-8">
+              {game.homeTeam.logo && (
+                <img
+                  src={game.homeTeam.logo}
+                  alt={`${game.homeTeam.name} logo`}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    console.error('Error loading home team logo:', e);
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex-grow"></div>
-        <div className="text-sm text-gray-500 mt-2">
+        {/* Game Status */}
+        <div className="text-xs sm:text-sm text-gray-500 mt-2">
           {(() => {
             switch (game.status?.toLowerCase()) {
-              case 'status_final':
-                return 'Final';
-              case 'status_in_progress':
-                return 'In Progress';
-              case 'status_first_half':
-                return 'First Half';
-              case 'status_halftime':
-                return 'Halftime';
-              case 'status_second_half':
-                return 'Second Half';
-              case 'status_full_time':
-                return 'Full Time';
-              case 'status_delayed':
-                return 'Delayed';
-              case 'status_postponed':
-                return 'Postponed';
-              case 'status_canceled':
-                return 'Canceled';
-              default:
-                return 'Scheduled';
+              case 'status_final': return 'Final';
+              case 'status_in_progress': return 'In Progress';
+              case 'status_first_half': return 'First Half';
+              case 'status_halftime': return 'Halftime';
+              case 'status_second_half': return 'Second Half';
+              case 'status_full_time': return 'Full Time';
+              case 'status_delayed': return 'Delayed';
+              case 'status_postponed': return 'Postponed';
+              case 'status_canceled': return 'Canceled';
+              default: return 'Scheduled';
             }
           })()}
         </div>

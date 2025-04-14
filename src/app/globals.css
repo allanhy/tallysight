@@ -276,3 +276,51 @@ body {
 .scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 0.7); /* Darker thumb on hover */
 }
+
+/* Team name styles in game cards */
+.team-name {
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .team-name {
+    max-width: 90px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Carousel card styles */
+.game-card {
+  height: 180px;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.game-card-inner {
+  height: 100%;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.team-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
