@@ -13,12 +13,10 @@ interface Pick {
   homeTeam: {
     name: string;
     logo: string;
-    isUnderdog?: boolean;
   };
   awayTeam: {
     name: string;
     logo: string;
-    isUnderdog?: boolean;
   };
   gameTime: string;
   status: string;
@@ -27,7 +25,6 @@ interface Pick {
   fullDate?: string;
   dbDate?: string;
   dbTime?: string;
-  bestPick?: boolean;
 }
 
 export async function POST(req: NextRequest) {
@@ -221,8 +218,7 @@ export async function POST(req: NextRequest) {
           "teamIndex",
           "createdAt",
           "sport",
-          "isBestPick",
-          "isUnderdog"
+          "bestPick"
         ) VALUES (
           ${crypto.randomUUID()},
           ${userId},
@@ -230,14 +226,12 @@ export async function POST(req: NextRequest) {
           ${pick.teamIndex},
           NOW() AT TIME ZONE 'America/New_York',
           ${sport},
-          ${pick.bestPick || false},
-          ${pick.teamIndex === 0 ? pick.homeTeam.isUnderdog : pick.awayTeam.isUnderdog}
+          ${pick.bestPick}
         )
         ON CONFLICT ("userId", "gameId") DO UPDATE
         SET "teamIndex" = EXCLUDED."teamIndex",
             "createdAt" = EXCLUDED."createdAt",
-            "isBestPick" = EXCLUDED."isBestPick",
-            "isUnderdog" = EXCLUDED."isUnderdog";
+            "bestPick" = EXCLUDED."bestPick";
       `;
     }
 

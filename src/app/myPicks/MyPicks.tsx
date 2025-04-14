@@ -11,7 +11,6 @@ import { toZonedTime } from 'date-fns-tz';
 import { isTomorrow, isToday } from 'date-fns';
 import { PrismaClient } from '@prisma/client';
 import { PcCaseIcon } from 'lucide-react';
-import BackToTop from '../components/BackToTop';
 const prisma = new PrismaClient();
 
 
@@ -1038,7 +1037,8 @@ export default function MyPicksPage() {
                     </div>
                 )}
             </div>
-            <BackToTop />
+
+            
         </div>
     );
 }
