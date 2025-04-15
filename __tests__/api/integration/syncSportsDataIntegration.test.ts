@@ -4,19 +4,17 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
-describe("Integration: POST /api/syncSportsRadarData", () => {
+describe("Integration: POST /api/admin/syncSportsRadarData", () => {
   const mockGame = {
-    id: "integration_test_rockies_brewers",
-    team1Name: "Colorado Rockies", // must match ESPN team names
-    team2Name: "Milwaukee Brewers",
-    gameDate: new Date("2025-04-10T00:40:00.000Z"),
+    id: "401695149",
+    team1Name: "Team A", 
+    team2Name: "Team B",
+    gameDate: new Date("2025-04-14T00:00:00.000Z"), 
     sport: "MLB",
   };
 
   beforeAll(async () => {
-    // Clean up any previous test entries
     await sql`DELETE FROM "Game" WHERE id = ${mockGame.id}`;
-
     await sql`
       INSERT INTO "Game" (id, "team1Name", "team2Name", "gameDate", sport)
       VALUES (
@@ -34,11 +32,11 @@ describe("Integration: POST /api/syncSportsRadarData", () => {
   });
 
   it(
-    "updates a real game record after syncing ESPN",
+    "updates a game record with final score and winner from ESPN sync",
     async () => {
       const req = {
         json: async () => ({
-          gameIds: [], // allow sync to process all ESPN games
+          gameIds: [], // sync all games, not filtered by ID
         }),
       } as any;
 
@@ -49,17 +47,17 @@ describe("Integration: POST /api/syncSportsRadarData", () => {
       expect(json.success).toBe(true);
       expect(Array.isArray(json.results)).toBe(true);
 
-      const updatedGame = await sql`
+      const updated = await sql`
         SELECT * FROM "Game"
-        WHERE "team1Name" = ${mockGame.team1Name}
-          AND "team2Name" = ${mockGame.team2Name}
-          AND DATE("gameDate") = DATE(${mockGame.gameDate.toISOString()})
+        WHERE id = ${mockGame.id}
       `;
 
-      expect(updatedGame.rows.length).toBeGreaterThan(0);
-      expect(updatedGame.rows[0].winner).not.toBeNull();
-      expect(updatedGame.rows[0].final_score).toMatch(/\d+-\d+/);
+      const updatedGame = updated.rows[0];
+
+      expect(updatedGame).toBeDefined();
+      expect(updatedGame.final_score).toMatch(/^\d+-\d+$/);
+      expect(typeof updatedGame.winner).toBe("boolean");
     },
-    20000 // ⏱ Extend timeout
+    20000
   );
 });

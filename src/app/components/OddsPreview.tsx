@@ -220,7 +220,8 @@ export default function OddsPreview({
                   ? 'text-red-800 bg-red-100'
                   : gameData.status?.toLowerCase() === 'status_in_progress' ||
                     gameData.status?.toLowerCase() === 'status_first_half' ||
-                    gameData.status?.toLowerCase() === 'status_second_half'
+                    gameData.status?.toLowerCase() === 'status_second_half' ||
+                    gameData.status?.toLowerCase() === 'status_end_period'
                     ? 'text-blue-800 bg-blue-100'
                     : gameData.status?.toLowerCase() === 'status_halftime'
                       ? 'text-yellow-800 bg-yellow-100'
@@ -236,6 +237,7 @@ export default function OddsPreview({
                       case 'status_in_progress':
                       case 'status_first_half':
                       case 'status_second_half':
+                      case 'status_end_period':
                         return 'In Progress';
                       case 'status_halftime':
                         return 'Halftime';
@@ -274,6 +276,7 @@ export default function OddsPreview({
                         case 'status_in_progress':
                         case 'status_first_half':
                         case 'status_second_half':
+                        case 'status_end_period':
                           return '(In Progress)';
                         case 'status_halftime':
                           return '(Halftime)';
@@ -333,6 +336,7 @@ export default function OddsPreview({
                         case 'status_in_progress':
                         case 'status_first_half':
                         case 'status_second_half':
+                        case 'status_end_period':
                           return '(In Progress)';
                         case 'status_halftime':
                           return '(Halftime)';

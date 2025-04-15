@@ -220,6 +220,8 @@ export async function GET(request: Request) {
           const isGameInProgress = gameStatus === "STATUS_IN_PROGRESS" || 
                                  gameStatus === "STATUS_HALFTIME" || 
                                  gameStatus === "STATUS_LIVE" ||
+                                 gameStatus === "STATUS_FIRST_HALF" ||
+                                 gameStatus === "STATUS_SECOND_HALF" ||
                                  gameStatus === "STATUS_ACTIVE";
 
           // If game is finished, update the schedule to show "Final"

@@ -37,7 +37,7 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
       'Los Angeles Chargers': 'LA Chargers',
       'Las Vegas Raiders': 'LV Raiders',
       'Jacksonville Jaguars': 'JAX Jaguars',
-      
+
       // NBA Teams
       'Golden State Warriors': 'GS Warriors',
       'Los Angeles Lakers': 'LA Lakers',
@@ -45,14 +45,14 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
       'Portland Trail Blazers': 'POR Blazers',
       'Oklahoma City Thunder': 'OKC Thunder',
       'San Antonio Spurs': 'SA Spurs',
-      
+
       // MLB Teams
       'Boston Red Sox': 'BOS Red Sox',
       'Chicago White Sox': 'CHW White Sox',
       'Toronto Blue Jays': 'TOR Blue Jays',
       'Los Angeles Angels': 'LA Angels',
       'Los Angeles Dodgers': 'LA Dodgers',
-      
+
       // Soccer Teams
       'Manchester United': 'Man United',
       'Manchester City': 'Man City',
@@ -65,7 +65,7 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
       'Brighton & Hove Albion': 'Brighton',
       'West Ham United': 'West Ham',
       'Aston Villa': 'Villa',
-      
+
       // European Soccer Teams
       'Paris Saint-Germain': 'PSG',
       'Borussia Dortmund': 'Dortmund',
@@ -137,6 +137,7 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
                   game.status === 'STATUS_SECOND_HALF' ||
                   game.status === 'STATUS_FINAL' ||
                   game.status === 'STATUS_FULL_TIME' ||
+                  game.status === 'STATUS_END_PERIOD' ||
                   game.status === 'IN_PROGRESS') &&
                   game.awayScore}
               </span>
@@ -162,6 +163,7 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
                   game.status === 'STATUS_SECOND_HALF' ||
                   game.status === 'STATUS_FINAL' ||
                   game.status === 'STATUS_FULL_TIME' ||
+                  game.status === 'STATUS_END_PERIOD' ||
                   game.status === 'IN_PROGRESS') &&
                   game.homeScore}
               </span>
@@ -187,7 +189,9 @@ export const GameCard = ({ game, userTimeZone }: { game: Game, userTimeZone: str
           {(() => {
             switch (game.status?.toLowerCase()) {
               case 'status_final': return 'Final';
-              case 'status_in_progress': return 'In Progress';
+              case 'status_in_progress':
+              case 'status_end_period':
+                return 'In Progress';
               case 'status_first_half': return 'First Half';
               case 'status_halftime': return 'Halftime';
               case 'status_second_half': return 'Second Half';
