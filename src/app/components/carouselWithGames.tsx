@@ -65,13 +65,41 @@ const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDat
   const carouselRef = useRef<any>(null);
   const { carouselSport, selectedSoccerLeague } = useSport();
   const [userTimeZone, setUserTimeZone] = useState('America/New_York');
-  
+
   useEffect(() => {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     setUserTimeZone(timezone);
     const fetchGames = async () => {
       try {
         setLoading(true);
+
+        const sortGames = (games: Game[]) => {
+          return games.sort((a, b) => {
+            const statusPriority = (status: string) => {
+              const upper = status.toUpperCase();
+              if (
+                upper.includes('FIRST_HALF') ||
+                upper.includes('SECOND_HALF') ||
+                upper.includes('HALFTIME') ||
+                upper.includes('IN_PROGRESS')
+              ) return 0; // In progress
+              if (status.includes('FINAL') || status.includes('FULL TIME') || status === 'FT') return 1;
+              return 2; // Scheduled
+            };
+
+            const priorityA = statusPriority(a.status);
+            const priorityB = statusPriority(b.status);
+
+            if (priorityA !== priorityB) {
+              return priorityA - priorityB;
+            }
+
+            // If same group, sort by start time
+            const dateA = new Date(a.fullDate).getTime();
+            const dateB = new Date(b.fullDate).getTime();
+            return dateA - dateB;
+          });
+        };
 
         if (carouselSport === 'Soccer' && selectedSoccerLeague === '') {
           // Fetch all soccer games when "All Soccer Leagues" is selected
@@ -94,15 +122,19 @@ const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDat
             const dateB = new Date(b.fullDate).getTime();
             return dateA - dateB;
           });
-          setGames(combinedGames);
+          setGames(sortGames(combinedGames));
         } else {
           const response = await fetch(`/api/all-espn-games?sport=${carouselSport}`);
           const data = await response.json();
           // console.log(`Fetched data for ${carouselSport}:`, data); // Debugging
 
-          if (data.games) {
+          const sortedGames = sortGames(data.games);
+
+          if (sortedGames.length < 3) {
             const duplicatedGames = [...data.games, ...data.games, ...data.games];
             setGames(duplicatedGames);
+          } else {
+            setGames(sortedGames);
           }
         }
       } catch (error) {
@@ -148,18 +180,18 @@ const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDat
               removeArrowOnDeviceType={[]}
             >
               {games.length > 0 ? (
-              games.map((game, index) => (
-                <div key={`${game.id}-${index}`} className="h-full">
-                  <GameCard game={game} userTimeZone={userTimeZone}/>
+                games.map((game, index) => (
+                  <div key={`${game.id}-${index}`} className="h-full">
+                    <GameCard game={game} userTimeZone={userTimeZone} />
+                  </div>
+                ))
+              ) : (
+                <div className="no-games-card flex dark:bg-gray-700/30 dark:border-gray-500 justify-center items-center text-center rounded-lg shadow-md h-48 border">
+                  <p className="text-gray-500 dark:text-gray-300 text-lg font-semibold">
+                    No games are available for today.
+                  </p>
                 </div>
-              ))
-            ) : (
-              <div className="no-games-card flex dark:bg-gray-700/30 dark:border-gray-500 justify-center items-center text-center rounded-lg shadow-md h-48 border">
-                <p className="text-gray-500 dark:text-gray-300 text-lg font-semibold">
-                  No games are available for today.
-                </p>
-              </div>
-            )}
+              )}
             </Carousel>
           )}
         </div>
