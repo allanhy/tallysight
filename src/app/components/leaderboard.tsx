@@ -148,7 +148,8 @@ const Leaderboard: React.FC = () => {
         <div className='leaderboard-page'>
             <div className='content-wrapper'>
                 <div className='main-content'>
-                    <h1 className='leaderboard-title text-black dark:text-white'>
+                    <h1 className="text-black dark:text-white font-semibold mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
+                        style={{ letterSpacing: '1.5px' }}>
                     {selectedWeek === 0 ? 
                         (selectedSport === "SELECT" ? "Overall Leaderboard" : `${selectedSport} All Time Leaderboard`) : 
                         (selectedSport === "SELECT" ? `Overall Week ${selectedWeek}` : `${selectedSport} Week ${selectedWeek} Leaderboard`)}
