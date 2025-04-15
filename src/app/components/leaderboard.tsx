@@ -44,16 +44,17 @@ const Leaderboard: React.FC = () => {
             setError('');
 
             try {
-                // Log the fetch for debugging
-                console.log(`Fetching leaderboard: sport=${selectedSport}, week=${selectedWeek}`);
-
-                const res = await fetch(
-                    `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`
-                );
+              
+                const endpoint = selectedSport === 'SELECT' 
+                    ? `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`
+                    // new route for specific sport selection
+                    : `/api/user/getSportPoints?sport=${selectedSport}&week=${selectedWeek}`;
+                
+                const res = await fetch(endpoint);
                 const data = await res.json();
-
+        
                 console.log("API response:", data);
-
+        
                 if (res.ok) {
                     setLeaderboard(data.data);
                 } else {
@@ -66,6 +67,7 @@ const Leaderboard: React.FC = () => {
                 setLoading(false);
             }
         };
+        
 
         // Force a fetch on initial render
         fetchLeaderboard();
@@ -203,7 +205,14 @@ const Leaderboard: React.FC = () => {
                                         {leaderboard.length <= 0 ? (
                                                 <div className='text-black dark:text-white'>No rankings available for the selected sport and week. Please choose a different option.</div>
                                         ) : (
-                                            <div className='hover:cursor-pointer'><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
+                                            <div className='hover:cursor-pointer'>
+                                                <LeaderboardProfiles 
+                                                    sport={selectedSport} 
+                                                    week={selectedWeek} 
+                                                    userIds={leaderboard.map(entry => entry.user_id)}
+                                                    userData={leaderboard}
+                                                />
+                                            </div>
                                         )}
                                 </div>
                         )}
