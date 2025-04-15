@@ -44,16 +44,17 @@ const Leaderboard: React.FC = () => {
             setError('');
 
             try {
-                // Log the fetch for debugging
-                console.log(`Fetching leaderboard: sport=${selectedSport}, week=${selectedWeek}`);
-
-                const res = await fetch(
-                    `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`
-                );
+              
+                const endpoint = selectedSport === 'SELECT' 
+                    ? `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`
+                    // new route for specific sport selection
+                    : `/api/user/getSportPoints?sport=${selectedSport}&week=${selectedWeek}`;
+                
+                const res = await fetch(endpoint);
                 const data = await res.json();
-
+        
                 console.log("API response:", data);
-
+        
                 if (res.ok) {
                     setLeaderboard(data.data);
                 } else {
@@ -66,6 +67,7 @@ const Leaderboard: React.FC = () => {
                 setLoading(false);
             }
         };
+        
 
         // Force a fetch on initial render
         fetchLeaderboard();
@@ -204,7 +206,14 @@ const Leaderboard: React.FC = () => {
                                         {leaderboard.length <= 0 ? (
                                                 <div className='text-black dark:text-white'>No rankings available for the selected sport and week. Please choose a different option.</div>
                                         ) : (
-                                            <div className='hover:cursor-pointer'><LeaderboardProfiles sport={ selectedSport } week={ selectedWeek } userIds={leaderboard.map(entry => entry.user_id)}/></div>
+                                            <div className='hover:cursor-pointer'>
+                                                <LeaderboardProfiles 
+                                                    sport={selectedSport} 
+                                                    week={selectedWeek} 
+                                                    userIds={leaderboard.map(entry => entry.user_id)}
+                                                    userData={leaderboard}
+                                                />
+                                            </div>
                                         )}
                                 </div>
                         )}
@@ -370,6 +379,66 @@ const Leaderboard: React.FC = () => {
 
                     .performance {
                         text-align: right;
+                    }
+                }
+                       /* For small screens  */
+                @media (max-width: 480px) {
+                    .leaderboard-title {
+                        font-size: 30px;
+                    }
+                    
+                    .rank, .username, .performance, .points {
+                        padding: 8px;
+                        font-size: .5rem;
+                    }
+                    
+                    .points {
+                        text-align: right;
+                        min-width: 30px;
+                        max-width: 40px;
+                        margin-left: auto;
+                        width: 13%;
+                       
+                    }
+
+                    .username {
+                        text-align: left;
+                        width: 30%; 
+                        max-width: 75px; 
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    
+                    .performance {
+                        text-align: right;
+                        width: 25%;
+                        margin-right: 15px; 
+                    }
+                    
+                    /* Profile row and item adjustments */
+                    :global(*[class*="profile-row"]),
+                    :global(*[class*="profile-item"]) {
+                        display: flex;
+                        justify-content: space-between;
+                        width: 100%;
+                        box-sizing: border-box;
+                        overflow: hidden;
+                    }
+                    
+                    :global(*[class*="username"]),
+                    :global(.user-text) {
+                        max-width: 75px; 
+                        width: 30%; 
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    
+                    :global(*[class*="performance"]) {
+                        text-align: right;
+                        width: 25%;
+                        margin-right: 15px; 
                     }
                 }
             `}</style>

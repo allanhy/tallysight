@@ -42,9 +42,11 @@ export async function GET(req: Request) {
           WHERE u.user_id = subquery.user_id;
         `);
 
+        // Only include users who have earned points (> 0)
         const query = 
           `SELECT u.user_id, u.clerk_id, u.username, u.points, u.rank, u.performance, u.bio, u.fav_team, u.max_points
           FROM users u
+          WHERE u.points > 0
           ORDER BY u.rank ASC, u.points DESC;`;
         users = await client.query(query);
     
@@ -70,6 +72,8 @@ export async function GET(req: Request) {
           l.week = $1
         GROUP BY 
           u.user_id, u.clerk_id, u.username, u.performance, u.bio, u.fav_team, u.max_points
+        HAVING 
+          SUM(le.points) > 0
         ORDER BY 
           rank ASC, points DESC;`;
         users = await client.query(query, [week]);
@@ -108,9 +112,13 @@ export async function GET(req: Request) {
         JOIN 
           leaderboard_entries le ON u.user_id = le.user_id
         JOIN 
-          leaderboards l ON le.leaderboard_id = l.leaderboard_id AND l.sport = $1
+          leaderboards l ON le.leaderboard_id = l.leaderboard_id
+        WHERE 
+          l.sport = $1
         GROUP BY 
           u.user_id, u.clerk_id, u.username, u.performance, u.bio, u.fav_team, u.max_points
+        HAVING 
+          SUM(le.points) > 0
         ORDER BY 
           rank ASC, points DESC;
       `;

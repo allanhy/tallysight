@@ -33,10 +33,11 @@ interface leaderboardProfileProps{
     sport: Sport;
     week: number | null;
     userIds: number[];
+    userData?: any[];
 }
 
 //export default function LeaderboardProfiles({ userIds = []}: leaderboardProfileProps) {
-export default function LeaderboardProfiles({ sport, week, userIds = [] }: leaderboardProfileProps) {
+export default function LeaderboardProfiles({ sport, week, userIds = [], userData = [] }: leaderboardProfileProps) {
     const [users, setUsers] = useState<user[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -46,6 +47,19 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
     const [loadingSocial, setLoadingSocial] = useState(false);
     
     useEffect(() => {
+        
+        if (userData && userData.length > 0) {
+            const processedUsers = userData.map(user => ({
+                ...user,
+                imageUrl: user.imageUrl || "/default-profile.png",
+                totalPoints: user.points
+            }));
+            
+            setUsers(processedUsers);
+            setLoading(false);
+            return; 
+        }
+        
         if ((sport === 'SELECT' && (week === -1 || week === null)) || week === 0) {
             if (userIds.length === 0) {
                 setLoading(false);
@@ -63,9 +77,11 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
                         const updatedUsers = data.data.filter((user: user) => user.points !== 0).map((user: user) => ({
                             ...user,
                             imageUrl: user.imageUrl || "/default-profile.png",
+                            totalPoints: user.points
                         })) || [];
     
-                        await linkTotalPoints(updatedUsers); // merge and set inside
+                        setUsers(updatedUsers);
+                        setLoading(false);
                     } else {
                         setError(data.message || 'Users Fetch: Failed');
                         setLoading(false);
@@ -80,16 +96,26 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
         } else {
             const fetchSpecificLeaderboardUsers = async () => {
                 try {
-                    const res = await fetch(`/api/leaderboard-entries/getEntriesForLeaderboard?sport=${sport}&week=${week}`);
+                    const endpoint = sport === 'SELECT' 
+                        ? `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${sport}&week=${week}`
+                        : `/api/user/getSportPoints?sport=${sport}&week=${week}`;
+                    
+                    console.log(`Fetching from endpoint: ${endpoint}`);
+                    const res = await fetch(endpoint);
                     const data = await res.json();
-    
+
+                    
+
                     if (res.ok) {
                         const updatedUsers = data.data.filter((user: user) => user.points !== 0).map((user: user) => ({
                             ...user,
                             imageUrl: user.imageUrl || "/default-profile.png",
+                            totalPoints: user.points // Ensure totalPoints exactly matches points
                         })) || [];
-    
-                        await linkTotalPoints(updatedUsers);
+
+                        
+                        setUsers(updatedUsers);
+                        setLoading(false);
                     } else {
                         setError(data.message || 'User Fetch for Specific Leaderboard: Failed');
                         setLoading(false);
@@ -102,35 +128,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
     
             fetchSpecificLeaderboardUsers();
         }
-    
-        async function linkTotalPoints(baseUsers: user[]) {
-            try {
-                const queryStr = `user_id=${userIds.join(',')}`;
-                const res = await fetch(`/api/user/getMultiUserPoints?${queryStr}`);
-                const data = await res.json();
-    
-                if (res.ok) {
-                    const totalsMap = new Map<number, number>();
-                    data.data.forEach((entry: { user_id: number; points: number }) => {
-                        totalsMap.set(entry.user_id, entry.points);
-                    });
-    
-                    const mergedUsers = baseUsers.map((u) => ({
-                        ...u,
-                        totalPoints: totalsMap.get(u.user_id) || 0,
-                    }));
-    
-                    setUsers(mergedUsers);
-                } else {
-                    setError(data.message || 'Failed to fetch total points');
-                }
-            } catch (error) {
-                setError(`Network error fetching total points: ${error}`);
-            } finally {
-                setLoading(false);
-            }
-        }
-    }, [sport, userIds, week]);
+    }, [sport, userIds, week, userData]);
         
     // Close profile popout when clicking outside
     useEffect(() => {
@@ -318,31 +316,39 @@ export default function LeaderboardProfiles({ sport, week, userIds = [] }: leade
 function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) => void }) {
     // Double check sorting
     const sortedData = [...data].sort((a, b) => a.rank - b.rank);
-    //const { user } = useUser(); // to display signed in user differently
+    
+    console.log("Data being rendered in Item component:", sortedData.slice(0, 3)); // Log first 3 users
     
     return(
         <>
-            {sortedData.map((user) => (
-                <div 
-                    className={styles.profile + " text-black bg-gray-300/30 dark:text-white dark:bg-gray-800/30"}
-                    key={`${user.username}-${user.rank}`}
-                    onClick={() => onUserClick(user)}
-                >
-                    <div className={styles.rank}>{user.rank}</div>
-                    <Image
-                        src={getImageSrc(user.imageUrl)}
-                        alt={`Profile image of ${user.username}`}
-                        loading='lazy'
-                        width={60}
-                        height={60}
-                        quality={100}
-                        className={styles.image}
-                        unoptimized/>
-                    <div className={styles.username + " text-black dark:text-white"}>{user.username}</div>
-                    <div className={styles.performance +  " text-black dark:text-white"}>{user.performance}% {user.totalPoints}/{user.max_points}</div>
-                    <div className={styles.points +  " text-black dark:text-white"}>{user.points}</div>
-                </div>
-            ))}
+            {sortedData.map((user) => {
+                console.log(`Rendering user ${user.username}: points=${user.points}, totalPoints=${user.totalPoints}`);
+                return (
+                    <div 
+                        className={styles.profile + " text-black bg-gray-300/30 dark:text-white dark:bg-gray-800/30"}
+                        key={`${user.username}-${user.rank}`}
+                        onClick={() => onUserClick(user)}
+                    >
+                        <div className={styles.rank}>{user.rank}</div>
+                        <Image
+                            src={getImageSrc(user.imageUrl)}
+                            alt={`Profile image of ${user.username}`}
+                            loading='lazy'
+                            width={60}
+                            height={60}
+                            quality={100}
+                            className={styles.image}
+                            unoptimized/>
+                        <div className={styles.username + " text-black dark:text-white"}>{user.username}</div>
+                        <div className={styles.performance +  " text-black dark:text-white"}>
+                            {user.performance}% {user.points}/{user.max_points}
+                        </div>
+                        <div className={styles.points +  " text-black dark:text-white"}>
+                            {user.points}
+                        </div>
+                    </div>
+                );
+            })}
         </>
     );
 }
