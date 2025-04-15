@@ -380,6 +380,66 @@ const Leaderboard: React.FC = () => {
                         text-align: right;
                     }
                 }
+                       /* For small screens  */
+                @media (max-width: 480px) {
+                    .leaderboard-title {
+                        font-size: 30px;
+                    }
+                    
+                    .rank, .username, .performance, .points {
+                        padding: 8px;
+                        font-size: .5rem;
+                    }
+                    
+                    .points {
+                        text-align: right;
+                        min-width: 30px;
+                        max-width: 40px;
+                        margin-left: auto;
+                        width: 13%;
+                       
+                    }
+
+                    .username {
+                        text-align: left;
+                        width: 30%; 
+                        max-width: 75px; 
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    
+                    .performance {
+                        text-align: right;
+                        width: 25%;
+                        margin-right: 15px; 
+                    }
+                    
+                    /* Profile row and item adjustments */
+                    :global(*[class*="profile-row"]),
+                    :global(*[class*="profile-item"]) {
+                        display: flex;
+                        justify-content: space-between;
+                        width: 100%;
+                        box-sizing: border-box;
+                        overflow: hidden;
+                    }
+                    
+                    :global(*[class*="username"]),
+                    :global(.user-text) {
+                        max-width: 75px; 
+                        width: 30%; 
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    
+                    :global(*[class*="performance"]) {
+                        text-align: right;
+                        width: 25%;
+                        margin-right: 15px; 
+                    }
+                }
             `}</style>
         </div>
     );
