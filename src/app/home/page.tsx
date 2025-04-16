@@ -222,7 +222,7 @@ export default function ContestsPage() {
     };
 
     const handleSoccerLeagueChange = (league: string) => {
-        setSelectedSoccerLeague(league);  
+        setSelectedSoccerLeague(league);
         setCarouselSport(league === '' ? 'Soccer' : league);   // Update carousel to reflect the new league
     };
 
@@ -273,7 +273,7 @@ export default function ContestsPage() {
         if (a.hasGames === b.hasGames) return 0;
         return a.hasGames ? -1 : 1; // Sports with games come first
     });
-    
+
     useEffect(() => {
         if (!selectedSport && sortedSports.length > 0) {
             setSelectedSport(sortedSports[0].sport as 'NBA' | 'MLB' | 'NFL' | 'NHL' | 'Soccer');
@@ -290,8 +290,8 @@ export default function ContestsPage() {
     if (loading) {
         return (
             <div className="p-4 sm:p-8 min-h-screen">
-                <UserMatch/>
-                <h1 className="text-black dark:text-white font-semibold mb-4 text-center" style={{ letterSpacing: '1.5px', fontSize: '65px' }}>
+                <UserMatch />
+                <h1 className="text-black dark:text-white font-semibold mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style={{ letterSpacing: '1.5px' }}>
                     Contests
                 </h1>
                 {/* Skeleton Loader for Buttons */}
@@ -301,32 +301,32 @@ export default function ContestsPage() {
                             key={index}
                             className="flex flex-col items-center gap-2 px-4 py-4 rounded-lg w-24 text-center animate-pulse"
                         >
-                            <div className="h-16 w-16 rounded-full bg-gray-600" />
-                            <div className="h-4 w-12 bg-gray-500 rounded" />
+                            <div className="h-12 sm:h-16 w-12 sm:w-16 rounded-full bg-gray-600" />
+                            <div className="h-3 sm:h-4 w-10 sm:w-12 bg-gray-500 rounded" />
                         </div>
                     ))}
                 </div>
-                <div className="flex flex-col gap-4 sm:gap-8 max-w-4xl mx-auto">
-                    {/* Skeleton for Featured Contest */}
+                <div className="flex flex-col gap-3 sm:gap-4 md:gap-8 max-w-4xl mx-auto">
+                {/* Skeleton for Featured Contest */}
                     <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4 sm:p-8">
-                        <Skeleton className="h-5 w-1/4 bg-gray-600 mb-2" />
-                        <Skeleton className="h-8 w-3/4 bg-gray-500 mb-2" />
-                        <Skeleton className="h-4 w-1/2 bg-gray-600 mb-4" />
-                        <Skeleton className="h-10 w-full bg-gray-700 rounded-lg" />
+                    <Skeleton className="h-4 sm:h-5 w-1/4 bg-gray-600 mb-2" />
+                    <Skeleton className="h-6 sm:h-8 w-3/4 bg-gray-500 mb-2" />
+                    <Skeleton className="h-3 sm:h-4 w-1/2 bg-gray-600 mb-4" />
+                    <Skeleton className="h-9 sm:h-10 w-full bg-gray-700 rounded-lg" />
                     </div>
 
                     {/* Skeleton for Upcoming Contest */}
-                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950 p-4 sm:p-8">
-                        <Skeleton className="h-5 w-1/4 bg-gray-600 mb-2" />
-                        <Skeleton className="h-8 w-3/4 bg-gray-500 mb-2" />
-                        <Skeleton className="h-4 w-1/2 bg-gray-600 mb-4" />
-                        <Skeleton className="h-10 w-full bg-gray-700 rounded-lg" />
+                    <div className="rounded-lg sm:rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-white to-gray-100 dark:from-gray-900 dark:to-gray-950 p-3 sm:p-4 md:p-8">
+                    <Skeleton className="h-4 sm:h-5 w-1/4 bg-gray-600 mb-2" />
+                    <Skeleton className="h-6 sm:h-8 w-3/4 bg-gray-500 mb-2" />
+                    <Skeleton className="h-3 sm:h-4 w-1/2 bg-gray-600 mb-4" />
+                    <Skeleton className="h-9 sm:h-10 w-full bg-gray-700 rounded-lg" />
                     </div>
                 </div>
             </div>
         )
     }
-    
+
     return (
         <div className="p-2 sm:p-4 md:p-8 min-h-screen" >
             <h1 className="text-black dark:text-white font-semibold mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style={{ letterSpacing: '1.5px' }}>

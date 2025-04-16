@@ -31,30 +31,30 @@ const Leaderboard: React.FC = () => {
 
     // Getting selected leaderboard for chosen week and sport
     useEffect(() => {
-        
-            // Initial fetch proceed without early return
-            if (!isInitialRender && (selectedSport === 'SELECT' || selectedWeek === null || selectedWeek === -1 || selectedWeek === 0)) {
-                setLeaderboard([]);
-                setLoading(false);
-                return;
-            }
-            const fetchLeaderboard = async () => {
-            
+
+        // Initial fetch proceed without early return
+        if (!isInitialRender && (selectedSport === 'SELECT' || selectedWeek === null || selectedWeek === -1 || selectedWeek === 0)) {
+            setLeaderboard([]);
+            setLoading(false);
+            return;
+        }
+        const fetchLeaderboard = async () => {
+
             setLoading(true);
             setError('');
 
             try {
-              
-                const endpoint = selectedSport === 'SELECT' 
+
+                const endpoint = selectedSport === 'SELECT'
                     ? `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${selectedSport}&week=${selectedWeek}`
                     // new route for specific sport selection
                     : `/api/user/getSportPoints?sport=${selectedSport}&week=${selectedWeek}`;
-                
+
                 const res = await fetch(endpoint);
                 const data = await res.json();
-        
+
                 console.log("API response:", data);
-        
+
                 if (res.ok) {
                     setLeaderboard(data.data);
                 } else {
@@ -67,7 +67,7 @@ const Leaderboard: React.FC = () => {
                 setLoading(false);
             }
         };
-        
+
 
         // Force a fetch on initial render
         fetchLeaderboard();
@@ -77,12 +77,12 @@ const Leaderboard: React.FC = () => {
     useEffect(() => {
         // If loading is true for more than 5 seconds, force it to false
         let loadingTimer: NodeJS.Timeout;
-        
+
         if (loading) {
             loadingTimer = setTimeout(() => {
                 console.log("Loading timeout - forcing loading state to false");
                 setLoading(false);
-                
+
                 // Try to fetch again if we're on the initial NBA All Time selection
                 if (selectedSport === 'NBA' && selectedWeek === 0) {
                     console.log("Retrying NBA All Time fetch");
@@ -94,7 +94,7 @@ const Leaderboard: React.FC = () => {
                 }
             }, 5000);
         }
-        
+
         return () => {
             if (loadingTimer) clearTimeout(loadingTimer);
         };
@@ -152,9 +152,9 @@ const Leaderboard: React.FC = () => {
                 <div className='main-content'>
                     <h1 className="text-black dark:text-white font-semibold mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
                         style={{ letterSpacing: '1.5px' }}>
-                    {selectedWeek === 0 ? 
-                        (selectedSport === "SELECT" ? "Overall Leaderboard" : `${selectedSport} All Time Leaderboard`) : 
-                        (selectedSport === "SELECT" ? `Overall Week ${selectedWeek}` : `${selectedSport} Week ${selectedWeek} Leaderboard`)}
+                        {selectedWeek === 0 ?
+                            (selectedSport === "SELECT" ? "Overall Leaderboard" : `${selectedSport} All Time Leaderboard`) :
+                            (selectedSport === "SELECT" ? `Overall Week ${selectedWeek}` : `${selectedSport} Week ${selectedWeek} Leaderboard`)}
                     </h1>
                     <div className='leaderboard-container text-black bg-gradient-to-r from-white to-gray-100 dark:text-white dark:from-gray-900 dark:to-gray-950'>
                         <div className='leaderboard-controls'>
@@ -179,9 +179,9 @@ const Leaderboard: React.FC = () => {
                                 </optgroup>
                             </select>
 
-                            <select 
+                            <select
                                 aria-label="Select week"
-                                className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800' 
+                                className='select text-black bg-gray-300/90 dark:text-white dark:bg-gray-800'
                                 value={selectedWeek ?? 0}
                                 onChange={handleWeekChange}>
                                 <option value='-1' disabled>Select Week</option>
@@ -192,30 +192,30 @@ const Leaderboard: React.FC = () => {
                         </div>
 
                         {loading ? (
-                                <p>Loading leaderboard...</p>
-                            ) : error ? (
-                                <p className='error'>{error}</p>
-                            ) : (
-                                <div className='leaderboard-table'>
-                                    <div className='leaderboard-header'>
-                                        <div className='rank text-black dark:text-white'>Rank</div>
-                                        <div className='username text-black dark:text-white'>User</div>
-                                        <div className='performance text-black dark:text-white'>Performance</div>
-                                        <div className='points text-black dark:text-white'>Points</div>
-                                    </div>
-                                        {leaderboard.length <= 0 ? (
-                                                <div className='text-black dark:text-white'>No rankings available for the selected sport and week. Please choose a different option.</div>
-                                        ) : (
-                                            <div className='hover:cursor-pointer'>
-                                                <LeaderboardProfiles 
-                                                    sport={selectedSport} 
-                                                    week={selectedWeek} 
-                                                    userIds={leaderboard.map(entry => entry.user_id)}
-                                                    userData={leaderboard}
-                                                />
-                                            </div>
-                                        )}
+                            <p>Loading leaderboard...</p>
+                        ) : error ? (
+                            <p className='error'>{error}</p>
+                        ) : (
+                            <div className='leaderboard-table'>
+                                <div className='leaderboard-header'>
+                                    <div className='rank text-black dark:text-white'>Rank</div>
+                                    <div className='username text-black dark:text-white'>User</div>
+                                    <div className='performance text-black dark:text-white'>Performance</div>
+                                    <div className='points text-black dark:text-white'>Points</div>
                                 </div>
+                                {leaderboard.length <= 0 ? (
+                                    <div className='text-black dark:text-white'>No rankings available for the selected sport and week. Please choose a different option.</div>
+                                ) : (
+                                    <div className='hover:cursor-pointer'>
+                                        <LeaderboardProfiles
+                                            sport={selectedSport}
+                                            week={selectedWeek}
+                                            userIds={leaderboard.map(entry => entry.user_id)}
+                                            userData={leaderboard}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -250,13 +250,6 @@ const Leaderboard: React.FC = () => {
                     font-size: 65px;
                     margin-bottom: 20px;
                     text-align: center;
-                }
-                
-                /* For small screens (e.g., mobile devices) */
-                @media (max-width: 480px) {
-                    .leaderboard-title {
-                        font-size: 50px;
-                    }
                 }
                  
                 .leaderboard-container {
@@ -306,6 +299,7 @@ const Leaderboard: React.FC = () => {
                 .rank, .username, .performance, .points {
                     padding: 10px;
                     font-weight: bold;
+                    font-size: 1rem;
                     min-width: 80px; /* Prevent wrapping */
                 }
 
@@ -346,7 +340,7 @@ const Leaderboard: React.FC = () => {
                     min-width: 80px; /* Prevent wrapping in rows */
                 }
 
-                @media (max-width: 600px) {
+                @media (max-width: 768px) {
                     .leaderboard-header {
                         flex-direction: row;
                         text-align: left;
@@ -357,7 +351,7 @@ const Leaderboard: React.FC = () => {
                         width: 100%;
                         text-align: left;
                         padding: 8px;
-                        font-size: .5rem; /* Slightly smaller for mobile */
+                        font-size: 12px; /* Slightly smaller for mobile */
                     }
 
                     .leaderboard-row {
@@ -388,9 +382,17 @@ const Leaderboard: React.FC = () => {
                     }
                     
                     .rank, .username, .performance, .points {
-                        padding: 8px;
-                        font-size: .5rem;
+                        flex: 1 1 20%; /* Allows them to shrink and grow */
+                        min-width: 0;  /* Prevents overflow due to content */
+                        padding: 1px;
+                        font-weight: bold;
+                        font-size: 0.5rem;
+                        box-sizing: border-box;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
                     }
+
                     
                     .points {
                         text-align: right;
@@ -416,6 +418,14 @@ const Leaderboard: React.FC = () => {
                         margin-right: 15px; 
                     }
                     
+                    .select {
+                        padding: 6px;
+                        font-size: 0.75rem;
+                        border-radius: 4px;
+                        width: 48%;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                    }
+
                     /* Profile row and item adjustments */
                     :global(*[class*="profile-row"]),
                     :global(*[class*="profile-item"]) {

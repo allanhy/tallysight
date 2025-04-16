@@ -144,6 +144,47 @@
     }
 }
 
+@media (max-width: 480px) {
+    .profile {
+        flex-direction: row;
+        align-items: center;
+        font-size: 0.6em;
+        padding: 4px 6px;
+        gap: 4px;
+    }
+
+    .rank, .username, .performance, .points {
+        font-size: 0.55rem;
+        width: auto;
+        margin: 0;
+        padding: 2px 4px;
+    }
+
+    .username {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .performance {
+        max-width: 60px;
+        overflow: hidden;
+    }
+
+    .points {
+        text-align: right;
+        min-width: 35px;
+    }
+
+    .image {
+        width: 28px;
+        height: 28px;
+        margin: 0 6px 0 0;
+    }
+}
+
+
 .popoutOverlay {
     position: fixed;
     top: 0;

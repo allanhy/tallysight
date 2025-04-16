@@ -753,9 +753,9 @@ export default function MyPicksPage() {
             <div className="picks-page">
                 <div className="content-wrapper centered">
                     <div className="main-content">
-                        <h1 className="picks-title text-black dark:text-white">
-                            My Picks
-                        </h1>
+                    <h1 className="text-black dark:text-white font-semibold mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style={{ letterSpacing: '1.5px' }}>
+                        My Picks
+                    </h1>
 
                         {/* Conditional rendering for History or Picks */}
                         {isHistoryActive ? (
