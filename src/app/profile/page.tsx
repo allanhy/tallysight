@@ -287,44 +287,44 @@ const Profile = () => {
       case 'Profile':
         return (
         <div>
-            <h2 className="text-5xl font-medium mb-4 text-gray-900 dark:text-gray-100">Profile Information</h2>
-            {favoriteTeam && favoriteTeam.logoUrl && (<div className="flex items-center">
-            <img
-              src={favoriteTeam.logoUrl}
-              width="64"
-              height="64"
-              alt={favoriteTeam.name || "Favorite Team Logo"}
-              className="object-contain"
-            />
-          </div>
-        )}
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-medium mb-2 sm:mb-4 text-gray-900 dark:text-gray-100">Profile Information</h2>
+            {favoriteTeam && favoriteTeam.logoUrl && (
+              <div className="flex items-center mb-2 sm:mb-4">
+                <img
+                  src={favoriteTeam.logoUrl}
+                  width="48"
+                  height="48"
+                  alt={favoriteTeam.name || "Favorite Team Logo"}
+                  className="object-contain"
+                />
+              </div>
+            )}
             <table className="w-full text-left bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md table-auto">
                 <tbody>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 text-xl">Current Username</td>
-                        <td className="px-4 py-2 text-gray-600 dark:text-gray-300 text-xl">{user?.username}</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-gray-700 dark:text-gray-200 text-base sm:text-xl">Current Username</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 text-gray-600 dark:text-gray-300 text-base sm:text-xl">{user?.username}</td>
                     </tr>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 text-xl">First Name</td>
-                        <td className="px-4 py-2 text-gray-600 dark:text-gray-300 text-xl">{user?.firstName}</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-gray-700 dark:text-gray-200 text-base sm:text-xl">First Name</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 text-gray-600 dark:text-gray-300 text-base sm:text-xl">{user?.firstName}</td>
                     </tr>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 text-xl">Last Name</td>
-                        <td className="px-4 py-2 text-gray-600 dark:text-gray-300 text-xl">{user?.lastName}</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-gray-700 dark:text-gray-200 text-base sm:text-xl">Last Name</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 text-gray-600 dark:text-gray-300 text-base sm:text-xl">{user?.lastName}</td>
                     </tr>
                     <tr>
-                        <td className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 text-xl">Email</td>
-                        <td className="px-4 py-2 text-gray-600 dark:text-gray-300 text-xl">{user?.primaryEmailAddress?.toString()}</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-gray-700 dark:text-gray-200 text-base sm:text-xl">Email</td>
+                        <td className="px-2 sm:px-4 py-1 sm:py-2 text-gray-600 dark:text-gray-300 text-base sm:text-xl">{user?.primaryEmailAddress?.toString()}</td>
                     </tr>
                 </tbody>
             </table>
-            <div className = "py-2 space-between">
-                <button
-                    onClick={() => setSelectedSection('Edit Profile')}
-                    className="w-s text-left px-4 py-2 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold shadow-sm">
-                    Edit Profile
-                </button>
-            </div>
+            
+            <button
+                onClick={() => setSelectedSection('Edit Profile')}
+                className="w-full sm:w-auto mt-2 sm:mt-4 text-left px-3 sm:px-4 py-2 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold shadow-sm">
+                Edit Profile
+            </button>
         </div>
         );
         case "Edit Profile":
@@ -430,24 +430,24 @@ const Profile = () => {
       case 'Social Media':
         return (
           <div className="max-w-2xl">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-gray-100">Social Media Links</h2>
-            <form onSubmit={handleSubmit(handleSocialMediaSubmit)} className="space-y-4">
+            <h2 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-4 text-gray-700 dark:text-gray-100">Social Media Links</h2>
+            <form onSubmit={handleSubmit(handleSocialMediaSubmit)} className="space-y-2 sm:space-y-4">
               {[
                 { display: 'X', key: 'x' },
                 { display: 'Instagram', key: 'instagram' },
                 { display: 'Discord', key: 'discord' },
                 { display: 'Facebook', key: 'facebook' },
-                { display: 'Snapchat', key: 'snapchat' }
+                { display: 'Snapchat', key: 'snapchat' } 
               ].map((platform) => (
                 <div key={platform.key} className="flex flex-col">
-                  <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200">
+                  <label className="px-2 sm:px-4 py-1 sm:py-2 font-semibold text-gray-700 dark:text-gray-200 text-sm sm:text-base">
                     {platform.display}:
                   </label>
                   <input
                     defaultValue={socialLinks[platform.key as keyof typeof socialLinks] || ''}
                     {...register(platform.key)}
                     placeholder={`Enter your ${platform.display} profile link`}
-                    className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"
+                    className="focus:shadow-outline w-full appearance-none rounded border px-2 sm:px-3 py-1 sm:py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none text-sm sm:text-base"
                   />
                 </div>
               ))}
@@ -455,7 +455,7 @@ const Profile = () => {
               <div className="space-x-2 py-2">
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold shadow-sm hover:bg-blue-600"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold shadow-sm hover:bg-blue-600 text-sm sm:text-base"
                 >
                   Save Social Links
                 </button>
@@ -464,11 +464,11 @@ const Profile = () => {
 
             {/* Displaying the social media links */}
             <div className="mt-4">
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-100">Your Social Media Links:</h3>
-              <ul>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-700 dark:text-gray-100">Your Social Media Links:</h3>
+              <ul className="space-y-1 sm:space-y-2">
                 {Object.entries(socialLinks).map(([key, value]) => (
                   value && (
-                    <li key={key}>
+                    <li key={key} className="text-sm sm:text-base">
                       <a
                         href={
                           key === 'instagram' ? `https://www.instagram.com/${value}` :
@@ -496,12 +496,12 @@ const Profile = () => {
   };
 
   return (
-    <div className="h-[80vh] p-4 md:p-8 flex items-center justify-center">
-      <div className="flex flex-col md:flex-row w-full h-full max-w-[90vw] bg-card dark:bg-card-background rounded-lg shadow-lg overflow-hidden">
+    <div className="min-h-[80vh] p-2 sm:p-4 md:p-8 flex items-center justify-center">
+      <div className="flex flex-col md:flex-row w-full h-full max-w-[95vw] bg-card dark:bg-card-background rounded-lg shadow-lg overflow-hidden">
         {/* Left Section of profile screen */}
-        <div className="w-full md:w-1/6 bg-gray-50 dark:bg-gray-800 p-6 flex flex-col items-center">
+        <div className="w-full md:w-1/6 bg-gray-50 dark:bg-gray-800 p-2 sm:p-4 md:p-6 flex flex-col items-center">
           {/* Profile Picture and Navigation */}
-          <div className="relative w-24 h-24 mb-4 cursor-pointer group" onClick={handleImageClick}>
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-4 cursor-pointer group" onClick={handleImageClick}>
             <div className="absolute inset-0 bg-gray-800/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             {user?.imageUrl && (
               <Image
@@ -515,7 +515,7 @@ const Profile = () => {
               />
             )}
             <div className="absolute inset-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-              <p className="select-none cursor-pointer text-white text-4xl">&#9998;</p>
+              <p className="select-none cursor-pointer text-white text-2xl sm:text-3xl md:text-4xl">&#9998;</p>
             </div>
           </div>
           <input 
@@ -529,10 +529,11 @@ const Profile = () => {
           {renderNavigationButtons()}
         </div>
         {/* Right Section of profile screen */}
-        <div className="w-full md:w-5/6 p-4 md:p-8 overflow-y-auto bg-white dark:bg-gray-900">
+        <div className="w-full md:w-5/6 p-2 sm:p-4 md:p-8 overflow-y-auto bg-white dark:bg-gray-900">
           {renderContent()}
         </div>
       </div>
+      
       {showCropper && selectedFile && (
         <ImageCropper imageFile={selectedFile} onCropComplete={handleCropComplete} onCancel={() => setShowCropper(false)} />
       )}
