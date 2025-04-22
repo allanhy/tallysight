@@ -55,13 +55,17 @@ const isValidImageFile = (file: File): boolean => {
 };
 
 const Profile = () => {
-  const router = useRouter();
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { user } = useUser();
   const [selectedSection, setSelectedSection] = useState("Profile");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingEmailId, setPendingEmailId] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verifyError, setVerifyError] = useState("");
 
   // Favorite team states and effects from the second file
   const [favoriteTeam, setFavoriteTeam] = useState<Team | null>(null);
@@ -85,16 +89,60 @@ const Profile = () => {
   // Handles form submission for when user updates profile info.
   const onSubmit = async (data: any) => {
     try {
+      // Update username, name fields
       await user!.update({
         username: data.username,
         firstName: data.firstName,
         lastName: data.lastName,
       });
+  
+      // Check if email was changed
+      const currentEmail = user!.primaryEmailAddress?.emailAddress;
+      const newEmail = data.email;
+  
+      if (newEmail && newEmail !== currentEmail) {
+        const existing = user!.emailAddresses.find((e) => e.emailAddress === newEmail);
+  
+        // If this email isn't already on the account
+        if (!existing) {
+          const newEmailObj = await user!.createEmailAddress({ email: newEmail });
+          await newEmailObj.prepareVerification({ strategy: "email_code" });
+        
+          setPendingEmail(newEmail);
+          setPendingEmailId(newEmailObj.id);
+          setShowVerifyModal(true);
+        }
+      }
+  
       setSelectedSection("Profile");
     } catch (error) {
       console.error("Error updating profile:", error);
     }
-  }
+  };
+
+  const handleVerifyEmail = async () => {
+    try {
+      const email = user!.emailAddresses.find((e) => e.id === pendingEmailId);
+      if (!email) throw new Error("Email not found");
+  
+      await email.attemptVerification({ code: verificationCode });
+  
+      // Set as primary after verification
+      await user!.update({ primaryEmailAddressId: email.id });
+  
+      // Optional: remove previous email
+      const oldEmail = user!.primaryEmailAddress;
+      if (oldEmail && oldEmail.id !== email.id) {
+        await oldEmail.destroy();
+      }
+  
+      setShowVerifyModal(false);
+      alert("Email verified and updated successfully!");
+    } catch (err: any) {
+      console.error("Verification failed:", err);
+      setVerifyError("Invalid code. Please try again.");
+    }
+  };
 
   // Loader implementation for profile picture
   const contentfulImageLoader = ({ src, width }: { src: string, width: number }) => {
@@ -128,7 +176,7 @@ const Profile = () => {
     try {
       const response = await fetch(croppedDataUrl);
       const blob = await response.blob();
-      const croppedFile = new File([blob], "cropped-image.png", { type: "image/png" });
+      const croppedFile = new File([blob], "cropped-image.jpeg", { type: "image/jpeg" });
       await user?.setProfileImage({ file: croppedFile });
       console.log("Successfully changed user profile picture.");
     } catch (error) {
@@ -380,6 +428,26 @@ const Profile = () => {
                               {...register("lastName", { required: true })}
                               className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"/>
                       </div>
+
+                      <div className="mb-4">
+                        <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200 w-1/6" htmlFor="email">
+                          *Email:
+                        </label>
+                        {errors.email?.type === "required" && (
+                          <div className="text-sm text-red-600 mb-1 px-4">This field is required</div>
+                        )}
+                        {errors.email?.type === "pattern" && (
+                          <div className="text-sm text-red-600 mb-1 px-4">Enter a valid email (e.g. example@example.com)</div>
+                        )}
+                        <input
+                          defaultValue={user?.primaryEmailAddress?.emailAddress ?? ""}
+                          {...register("email", {
+                            required: true,
+                            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                          })}
+                          className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"
+                        />
+                      </div>
     
                       <div className="mb-4">
                           <label className="px-4 py-2 font-semibold text-gray-700 dark:text-gray-200" htmlFor="profilePicture">
@@ -393,7 +461,7 @@ const Profile = () => {
                               aria-label="Upload profile picture"
                               className="focus:shadow-outline w-full appearance-none rounded border px-3 py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none"
                           />
-                          <p className="text-xs text-gray-500 mt-1 px-4">Only JPG/JPEG files up to 5MB are allowed</p>
+                          <p className="text-xs text-gray-500 mt-1 px-4">Only JPG/JPEG files up to 3MB are allowed</p>
                       </div>
     
                       <div className="space-x-2 py-2 space-between">
@@ -408,8 +476,9 @@ const Profile = () => {
                           </button>
                       </div>
                   </form>
-              </div>
+              </div>   
           );
+          
       case 'Preferences':
         return <PreferencesSettings />;
       case 'Favorite Team':
@@ -446,7 +515,7 @@ const Profile = () => {
                   <input
                     defaultValue={socialLinks[platform.key as keyof typeof socialLinks] || ''}
                     {...register(platform.key)}
-                    placeholder={`Enter your ${platform.display} profile link`}
+                    placeholder={`Enter your ${platform.display} profile handle`}
                     className="focus:shadow-outline w-full appearance-none rounded border px-2 sm:px-3 py-1 sm:py-2 leading-tight text-gray-700 dark:text-gray-200 dark:bg-gray-800 shadow focus:outline-none text-sm sm:text-base"
                   />
                 </div>
@@ -479,7 +548,7 @@ const Profile = () => {
                         }
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline dark:text-blue-400"
+                        className="text-blue-500 dark:text-blue-400 hover:underline hover:bg-gray-200 dark:hover:bg-gray-800"
                       >
                         {key.charAt(0).toUpperCase() + key.slice(1)}: @{value}
                       </a>
@@ -532,6 +601,51 @@ const Profile = () => {
         <div className="w-full md:w-5/6 p-2 sm:p-4 md:p-8 overflow-y-auto bg-white dark:bg-gray-900">
           {renderContent()}
         </div>
+        {showVerifyModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+              Verify Your New Email
+            </h2>
+
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              We've sent a verification code to <strong>{pendingEmail}</strong>. Please enter it below.
+            </p>
+
+            <input
+              type="text"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              placeholder="Enter verification code"
+              className="w-full px-4 py-2 mb-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
+
+            {verifyError && (
+              <p className="text-sm text-red-500 mb-3">{verifyError}</p>
+            )}
+
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                onClick={() => {
+                  setShowVerifyModal(false);
+                  setVerificationCode("");
+                  setVerifyError("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 text-white rounded-lg bg-blue-500 hover:bg-blue-600"
+                onClick={handleVerifyEmail}
+              >
+                Verify
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
       
       {showCropper && selectedFile && (

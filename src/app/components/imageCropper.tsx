@@ -47,9 +47,10 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ imageFile, onCropComplete, 
     
         try {
             const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
-            
-            if (croppedBlob.size > 10 * 1024 * 1024) { // Check if size > 10MB
+            console.log("Cropped image size " + croppedBlob.size + " bytes");
+            if (croppedBlob.size > 3 * 1024 * 1024) { // Check if size < 3MB
                 setError("Cropped image is too large. Please choose a smaller area.");
+                console.log("Could not change profile picture, cropped image is too large. Please choose a smaller area or new file.");
                 setLoading(false);
                 return;
             }
@@ -134,7 +135,7 @@ const getCroppedImg = async (imageSrc: string, croppedAreaPixels: { width: numbe
                     return;
                 }
                 resolve(blob);
-            }, "image/png");
+            }, "image/jpeg");
         };
 
         image.onerror = reject;
@@ -160,9 +161,9 @@ export const isValidImageFile = (file: File): boolean => {
     }
     
     // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    const maxSize = 3 * 1024 * 1024; // 3MB in bytes
     if (file.size > maxSize) {
-        alert('Image file is too large. Maximum size is 5MB');
+        alert('Image file is too large. Maximum size is 3MB');
         return false;
     }
     
