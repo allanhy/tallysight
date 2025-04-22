@@ -17,7 +17,7 @@ export default function SignInPage() {
   if (isSSOCallback) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen">
-        <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
+        <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-gray-900">
         <div className="w-full flex justify-center flex-col items-center">
           <header className="text-center w-full mb-4">
             <div className="text-3xl font-extrabold text-black dark:text-white">

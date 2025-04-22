@@ -80,7 +80,7 @@ const ForgotPasswordPage: NextPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-gray-900">
       <header className="text-center">
         <div className='text-3xl font-extrabold pb-10 text-black dark:text-white'>
           Forgot Password?

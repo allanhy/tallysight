@@ -6,55 +6,58 @@ import * as Clerk from '@clerk/elements/common'
 import * as SignUp from '@clerk/elements/sign-up'
 import ReCAPTCHA from 'react-google-recaptcha';
 import axios from 'axios';
-import { AuthenticateWithRedirectCallback } from '@clerk/nextjs';
-import { useParams } from 'next/navigation';
+import { AuthenticateWithRedirectCallback, useSignUp } from '@clerk/nextjs';
+import { useParams, usePathname } from 'next/navigation';
 import { Skeleton } from '@/app/components/ui/skeleton';
+import { OAuthStrategy } from '@clerk/types'
 
 
 export default function SignUpPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [recaptchaVerified, setRecaptchaVerified] = useState<boolean>(false);
-  const params = useParams() ?? {};
-  const segments = Array.isArray(params['sign-up']) ? params['sign-up'] : [];
-  const isSSOCallback = segments[0] === 'sso-callback';
+  const pathname = usePathname();
+  const isSSOCallback = pathname.includes('sso-callback');
+  const { signUp } = useSignUp()
+
 
   if (isSSOCallback) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen">
-        <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-white dark:bg-black">
-        <div className="w-full flex justify-center flex-col items-center">
-          <header className="text-center w-full mb-4">
-            <div className="text-3xl font-extrabold text-black dark:text-white">
-              Continue Sign Up
-            </div>
-            <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
-              Please choose your username.
-            </h1>
-          </header>
-
-          <div className="w-full sm:w-[550px] px-8 py-8 bg-white dark:bg-gray-900 shadow-md border border-gray-400 rounded-2xl">
-            <Skeleton className="h-10 w-full rounded-lg mb-4" /> {/* Input Field */}
-            <Skeleton className="h-10 w-full rounded-lg" /> {/* Continue Button */}
-          </div>
-        </div>
-      </div>
+        <header className="text-center w-full mb-4">
+  <div className="text-3xl font-extrabold text-black dark:text-white">
+    Just a moment…
+  </div>
+  <h1 className="mt-2 text-xl font-medium tracking-tight text-gray-700 dark:text-gray-300">
+    We're verifying your account.
+  </h1>
+</header>
         {/* The Clerk component that finishes the OAuth flow */}
         <AuthenticateWithRedirectCallback continueSignUpUrl="/sign-up/continue" />
       </div>
     );
   }
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    const html = document.documentElement;
-    if (theme === 'dark') {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
-  }, [theme]);
+  if (!signUp) return null
+
+  const signUpWith = (strategy: OAuthStrategy) => {
+    return signUp
+      .authenticateWithRedirect({
+        strategy,
+        redirectUrl: '/sign-up/sso-callback',
+        redirectUrlComplete: '/',
+      })
+      .then((res) => {
+        console.log(res)
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .catch((err: any) => {
+        // See https://clerk.com/docs/custom-flows/error-handling
+        // for more info on error handling
+        console.log(err.errors)
+        console.error(err, null, 2)
+      })
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSubmit = async (event: React.FormEvent) => {
@@ -75,7 +78,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 pt-6 pb-6 bg-white dark:bg-black">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 pt-6 pb-6">
       <div className="w-full flex justify-center flex-col items-center">
         <header className="text-center w-full mb-4">
           <div className='text-3xl font-extrabold text-black dark:text-white'>
@@ -94,10 +97,15 @@ export default function SignUpPage() {
             <Clerk.GlobalError className="block text-sm text-rose-400" />
 
             <div className="space-y-2">
-              <Clerk.Connection
-                name="google"
-                className="flex w-full items-center justify-center gap-x-3 rounded-md bg-black px-3.5 py-1.5 text-sm font-medium text-white shadow-[0_1px_0_0_theme(colors.white/5%)_inset,0_0_0_1px_theme(colors.white/2%)_inset] outline-none hover:bg-gray-800 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-white active:bg-gray-900 active:text-white/70"
-
+              <button
+                type="button"
+                onClick={() => signUpWith("oauth_google")}
+                className="flex w-full items-center justify-center gap-x-3 
+                  rounded-md bg-black px-3.5 py-1.5 text-sm font-medium text-white 
+                  shadow-[0_1px_0_0_theme(colors.white/5%)_inset,0_0_0_1px_theme(colors.white/2%)_inset] 
+                  outline-none hover:bg-gray-800 focus-visible:outline-[1.5px] 
+                  focus-visible:outline-offset-2 focus-visible:outline-white 
+                  active:bg-gray-900 active:text-white/70"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -112,7 +120,7 @@ export default function SignUpPage() {
                   />
                 </svg>
                 Sign up with Google
-              </Clerk.Connection>
+              </button>
             </div>
 
             <div className="flex items-center space-x-2">

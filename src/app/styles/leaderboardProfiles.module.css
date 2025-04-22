@@ -53,6 +53,26 @@
     flex-shrink: 0;
 }
 
+.performance {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    font-weight: bold;
+    text-align: left;
+    flex-shrink: 0;
+    width: 15%;
+    margin-right: 2em;
+}
+
+.performanceTop {
+    font-weight: 700;
+}
+
+.performanceBottom {
+    font-weight: 500;
+}
+
 @media (max-width: 600px) {
     .profile {
         flex-direction: column;
@@ -142,6 +162,23 @@
     .socialLink {
         font-size: 0.8rem;
     }
+
+    .performance {
+        align-items: center;
+        text-align: center;
+        width: auto;
+        margin-right: 0;
+    }
+
+    .performanceTop {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .performanceBottom {
+        font-size: 14px;
+        font-weight: 500;
+    }
 }
 
 @media (max-width: 480px) {
@@ -181,6 +218,16 @@
         width: 28px;
         height: 28px;
         margin: 0 6px 0 0;
+    }
+
+    .performanceTop {
+        font-size: 0.55rem;
+        font-weight: 700;
+    }
+
+    .performanceBottom {
+        font-size: 0.55rem;
+        font-weight: 500;
     }
 }
 

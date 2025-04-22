@@ -29,7 +29,7 @@ interface SocialLinks {
 
 type Sport = 'NBA' | 'NFL' | 'MLB' | 'NHL' | 'MLS' | 'EPL' | 'LALIGA' | 'LIGUE_1' | 'BUNDESLIGA' | 'SERIE_A' | 'SELECT';
 
-interface leaderboardProfileProps{
+interface leaderboardProfileProps {
     sport: Sport;
     week: number | null;
     userIds: number[];
@@ -45,41 +45,41 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
     const [selectedUser, setSelectedUser] = useState<user | null>(null);
     const [socialLinks, setSocialLinks] = useState<SocialLinks | null>(null);
     const [loadingSocial, setLoadingSocial] = useState(false);
-    
+
     useEffect(() => {
-        
+
         if (userData && userData.length > 0) {
             const processedUsers = userData.map(user => ({
                 ...user,
                 imageUrl: user.imageUrl || "/default-profile.png",
                 totalPoints: user.points
             }));
-            
+
             setUsers(processedUsers);
             setLoading(false);
-            return; 
+            return;
         }
-        
+
         if ((sport === 'SELECT' && (week === -1 || week === null)) || week === 0) {
             if (userIds.length === 0) {
                 setLoading(false);
                 setError('No user_ids provided');
                 return;
             }
-    
+
             const fetchUsers = async () => {
                 try {
                     const queryStr = `user_id=${userIds.join(',')}`;
                     const res = await fetch(`/api/user/getUsersLeaderboard?${queryStr}`); // For total leaderboard
                     const data = await res.json();
-    
+
                     if (res.ok) {
                         const updatedUsers = data.data.filter((user: user) => user.points !== 0).map((user: user) => ({
                             ...user,
                             imageUrl: user.imageUrl || "/default-profile.png",
                             totalPoints: user.points
                         })) || [];
-    
+
                         setUsers(updatedUsers);
                         setLoading(false);
                     } else {
@@ -91,20 +91,20 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                     setLoading(false);
                 }
             };
-    
+
             fetchUsers();
         } else {
             const fetchSpecificLeaderboardUsers = async () => {
                 try {
-                    const endpoint = sport === 'SELECT' 
+                    const endpoint = sport === 'SELECT'
                         ? `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${sport}&week=${week}`
                         : `/api/user/getSportPoints?sport=${sport}&week=${week}`;
-                    
+
                     console.log(`Fetching from endpoint: ${endpoint}`);
                     const res = await fetch(endpoint);
                     const data = await res.json();
 
-                    
+
 
                     if (res.ok) {
                         const updatedUsers = data.data.filter((user: user) => user.points !== 0).map((user: user) => ({
@@ -113,7 +113,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                             totalPoints: user.points // Ensure totalPoints exactly matches points
                         })) || [];
 
-                        
+
                         setUsers(updatedUsers);
                         setLoading(false);
                     } else {
@@ -125,11 +125,11 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                     setLoading(false);
                 }
             };
-    
+
             fetchSpecificLeaderboardUsers();
         }
     }, [sport, userIds, week, userData]);
-        
+
     // Close profile popout when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -146,7 +146,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
         };
     }, [selectedUser]);
 
-    const updateUserPerformance = async(username: string, points: number, max_points: number) => {
+    const updateUserPerformance = async (username: string, points: number, max_points: number) => {
         try {
             const response = await fetch('/api/user/updatePerformance', {
                 method: 'POST',
@@ -160,15 +160,15 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
             }
 
             console.log('Performance updated:', data.message);
-            return {success: true, data: data};
+            return { success: true, data: data };
         } catch (error) {
             setError(`Failed to update performance: ${error}`);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error updating performance' };
         }
     };
 
-    const updateAllUserPerformance = useCallback(async() => {
-        try{
+    const updateAllUserPerformance = useCallback(async () => {
+        try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const updatedUsers = await Promise.all(users.map(user => updateUserPerformance(user.username, user.points, user.max_points)));
             setLastUpdated(Date.now());
@@ -179,7 +179,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
     }, [users]);
 
     // Update leaderboard hourly
-    useEffect(() => { 
+    useEffect(() => {
         const currentTime = Date.now();
         const sinceUpdate = currentTime - lastUpdated;
 
@@ -196,7 +196,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
     // Fetch user social media links and favorite team from Clerk
     const fetchUserSocialLinks = async (clerkId: string) => {
         if (!clerkId) return;
-        
+
         setLoadingSocial(true);
         try {
             const response = await fetch(`/api/user/getUserProfile?clerkId=${clerkId}`);
@@ -229,12 +229,12 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
 
     return (
         <div id='profile' className='profile'>
-            {users?.length > 0 ? <Item data={users} onUserClick={handleUserClick}/> : <div>No data available</div>}
-            
+            {users?.length > 0 ? <Item data={users} onUserClick={handleUserClick} /> : <div>No data available</div>}
+
             {selectedUser && (
                 <div className={styles.popoutOverlay}>
                     <div id="profilePopout" className={styles.profilePopout}>
-                        <button 
+                        <button
                             className={styles.closeButton}
                             onClick={() => {
                                 setSelectedUser(null);
@@ -244,10 +244,10 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                             ×
                         </button>
                         <div className={styles.popoutHeader}>
-                            <Image 
-                                src={getImageSrc(selectedUser.imageUrl)} 
-                                alt={`Profile image of ${selectedUser.username}`} 
-                                width={100} 
+                            <Image
+                                src={getImageSrc(selectedUser.imageUrl)}
+                                alt={`Profile image of ${selectedUser.username}`}
+                                width={100}
                                 height={100}
                                 className={styles.popoutImage}
                                 unoptimized
@@ -268,7 +268,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                                     <p className={styles.socialMessage}>No favorite team selected</p>
                                 </div>
                             )}
-                            
+
                             <div className={styles.popoutSocialLinks}>
                                 <h3>Social Media</h3>
                                 {loadingSocial ? (
@@ -316,15 +316,15 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
 function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) => void }) {
     // Double check sorting
     const sortedData = [...data].sort((a, b) => a.rank - b.rank);
-    
+
     console.log("Data being rendered in Item component:", sortedData.slice(0, 3)); // Log first 3 users
-    
-    return(
+
+    return (
         <>
             {sortedData.map((user) => {
                 console.log(`Rendering user ${user.username}: points=${user.points}, totalPoints=${user.totalPoints}`);
                 return (
-                    <div 
+                    <div
                         className={styles.profile + " text-black bg-gray-300/30 dark:text-white dark:bg-gray-800/30"}
                         key={`${user.username}-${user.rank}`}
                         onClick={() => onUserClick(user)}
@@ -338,12 +338,13 @@ function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) =
                             height={60}
                             quality={100}
                             className={styles.image}
-                            unoptimized/>
+                            unoptimized />
                         <div className={styles.username + " text-black dark:text-white"}>{user.username}</div>
-                        <div className={styles.performance +  " text-black dark:text-white"}>
-                            {user.performance}% {user.points}/{user.max_points}
+                        <div className={styles.performance + " text-black dark:text-white"}>
+                            <div className={styles.performanceTop}>{user.performance}%</div>
+                            <div className={styles.performanceBottom}>{user.points}/{user.max_points}</div>
                         </div>
-                        <div className={styles.points +  " text-black dark:text-white"}>
+                        <div className={styles.points + " text-black dark:text-white"}>
                             {user.points}
                         </div>
                     </div>

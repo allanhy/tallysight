@@ -289,6 +289,22 @@ const Header = () => {
                             >
                                 My Picks
                             </Link>
+                            <SignedOut>
+                                     <div className='space-y-2'>
+                                         <SignInButton mode='redirect'>
+                                             <button className='p-1 text-black rounded-lg bg-white text-black border border-gray-300 w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full hover:scale-105'
+                                                 onClick={() => setIsMenuOpen(false)}>
+                                                 Log in
+                                             </button>
+                                         </SignInButton>
+                                         <SignUpButton mode='redirect'>
+                                             <button className='p-1 text-white rounded-lg bg-[#008AFF] block w-full hover:scale-105'
+                                                 onClick={() => setIsMenuOpen(false)}>
+                                                 Sign up
+                                             </button>
+                                         </SignUpButton>
+                                     </div>
+                                 </SignedOut>
                         </div>
                     </div>
                 </div>
