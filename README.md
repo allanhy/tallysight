@@ -126,12 +126,14 @@ Primary users include:
 - [Node.js](https://nodejs.org/) (v18 or later recommended)
 - npm (comes with Node)
 
+
 ### 🔐 Environment Variables
 Copy the provided `.env.example` file to `.env.local` and fill in the required values:
 
 ```bash
 cp .env.example .env.local
 ```
+
 
 ### 🧾 External Accounts (Required to Run the App)
 To fully set up and run the project, you’ll need accounts with the following services:
@@ -142,6 +144,7 @@ To fully set up and run the project, you’ll need accounts with the following s
 - [Google reCAPTCHA](https://www.google.com/recaptcha/admin) – for bot protection on sign-up
 
 > After creating these accounts, copy the necessary keys and secrets into your `.env.local` file
+
 
 ### :gear: Developer Instructions
 1. **Clone the repo**:
