@@ -150,9 +150,9 @@ To fully set up and run the project, you’ll need accounts with the following s
    npm install
    ```
 3. **Environment variables**: Copy the provided `.env.example` file to `.env.local` and fill in the required values:
-  ```bash
-  cp .env.example .env.local
-  ```
+    ```bash
+    cp .env.example .env.local
+    ```
 4. **Run Application**:
    ```bash
    npm run dev
