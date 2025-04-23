@@ -27,7 +27,7 @@
 ---
 
 ## :star2: Synopsis
-**Tallysight** is a dynamic web application enabling users to make picks on real-time sports and discover sports content creators and media brands in the sports gaming industry. Picks integrate real-time sports data while connections to sports brands and creators leverage Tallysight’s database to provide advanced search capabilities, customizable filters, and seamless navigation, delivering an enhanced and user-friendly experience.
+**Tallysight** is a dynamic web application enabling users to make picks on real-time sports and track their performance over time. Picks integrate real-time sports data and offers an engaging and competitive experience through leaderboards, personalized profiles, and performance analytics, delivering an enhanced and user-friendly experience.
 
 Primary users include:
 - Sports fans
@@ -43,12 +43,15 @@ Primary users include:
 - **Scalability & Accessibility**: Deployed on **Vercel** to ensure optimal performance, reliability, and minimal downtime, providing a fast and accessible platform for all users.
 
 ### Seamless Data Management & Real-Time Insights
-- **Real-Time Sports Data**: Connects to live sports and odds APIs (e.g., ESPN, The Odds) to provide users with up-to-date information on teams, games, and events, enhancing the overall experience.
+- **Real-Time Sports Data**: Connects to live sports and odds APIs (e.g., ESPN) to provide users with up-to-date information on teams, games, and events, enhancing the overall experience.
 - **Performance Tracking**: Enables users to track their picks, view past performance, and analyze selections over time with a secure and dynamic database.
+- **Automated Game Syncing**: Games and scores are automatically synced into the database through scheduled jobs (cron) or manual triggers via the admin portal.
+- **Automated Reminders**: Users receive weekly emails reminding them to submit their picks before contests close.
+- **Live Odds & Pick Percentages**: Odds from ESPN and real-time pick distribution (via Pusher) are displayed per game to inform smarter picks.
 
 ### Dynamic Content & Engaging UX
 - **Interactive Leaderboards**: Weekly and cumulative leaderboards to highlight top-performing users and foster a competitive community.
-- **Customized Profiles**: Users can personalize their profiles with preferences and favorite teams for a tailored experience.
+- **Customized Profiles**: Users can personalize their profiles with application preferences, favorite teams, and social media handles for a tailored experience.
 
 ---
 
@@ -70,10 +73,10 @@ Primary users include:
 
 ---
 
-### Quick Picks Page
+### Daily Picks Page
 <div align="center"> 
   <img src="assets/picks-w-review.png" alt="Picks w/ Review Screenshot" />
-  <p><i>Quick Picks Page with Review Menu Open to Select Picks from Real-Time Games</i></p>
+  <p><i>Daily Picks Page with Review Menu Open to Select Picks from Real-Time Games</i></p>
 </div>
 
 ---
@@ -81,7 +84,7 @@ Primary users include:
 ### Game Details and Odds
 <div align="center"> 
   <img src="assets/game-preview.png" alt="Game Details and Odds Screenshot" />
-  <p><i>Game Details and Odds Provided by ESPN and The Odds</i></p>
+  <p><i>Game Details and Odds Provided by ESPN</i></p>
 </div>
 
 ---
@@ -105,39 +108,47 @@ Primary users include:
 ### Profile Page
 <div align="center"> 
   <img src="assets/profile-page.png" alt="Profile Page Screenshot" />
-  <p><i>Profile Page Where Users Can Change Information</i></p>
+  <p><i>Profile Page Where Users Can Change Information Including There Preferences</i></p>
 </div>
 
 ---
 
 ## :space_invader: Tech Stack
 - **Frontend**: Next.js, TailwindCSS
-- **Backend**: TypeScript, Vercel, Prisma
+- **Backend**: TypeScript, Vercel
 - **Database**: Vercel PostgreSQL
-- **APIs**: Sports data integration with ESPN and The Odds
-
----
-
-## :date: Timeline
-Based on user stories in our JIRA backlog, the following milestones will guide development during CSC 191:
-
-| Milestone                                   | Deadline           |
-|---------------------------------------------|--------------------|
-| Database Integration w/ Entire Page         | February 3, 2025   |
-| Admin Page & Functions                      | February 16, 2025  |
-| Email Notifications                         | March 2, 2025      |
-| Integration of Tallysight & other Features  | March 16, 2025     |
-| Bug Fixes and Optimization for Mobile       | March 30, 2025     |
-| Final Deliverable                           | May 22, 2025       |
+- **APIs**: Sports data integration with ESPN, live user percentage using Pusher, security and verification using Clerk and reCAPTCHA
 
 ---
 
 ## :toolbox: Getting Started
+### 📦 Requirements
+- [Node.js](https://nodejs.org/) (v18 or later recommended)
+- npm (comes with Node)
+
+### 🔐 Environment Variables
+Copy the provided `.env.example` file to `.env.local` and fill in the required values:
+
+```bash
+cp .env.example .env.local
+```
+
+### 🧾 External Accounts (Required to Run the App)
+To fully set up and run the project, you’ll need accounts with the following services:
+
+- [Clerk](https://clerk.com/) – for user authentication (get API keys)
+- [Vercel](https://vercel.com/) – for deployment and environment management
+- [Pusher](https://pusher.com/) – for real-time pick percentages (get API keys)
+- [Google reCAPTCHA](https://www.google.com/recaptcha/admin) – for bot protection on sign-up
+
+> After creating these accounts, copy the necessary keys and secrets into your `.env.local` file
 
 ### :gear: Developer Instructions
 1. **Clone the repo**:
    ```bash
    git clone https://github.com/allanhy/tallysight.git
+   ```
+   ```bash
    cd tallysight
    ```
 2. **Install dependencies**:
@@ -151,29 +162,51 @@ Based on user stories in our JIRA backlog, the following milestones will guide d
 ---
 
 ## :test_tube: Testing
+### 🧪 Automated Testing
 
+This project includes basic unit and integration testing with real data and hitting the live APIs using **Jest**.
+
+To run tests locally:
+
+```bash
+npm run test
+```
 ---
 
 ## :triangular_flag_on_post: Deployment
-  ```bash
-  vercel deploy
-  ```
+This project is deployed with [Vercel](https://vercel.com).
+
+> 🚀 Automatic deployments are triggered when you push to the `main` branch via Git.
+
+If you want to deploy manually using the Vercel CLI:
+1. **Make sure to be logged into your Vercel account**
+```bash
+npx vercel login
+```
+2. **Link to the correct project before deploying manually**
+```bash
+npx vercel link
+```
+3. **Manually deploy**
+```bash
+npx vercel
+```
 ---
 
 ## :gem: Acknowledgments
 - **Tallysight**: For their support, guidance, and trust.
 - **CSU Sacramento**: For facilitating the senior project.
-- Open-source libraries including TailwindCSS, Next.js, EPSN, and The Odds.
+- Open-source libraries including TailwindCSS, Next.js, EPSN.
 
 ---
 
 ## :handshake: Contact
-- **Cynthia Angulo**: cangulo@csus.edu
-- **Jeremy Auradou**: jauradou@csus.edu
-- **Anthony Hernandez**: ahernandez56@csus.edu
-- **Allan Hy**: allanhy@csus.edu
-- **James Pullin**: jamespullin@csus.edu
-- **Oscar Villalobos**: oscarvillalobos@csus.edu
-- **Mursal Yari**: myari@csus.edu
-- **Sosan Yari**: syari@csus.edu
-- **Katrina Yu**: katrinayu@csus.edu
+- **[Cynthia Angulo](https://github.com/Kinikiaa)**: cangulo@csus.edu
+- **[Jeremy Auradou](https://github.com/JeremyAuradou)**: jauradou@csus.edu
+- **[Anthony Hernandez](https://github.com/ahern2212)**: ahernandez56@csus.edu
+- **[Allan Hy](https://github.com/allanhy)**: allanhy@csus.edu
+- **[James Pullin](https://github.com/OscarVillaloboss)**: jamespullin@csus.edu
+- **[Oscar Villalobos](https://github.com/OscarVillaloboss)**: oscarvillalobos@csus.edu
+- **[Mursal Yari](https://github.com/Myari1)**: myari@csus.edu
+- **[Sosan Yari](https://github.com/SosanY)**: syari@csus.edu
+- **[Katrina Yu](https://github.com/kyu2509)**: katrinayu@csus.edu
