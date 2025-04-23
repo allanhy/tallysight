@@ -16,6 +16,9 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'Tallysight',
   description: 'Your go-to e-gaming gambling site',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
