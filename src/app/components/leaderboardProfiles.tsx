@@ -47,13 +47,12 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
     const [loadingSocial, setLoadingSocial] = useState(false);
 
     useEffect(() => {
-
-        if (userData && userData.length > 0) {
+		if (userData && userData.length > 0) {
             const processedUsers = userData.map(user => ({
                 ...user,
-                imageUrl: user.imageUrl || "/default-profile.png",
-                totalPoints: user.points
+                imageUrl: user.imageUrl || "/default-profile.png"
             }));
+            linkTotalPoints(processedUsers);
 
             setUsers(processedUsers);
             setLoading(false);
@@ -66,22 +65,20 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                 setError('No user_ids provided');
                 return;
             }
-
+    
             const fetchUsers = async () => {
                 try {
                     const queryStr = `user_id=${userIds.join(',')}`;
                     const res = await fetch(`/api/user/getUsersLeaderboard?${queryStr}`); // For total leaderboard
                     const data = await res.json();
-
+    
                     if (res.ok) {
                         const updatedUsers = data.data.filter((user: user) => user.points !== 0).map((user: user) => ({
                             ...user,
                             imageUrl: user.imageUrl || "/default-profile.png",
-                            totalPoints: user.points
                         })) || [];
-
-                        setUsers(updatedUsers);
-                        setLoading(false);
+    
+                        await linkTotalPoints(updatedUsers); // merge and set inside
                     } else {
                         setError(data.message || 'Users Fetch: Failed');
                         setLoading(false);
@@ -91,31 +88,21 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                     setLoading(false);
                 }
             };
-
+    
             fetchUsers();
         } else {
             const fetchSpecificLeaderboardUsers = async () => {
                 try {
-                    const endpoint = sport === 'SELECT'
-                        ? `/api/leaderboard-entries/getEntriesForLeaderboard?sport=${sport}&week=${week}`
-                        : `/api/user/getSportPoints?sport=${sport}&week=${week}`;
-
-                    console.log(`Fetching from endpoint: ${endpoint}`);
-                    const res = await fetch(endpoint);
+                    const res = await fetch(`/api/leaderboard-entries/getEntriesForLeaderboard?sport=${sport}&week=${week}`);
                     const data = await res.json();
-
-
-
+    
                     if (res.ok) {
                         const updatedUsers = data.data.filter((user: user) => user.points !== 0).map((user: user) => ({
                             ...user,
                             imageUrl: user.imageUrl || "/default-profile.png",
-                            totalPoints: user.points // Ensure totalPoints exactly matches points
                         })) || [];
-
-
-                        setUsers(updatedUsers);
-                        setLoading(false);
+    
+                        await linkTotalPoints(updatedUsers);
                     } else {
                         setError(data.message || 'User Fetch for Specific Leaderboard: Failed');
                         setLoading(false);
@@ -125,10 +112,38 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
                     setLoading(false);
                 }
             };
-
+    
             fetchSpecificLeaderboardUsers();
         }
-    }, [sport, userIds, week, userData]);
+    
+        async function linkTotalPoints(baseUsers: user[]) {
+            try {
+                const queryStr = `user_id=${userIds.join(',')}`;
+                const res = await fetch(`/api/user/getMultiUserPoints?${queryStr}`);
+                const data = await res.json();
+    
+                if (res.ok) {
+                    const totalsMap = new Map<number, number>();
+                    data.data.forEach((entry: { user_id: number; points: number }) => {
+                        totalsMap.set(entry.user_id, entry.points);
+                    });
+    
+                    const mergedUsers = baseUsers.map((u) => ({
+                        ...u,
+                        totalPoints: totalsMap.get(u.user_id) || 0,
+                    }));
+    
+                    setUsers(mergedUsers);
+                } else {
+                    setError(data.message || 'Failed to fetch total points');
+                }
+            } catch (error) {
+                setError(`Network error fetching total points: ${error}`);
+            } finally {
+                setLoading(false);
+            }
+        }
+    }, [sport, userData, userIds, week]);
 
     // Close profile popout when clicking outside
     useEffect(() => {
@@ -342,7 +357,7 @@ function Item({ data, onUserClick }: { data: user[], onUserClick: (user: user) =
                         <div className={styles.username + " text-black dark:text-white"}>{user.username}</div>
                         <div className={styles.performance + " text-black dark:text-white"}>
                             <div className={styles.performanceTop}>{user.performance}%</div>
-                            <div className={styles.performanceBottom}>{user.points}/{user.max_points}</div>
+                            <div className={styles.performanceBottom}>{user.totalPoints}/{user.max_points}</div>
                         </div>
                         <div className={styles.points + " text-black dark:text-white"}>
                             {user.points}
