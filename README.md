@@ -97,6 +97,14 @@ Primary users include:
 
 ---
 
+### Live Game Scores
+<div align="center"> 
+  <img src="assets/carousel.png" alt="Live Game Scores Screenshot" />
+  <p><i>Live Game Scores Based on User's Selection for In Progress and Final Games</i></p>
+</div>
+
+---
+
 ### Contest Page
 <div align="center"> 
   <img src="assets/contests.png" alt="Contests Screenshot" />
