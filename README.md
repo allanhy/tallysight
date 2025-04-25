@@ -170,12 +170,18 @@ To fully set up and run the project, you’ll need accounts with the following s
 ## :test_tube: Testing
 ### 🧪 Automated Testing
 
-This project includes basic unit and integration testing with real data and hitting the live APIs using **Jest**.
+This project includes basic unit and integration testing with real data and hitting the live APIs using **Jest** & **Selenium (pytest)**.
 
-To run tests locally:
+To run tests locally for Jest:
 
 ```bash
 npm run test
+```
+
+To run tests locally for Selenium with pytest:
+
+```bash
+pytest -v
 ```
 ---
 
