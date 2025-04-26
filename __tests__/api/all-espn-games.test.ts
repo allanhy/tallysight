@@ -150,4 +150,23 @@ describe('all-espn-games API', () => {
       expect.any(Object)
     );
   });
+
+  it('should return 400 for invalid specificDate format', async () => {
+    const request = new Request('http://localhost:3000/api/all-espn-games?sport=NBA&specificDate=04-12-2024');
+    const response = await GET(request);
+    const data = await response.json();
+  
+    expect(response.status).toBe(400);
+    expect(data.message).toContain('Invalid date format');
+  });
+
+  it('should return 400 for missing sport parameter', async () => {
+    const request = new Request('http://localhost:3000/api/all-espn-games');
+    const response = await GET(request);
+    const data = await response.json();
+  
+    expect(response.status).toBe(400);
+    expect(data.message).toContain('Invalid sport');
+  });
+  
 }); 

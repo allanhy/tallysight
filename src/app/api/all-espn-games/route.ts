@@ -10,6 +10,16 @@ export async function GET(request: Request) {
     const selectedSport = searchParams.get("sport")?.toUpperCase();
     const specificDateParam = searchParams.get("specificDate");
 
+    if (specificDateParam) {
+      const validDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!validDateRegex.test(specificDateParam)) {
+        return NextResponse.json(
+          { games: [], message: "Invalid date format. Use YYYY-MM-DD." },
+          { status: 400 }
+        );
+      }
+    }
+    
     if (!selectedSport || !BASE_URLS[selectedSport]) {
       return NextResponse.json(
         {

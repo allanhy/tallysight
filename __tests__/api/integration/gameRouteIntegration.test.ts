@@ -22,21 +22,20 @@ describe("Integration (Live): GET /api/all-espn-games", () => {
     ).padStart(2, "0")}`;
 
   const todayStr = formatDate(new Date());
-  const tomorrowStr = formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000)); // add 1 day
+  const tomorrowStr = formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000)); // +1 day
 
-  const dateVariants = [todayStr, tomorrowStr];
+  const validDateVariants = [todayStr, tomorrowStr];
   const sportKeys = Object.keys(sportsToTest);
 
+  // ✅ Valid Tests
   test.each(
-    sportKeys.flatMap((sport) => dateVariants.map((date) => [sport, date]))
+    sportKeys.flatMap((sport) => validDateVariants.map((date) => [sport, date]))
   )(
-    "✅ Valid sport param: fetches %s games from ESPN for %s",
-
-    async (sportKey, todayStr) => {
+    "✅ Valid Input: fetches %s games correctly for %s",
+    async (sportKey, dateStr) => {
       const sport = sportKey.toLowerCase();
-
       const url = new URL(
-        `http://localhost/api/all-espn-games?sport=${sport}&specificDate=${todayStr}`
+        `http://localhost/api/all-espn-games?sport=${sport}&specificDate=${dateStr}`
       );
       const req = { url: url.toString() } as Request;
 
@@ -59,6 +58,8 @@ describe("Integration (Live): GET /api/all-espn-games", () => {
     20000
   );
 
+  // ❌ Invalid Tests
+
   test("❌ Invalid sport returns 400", async () => {
     const url = new URL(
       "http://localhost/api/all-espn-games?sport=invalidsport"
@@ -72,9 +73,35 @@ describe("Integration (Live): GET /api/all-espn-games", () => {
     expect(json.message).toMatch(/invalid sport/i);
   });
 
-  test("✅ ESPN data empty returns games: []", async () => {
+  test("❌ Invalid date format returns 400", async () => {
+    const url = new URL(
+      "http://localhost/api/all-espn-games?sport=nba&specificDate=04-25-2025"
+    );
+    const req = { url: url.toString() } as Request;
+
+    const res = await GET(req as NextRequest);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.message).toMatch(/invalid date format/i);
+  });
+
+  test("❌ Missing sport parameter returns 400", async () => {
+    const url = new URL(
+      "http://localhost/api/all-espn-games?specificDate=2025-04-25"
+    );
+    const req = { url: url.toString() } as Request;
+
+    const res = await GET(req as NextRequest);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.message).toMatch(/invalid sport/i);
+  });
+
+  test("✅ Valid sport but empty games returns empty array", async () => {
     const futureDate = new Date();
-    futureDate.setFullYear(futureDate.getFullYear() + 10); // Likely no games in 10 years
+    futureDate.setFullYear(futureDate.getFullYear() + 10);
     const futureStr = futureDate.toISOString().split("T")[0];
 
     const url = new URL(
@@ -90,7 +117,20 @@ describe("Integration (Live): GET /api/all-espn-games", () => {
     expect(json.message).toMatch(/no games/i);
   });
 
-  test("✅ With specificDate returns games for that day", async () => {
+  test("✅ With today returns games for that today", async () => {
+    const sport = "mlb";
+    const url = new URL(
+      `http://localhost/api/all-espn-games?sport=${sport}&day=$today`
+    );
+    const req = { url: url.toString() } as Request;
+
+    const res = await GET(req as NextRequest);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(json.games)).toBe(true);
+  });
+   test("✅ With specificDate returns games for that day", async () => {
     const sport = "mlb";
     const url = new URL(
       `http://localhost/api/all-espn-games?sport=${sport}&specificDate=${todayStr}`
@@ -109,7 +149,9 @@ describe("Integration (Live): GET /api/all-espn-games", () => {
       .spyOn(global, "fetch")
       .mockRejectedValueOnce(new Error("ESPN API is down"));
 
-    const url = new URL("http://localhost/api/all-espn-games?sport=nba");
+    const url = new URL(
+      "http://localhost/api/all-espn-games?sport=nba"
+    );
     const req = { url: url.toString() } as Request;
 
     const res = await GET(req as NextRequest);
@@ -118,6 +160,6 @@ describe("Integration (Live): GET /api/all-espn-games", () => {
     expect(res.status).toBe(500);
     expect(json.message || json.error).toMatch(/error fetching games/i);
 
-    fetchSpy.mockRestore(); // 🔄 Clean up
+    fetchSpy.mockRestore();
   });
 });
