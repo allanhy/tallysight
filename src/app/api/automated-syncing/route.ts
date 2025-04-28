@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     });    
     const syncResult = await syncRes.json();
 
+    await delay(60000);
 
     // for point handling
     await handleAllGamesDone();
@@ -43,4 +44,8 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
