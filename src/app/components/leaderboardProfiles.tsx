@@ -185,7 +185,7 @@ export default function LeaderboardProfiles({ sport, week, userIds = [], userDat
     const updateAllUserPerformance = useCallback(async () => {
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const updatedUsers = await Promise.all(users.map(user => updateUserPerformance(user.username, user.points, user.max_points)));
+            const updatedUsers = await Promise.all(users.map(user => updateUserPerformance(user.username, user.totalPoints, user.max_points)));
             setLastUpdated(Date.now());
             console.log('Daily performance update complete:');
         } catch (error) {

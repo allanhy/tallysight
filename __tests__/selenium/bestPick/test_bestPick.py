@@ -27,6 +27,8 @@ def test_best_pick_button(setup):
             "//div[text()='Upcoming Contest']/following::button[contains(text(), 'Preview Game')]"
         ))
     )
+    
+    print(f"Clicking preview game button")
     preview_button.click()
 
     time.sleep(2)
@@ -43,7 +45,9 @@ def test_best_pick_button(setup):
     )
 
     time.sleep(1)
-
+    
+    
+    print(f"Clicking first best pick button")
     # Click the first Best Pick button
     buttons[0].click()
     time.sleep(1)
