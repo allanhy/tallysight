@@ -13,6 +13,7 @@ import { useSport } from '@/context/SportContext';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../components/dropdown-menu";
 import { Loader2, LogOut, RefreshCw, Settings } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
+import BackToTop from './BackToTop';        
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -309,7 +310,7 @@ const Header = () => {
                     </div>
                 </div>
             </nav>
-            {pathname !== '/profile' && (
+            {pathname !== '/profile' && pathname !== '/info' && (
                 <div className="pt-20">
                     <div className="max-w-7xl mx-auto px-4 pl-4 flex items-center gap-2">
                         <select
@@ -347,10 +348,11 @@ const Header = () => {
             )}
             {pathname === '/profile' && (
                 <div className="py-10" />
+
             )}
+            <BackToTop />
         </div>
     );
 };
 
 export default Header;
-
