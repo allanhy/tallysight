@@ -5,8 +5,8 @@ import BackToTop from '@/app/components/BackToTop';
 export default function InfoPage() {
   return (
     // Outer container with top padding to clear a fixed header (assumed 64px tall)
-    <div className="container mx-auto px-4">
-      <h1 className="text-black dark:text-white font-semibold mt-6 mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
+    <div className="container mx-auto px-4 py-10">
+      <h1 className="text-black dark:text-white font-semibold mt-6 mb-2 py-10 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
   style={{ letterSpacing: '1.5px' }}>
         Information
       </h1>
@@ -15,7 +15,7 @@ export default function InfoPage() {
       <main className="min-h-screen pb-10 bg-white dark:bg-gray-900 transition-colors duration-200">
         
         {/* Navigation */}
-        <div className="pt-10"> 
+        <div> 
         <nav className="bg-[#1f2937] max-w-screen-xl mx-auto mt-6 mb-20 py-4 px-4 sticky top-16 z-30 rounded-lg shadow-md">
           <ul className="flex flex-col sm:flex-row justify-center gap-6 text-gray-200">
             <li>
