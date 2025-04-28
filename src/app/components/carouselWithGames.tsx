@@ -7,6 +7,7 @@ import GameCard from '../components/GameCard';
 import { Game } from '../types/game';
 import { Skeleton } from './ui/skeleton';
 import { useSport } from '@/context/SportContext';
+import { usePathname } from 'next/navigation';
 
 const responsive = {
   superLargeDesktop: {
@@ -65,6 +66,7 @@ const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDat
   const carouselRef = useRef<any>(null);
   const { carouselSport, selectedSoccerLeague } = useSport();
   const [userTimeZone, setUserTimeZone] = useState('America/New_York');
+  const pathname = usePathname();
 
   useEffect(() => {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -146,6 +148,9 @@ const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDat
     };
     fetchGames();
   }, [carouselSport, selectedSoccerLeague, refreshKey]);
+  if (pathname === '/info') {
+    return null;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-12">

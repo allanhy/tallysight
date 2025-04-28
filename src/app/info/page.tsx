@@ -1,5 +1,6 @@
 // src/app/info/page.tsx
 import React from 'react';
+import BackToTop from '@/app/components/BackToTop';
 
 export default function InfoPage() {
   return (
@@ -14,7 +15,8 @@ export default function InfoPage() {
       <main className="min-h-screen pb-10 bg-white dark:bg-gray-900 transition-colors duration-200">
         
         {/* Navigation */}
-        <nav className="bg-[#1f2937] max-w-screen-xl mx-auto mt-6 mb-10 py-4 px-4">
+        <div className="pt-10"> 
+        <nav className="bg-[#1f2937] max-w-screen-xl mx-auto mt-6 mb-20 py-4 px-4 sticky top-16 z-30 rounded-lg shadow-md">
           <ul className="flex flex-col sm:flex-row justify-center gap-6 text-gray-200">
             <li>
               <a 
@@ -50,6 +52,7 @@ export default function InfoPage() {
             </li>
           </ul>
         </nav>
+      </div>
 
         {/* About Section */}
         <section id="about" className="mb-12">
@@ -116,6 +119,7 @@ export default function InfoPage() {
           </p>
         </section>
       </main>
+      <BackToTop />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import React  from 'react';
 import { useRouter } from 'next/navigation';
 import Leaderboard from '../components/leaderboard';
 import { useUser } from '@clerk/nextjs';
+import BackToTop from '@/app/components/BackToTop'; 
+
 //import '../styles/leaderboard.css';
 
 export default function Page() {
@@ -159,6 +161,7 @@ export default function Page() {
                     }
                 }
             `}</style>
+           <BackToTop />
         </div>
         
     );
