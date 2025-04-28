@@ -2,7 +2,7 @@
     "crons": [
       {
         "path": "/api/automated-syncing",
-        "schedule": "45 6 * * *"
+        "schedule": "59 19 * * *"
       },
       {
         "path": "/api/automated-reminders",
