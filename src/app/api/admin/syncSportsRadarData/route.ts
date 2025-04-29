@@ -2,8 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
-import { getAuth } from "@clerk/nextjs/server";
-import { Buda } from "next/font/google";
 
 // Define interfaces for type safety
 interface ESPNGame {
@@ -65,8 +63,7 @@ const fetchESPNData = async (url: string) => {
   } catch (error) {
     console.error("Error fetching from ESPN:", error);
     throw new Error(
-      `Failed to fetch data from ESPN: ${
-        error instanceof Error ? error.message : String(error)
+      `Failed to fetch data from ESPN: ${error instanceof Error ? error.message : String(error)
       }`
     );
   }
@@ -129,6 +126,12 @@ const fetchScoreboardsForDates = async (baseUrl: string) => {
   const results = await Promise.allSettled(
     dateStrings.map((date) => fetchESPNData(`${baseUrl}?dates=${date}`))
   );
+
+  const failures = results.filter((r) => r.status === "rejected");
+
+  if (failures.length > 0) {
+    throw new Error("Failed to fetch ESPN data");
+  }
 
   // Combine successful results and flatten their `events`
   return results
@@ -421,8 +424,7 @@ export async function POST(req: NextRequest) {
           `Updating game ${dbGame.id}: ${dbGame.team1Name} vs ${dbGame.team2Name}`
         );
         console.log(
-          `Team1 is ${
-            team1IsHome ? "home" : "away"
+          `Team1 is ${team1IsHome ? "home" : "away"
           }, scores: ${team1Score}-${team2Score}`
         );
         console.log(

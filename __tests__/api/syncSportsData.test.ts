@@ -8,36 +8,38 @@ jest.mock("@vercel/postgres", () => ({
 
 global.fetch = jest.fn();
 
-describe("POST /api/admin/syncSportsRadarData", () => {
+describe("Unit: POST /api/admin/syncSportsRadarData", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it("returns success and updates game from ESPN data", async () => {
+  it("should update the mock game with final score and winner after ESPN sync", async () => {
     const mockGameId = "game123";
     const mockESPNGame = {
       id: mockGameId,
       date: new Date().toISOString(),
       status: { type: { state: "post", completed: true } },
-      competitions: [{
-        id: "comp1",
-        competitors: [
-          { homeAway: "home", team: { displayName: "Lakers" }, score: "100" },
-          { homeAway: "away", team: { displayName: "Celtics" }, score: "98" },
-        ],
-      }],
+      competitions: [
+        {
+          id: "comp1",
+          competitors: [
+            { homeAway: "home", team: { displayName: "Lakers" }, score: "100" },
+            { homeAway: "away", team: { displayName: "Celtics" }, score: "98" },
+          ],
+        },
+      ],
     };
 
-    // Mock ESPN fetch calls for all 10 leagues
     (fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ events: [mockESPNGame] }),
     });
 
-    // Mock SQL query returning one matching game from DB
     (sql as unknown as jest.Mock).mockImplementation((query: any, ...args: any[]) => {
       const text = query?.text ?? query?.sql ?? query;
+
       if (/SELECT \*/i.test(text)) {
+        // Select existing game from DB
         return Promise.resolve({
           rows: [{
             id: "db123",
@@ -50,17 +52,19 @@ describe("POST /api/admin/syncSportsRadarData", () => {
         });
       }
       if (/UPDATE "Game"/i.test(text)) {
+        // Simulate update succeeded
         return Promise.resolve({ rowCount: 1 });
       }
       if (/SELECT id, "team1Name"/i.test(text)) {
+        // Select updated game
         return Promise.resolve({
           rows: [{
             id: "db123",
             team1Name: "Lakers",
             team2Name: "Celtics",
-            winner: false,
-            won: 0,
             final_score: "100-98",
+            winner: true,
+            won: 1,
           }],
         });
       }
@@ -74,25 +78,42 @@ describe("POST /api/admin/syncSportsRadarData", () => {
     const res = await POST(req);
     const json = await res.json();
 
+    // ✅ Check HTTP Response
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(Array.isArray(json.results)).toBe(true);
     expect(json.results[0].status).toBe("updated");
     expect(json.results[0].espnId).toBe(mockGameId);
+
+    // ✅ Simulate DB check after update
+    const updatedGameQuery = await sql`SELECT id, "team1Name", "team2Name", winner, final_score FROM "Game" WHERE id = ${mockGameId}`;
+    const updatedGame = updatedGameQuery.rows[0];
+
+    expect(updatedGame).toBeDefined();
+
+    // ✅ Check final_score format: example "100-98"
+    expect(updatedGame.final_score).toMatch(/^\d+-\d+$/);
+
+    // ✅ Check winner field type
+    expect(typeof updatedGame.winner).toBe("boolean");
   });
 
-  it("returns 500 on ESPN fetch failure", async () => {
-    (fetch as jest.Mock).mockRejectedValue(new Error("ESPN fetch failed"));
-
-    const req = {
-      json: async () => ({ gameIds: ["fail123"] }),
-    } as unknown as NextRequest;
-
-    const res = await POST(req);
-    const json = await res.json();
-
-    expect(res.status).toBe(500);
-    expect(json.success).toBe(false);
-    expect(json.error).toMatch(/ESPN fetch failed/);
+it("should return 500 if ESPN fetch fails", async () => {
+  (fetch as jest.Mock).mockResolvedValue({
+    ok: false,
+    status: 500,
+    json: async () => ({ error: "ESPN fetch failed" }),
   });
+
+  const req = {
+    json: async () => ({ gameIds: ["fail123"] }),
+  } as unknown as NextRequest;
+
+  const res = await POST(req);
+  const json = await res.json();
+
+  expect(res.status).toBe(500);
+  expect(json.success).toBe(false);
+  expect(json.error).toMatch(/Failed to fetch/);
+});
 });

@@ -186,7 +186,7 @@ const carouselWithGames: React.FC<CarouselWithGamesProps> = ({ refreshKey, onDat
             >
               {games.length > 0 ? (
                 games.map((game, index) => (
-                  <div key={`${game.id}-${index}`} className="h-full">
+                  <div key={`${game.id}-${index}`} className="h-full" data-testid='game-card' data-game-id={game.id}>
                     <GameCard game={game} userTimeZone={userTimeZone} />
                   </div>
                 ))

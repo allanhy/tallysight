@@ -6,7 +6,7 @@ module.exports = {
     }],
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['**/__tests__/**/*.test.(ts|tsx)'],
   reporters: [
