@@ -175,15 +175,16 @@ This project includes basic unit, integration, and automated testing with real d
 ### 📦 Requirements
 - [Python](https://www.python.org/downloads/) (3.10+ recommended)
 - pip (comes with Python)
+- [Python Extension](https://marketplace.visualstudio.com/items/?itemName=ms-python.python) (Latest Verison)
 
-To run tests locally for Jest:
+To run tests locally for Jest (29.7+ recommended):
 
 ```bash
 npm run test
 ```
 
 To run tests locally for Selenium with pytest:
-1. **Install pytest-selenum**:
+1. **Install pytest-selenum** (pytest 8.3+ recommended & Selenium 4.31+ recommended):
    ```bash
    pip install pytest-selenium
    ```
