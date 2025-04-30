@@ -291,7 +291,7 @@ export default function ContestsPage() {
         return (
             <div className="p-4 sm:p-8 min-h-screen">
                 <UserMatch />
-                <h1 className="font-bold mb-2 sm:mb-4 text-center text-8xl sm:text-5xl md:text-6xl lg:text-6xl pb-10" style={{ letterSpacing: '1.5px', textShadow: '2px 2px 4px rgba(255, 255, 255, 0.1)' }}>
+                <h1 className="text-black dark:text-white font-bold mb-2 sm:mb-4 text-center text-4xl sm:text-5xl md:text-6xl lg:text-6xl pb-10" style={{ letterSpacing: '1.5px', textShadow: '2px 2px 4px rgba(255, 255, 255, 0.1)' }}>
                     TallySight Free-to-Play Sports Pick&apos;Em
                 </h1>
                 <h2 className="text-black dark:text-white font-medium mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style={{ letterSpacing: '1.5px' }}>
@@ -332,10 +332,15 @@ export default function ContestsPage() {
 
     return (
         <div className="p-2 sm:p-4 md:p-8 min-h-screen" >
-            <h1 className="font-bold mb-2 sm:mb-4 text-center text-8xl sm:text-5xl md:text-6xl lg:text-6xl pb-10" style={{ letterSpacing: '1.5px', textShadow: '2px 2px 4px rgba(255, 255, 255, 0.1)' }}>
-                TallySight Free-to-Play Sports Pick&apos;Em
+           <h1
+                className="relative group text-black dark:text-white font-bold mb-2 sm:mb-4 text-center text-4xl sm:text-5xl md:text-6xl lg:text-6xl pb-10"
+                style={{letterSpacing: '1.5px',textShadow: '2px 2px 4px rgba(255, 255, 255, 0.1)',}} 
+                > TallySight Free-to-Play Sports Pick&apos;Em
+                <span
+                    className="absolute left-1/2 -bottom-2 transform -translate-x-1/2 w-0 h-1 bg-blue-500 transition-all duration-300 group-hover:w-full"
+                ></span>
             </h1>
-            <h2 className="text-black dark:text-white font-medium mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style={{ letterSpacing: '1.5px' }}>
+            <h2 className="text-black dark:text-white font-medium mt-10 mb-2 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl" style={{ letterSpacing: '1.5px' }}>
                 Contests
             </h2>
             <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6 overflow-x-auto whitespace-nowrap scrollbar w-full justify-center">

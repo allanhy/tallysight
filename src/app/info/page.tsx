@@ -1,58 +1,59 @@
 // src/app/info/page.tsx
 import React from 'react';
 import BackToTop from '@/app/components/BackToTop';
+import Image from 'next/image';
 
 export default function InfoPage() {
   return (
-    // Outer container with top padding to clear a fixed header (assumed 64px tall)
-    <div className="container mx-auto px-4 py-10">
-      <h1 className="text-black dark:text-white font-semibold mt-6 mb-2 py-10 sm:mb-4 text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
-  style={{ letterSpacing: '1.5px' }}>
-        Information
-      </h1>
-      
+    <div className="container mx-auto px-4 pt-24">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
+        {/* Welcome Text */}
+        <div className="text-center sm:text-left">
+          <h1 className="relative inline-block text-4xl sm:text-4xl md:text-5xl font-semibold text-black dark:text-white group mt-10 mb-2 text-center">
+            Thanks for playing with TallySight!
+            <span className="absolute left-0 -bottom-1 h-1 w-0 bg-blue-500 transition-all duration-500 group-hover:w-full"></span>
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mt-2 sm:mt-4 text-center">
+            Learn the rules, get your questions answered, and start making your picks!
+          </p>
+        </div>
+      </div>
+
+
       {/* Main Content Area */}
       <main className="min-h-screen pb-10 bg-white dark:bg-gray-900 transition-colors duration-200">
         
         {/* Navigation */}
-        <div> 
-        <nav className="bg-[#1f2937] max-w-screen-xl mx-auto mt-6 mb-20 py-4 px-4 sticky top-16 z-30 rounded-lg shadow-md">
-          <ul className="flex flex-col sm:flex-row justify-center gap-6 text-gray-200">
-            <li>
-              <a 
-                href="#about" 
-                className="hover:text-gray-400 transition-colors duration-200"
-              >
-                About
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#rules" 
-                className="hover:text-gray-400 transition-colors duration-200"
-              >
-                Rules
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#faq" 
-                className="hover:text-gray-400 transition-colors duration-200"
-              >
-                FAQ
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#contact" 
-                className="hover:text-gray-400 transition-colors duration-200"
-              >
-                Contact
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
+        <div className="pt-5">
+              <nav className="bg-[#1f2937] max-w-screen-xl mx-auto mt-6 mb-20 py-4 px-4 sticky top-16 z-30 rounded-lg">
+        <ul className="flex flex-col sm:flex-row justify-center gap-8 text-white text-lg font-semibold">
+          <li>
+            <a href="#about" className="relative group inline-block transition-colors duration-300 hover:text-blue-400">
+              About
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-blue-500 transition-all duration-500 group-hover:w-full"></span>
+            </a>
+          </li>
+          <li>
+            <a href="#rules" className="relative group inline-block transition-colors duration-300 hover:text-blue-400">
+              Rules
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-blue-500 transition-all duration-500 group-hover:w-full"></span>
+            </a>
+          </li>
+          <li>
+            <a href="#faq" className="relative group inline-block transition-colors duration-300 hover:text-blue-400">
+              FAQ
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-blue-500 transition-all duration-500 group-hover:w-full"></span>
+            </a>
+          </li>
+          <li>
+            <a href="#contact" className="relative group inline-block transition-colors duration-300 hover:text-blue-400">
+              Contact
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-blue-500 transition-all duration-500 group-hover:w-full"></span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+</div>
 
         {/* About Section */}
         <section id="about" className="mb-12">
@@ -118,6 +119,18 @@ export default function InfoPage() {
             If you or someone you know has a gambling problem, help is available. Call <strong>1-800-GAMBLER</strong>.
           </p>
         </section>
+        
+        {/* Logo */}
+        <div className="flex justify-center my-8 transition-transform duration-600 hover:scale-110">
+          <Image
+            src="/tallysight-logo.png"
+            alt="TallySight Logo"
+            width={110}
+            height={100}
+            priority
+            className="object-contain"
+          />
+        </div>
       </main>
       <BackToTop />
     </div>
