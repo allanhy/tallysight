@@ -201,17 +201,17 @@ This project is deployed with [Vercel](https://vercel.com).
 
 If you want to deploy manually using the Vercel CLI:
 1. **Make sure to be logged into your Vercel account**
-```bash
-npx vercel login
-```
+    ```bash
+    npx vercel login
+    ```
 2. **Link to the correct project before deploying manually**
-```bash
-npx vercel link
-```
+    ```bash
+    npx vercel link
+    ```
 3. **Manually deploy**
-```bash
-npx vercel
-```
+    ```bash
+    npx vercel
+    ```
 ---
 
 ## :gem: Acknowledgments
