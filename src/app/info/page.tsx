@@ -9,7 +9,7 @@ export default function InfoPage() {
       <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
         {/* Welcome Text */}
         <div className="text-center sm:text-left">
-          <h1 className="relative inline-block text-4xl sm:text-5xl md:text-6xl font-semibold text-black dark:text-white group mt-10 mb-2">
+          <h1 className="relative inline-block text-4xl sm:text-4xl md:text-5xl font-semibold text-black dark:text-white group mt-10 mb-2 text-center">
             Thanks for playing with TallySight!
             <span className="absolute left-0 -bottom-1 h-1 w-0 bg-blue-500 transition-all duration-500 group-hover:w-full"></span>
           </h1>
