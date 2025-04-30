@@ -170,7 +170,11 @@ To fully set up and run the project, you’ll need accounts with the following s
 ## :test_tube: Testing
 ### 🧪 Automated Testing
 
-This project includes basic unit and integration testing with real data and hitting the live APIs using **Jest** & **Selenium (pytest)**.
+This project includes basic unit, integration, and automated testing with real data and hitting the live APIs using **Jest** & **Selenium with pytest** (for end-to-end UI testing).
+
+### 📦 Requirements
+- [Python](https://www.python.org/downloads/) (3.10+ recommended)
+- pip (comes with Python)
 
 To run tests locally for Jest:
 
@@ -179,10 +183,14 @@ npm run test
 ```
 
 To run tests locally for Selenium with pytest:
-
-```bash
-pytest -v
-```
+1. **Install pytest-selenum**:
+   ```bash
+   pip install pytest-selenium
+   ```
+2. **Run the tests**:
+   ```bash
+   pytest -v
+   ```
 ---
 
 ## :triangular_flag_on_post: Deployment
