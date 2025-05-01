@@ -27,7 +27,7 @@
 ---
 
 ## :star2: Synopsis
-**Tallysight** is a dynamic web application enabling users to make picks on real-time sports and track their performance over time. Picks integrate real-time sports data and offers an engaging and competitive experience through leaderboards, personalized profiles, and performance analytics, delivering an enhanced and user-friendly experience.
+**Tallysight** is a dynamic web application enabling users to make picks on real-time sports and track their performance over time. Picks integrate real-time sports data and offers an engaging and competitive experience through leaderboards, personalized profiles, and performance analytics, delivering an enhanced and user-friendly experience. The application was created because our client is able to provide insight into many different sports and their games but wanted more user engagement through competitive sports picking.
 
 Primary users include:
 - Sports fans
