@@ -22,8 +22,6 @@ export async function GET(req: NextRequest) {
     });    
     const syncResult = await syncRes.json();
 
-    await delay(60000);
-
     // for point handling
     await handleAllGamesDone();
     console.log('Cron for auto update points: success');
