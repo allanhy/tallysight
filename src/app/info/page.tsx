@@ -123,7 +123,7 @@ export default function InfoPage() {
         {/* Logo */}
         <div className="flex justify-center my-8 transition-transform duration-600 hover:scale-110">
           <Image
-            src="/tallysight-logo.png"
+            src="/tallysightcircle.png"
             alt="TallySight Logo"
             width={110}
             height={100}
