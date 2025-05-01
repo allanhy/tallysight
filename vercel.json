@@ -2,13 +2,11 @@
     "crons": [
       {
         "path": "/api/automated-syncing",
-        "schedule": "45 5 * * *",
-        "maxDuration": 60
+        "schedule": "45 5 * * *"
       },
       {
         "path": "/api/automated-reminders",
-        "schedule": "0 9 * * *",
-        "maxDuration": 60
+        "schedule": "0 9 * * *"
       }
     ]
   }
