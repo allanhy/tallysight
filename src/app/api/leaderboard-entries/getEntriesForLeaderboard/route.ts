@@ -44,7 +44,7 @@ export async function GET(req: Request) {
 
         // Only include users who have earned points (> 0)
         const query = 
-          `SELECT u.user_id, u.clerk_id, u.username, u.points, u.rank, u.performance, u.bio, u.fav_team, u.max_points
+          `SELECT u.user_id, u.clerk_id, u.username, u.points, DENSE_RANK() OVER (ORDER BY u.points DESC) AS rank, u.performance, u.bio, u.fav_team, u.max_points
           FROM users u
           WHERE u.points > 0
           ORDER BY u.rank ASC, u.points DESC;`;
