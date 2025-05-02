@@ -10,11 +10,10 @@ export async function GET(req: Request) {
   try {
     client = await db.connect();
     const {searchParams} = new URL(req.url);
-    //const leaderboard_id = searchParams.get('leaderboard_id');
     const sport = searchParams.get('sport');
-    const week = searchParams.get('week')
+    const week = searchParams.get('week');
     
-    if (/*!leaderboard_id ||*/ !sport || !week) {
+    if (!sport || !week) {
       return NextResponse.json({success: false, message: 'Missing Fields Required: leaderboard_id, sport, week' }, { status: 400 });
     }
 
@@ -40,6 +39,18 @@ export async function GET(req: Request) {
               u.user_id
           ) AS subquery
           WHERE u.user_id = subquery.user_id;
+        `);
+
+        await client.query(`
+          UPDATE users
+          SET rank = subquery.rank
+          FROM (
+            SELECT 
+              user_id,
+              DENSE_RANK() OVER (ORDER BY points DESC) AS rank
+            FROM users
+          ) AS subquery
+          WHERE users.user_id = subquery.user_id;
         `);
 
         // Only include users who have earned points (> 0)
