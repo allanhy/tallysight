@@ -177,7 +177,7 @@ This project includes basic unit, integration, and automated testing with real d
 - pip (comes with Python)
 - [Python Extension](https://marketplace.visualstudio.com/items/?itemName=ms-python.python) (Latest Verison)
 
-To run tests locally for Jest (29.7+ recommended):
+To run tests locally for **Jest** (29.7+ recommended) where a report is automatically generated about passing/failing tests:
 
 ```bash
 npm run test
@@ -198,6 +198,8 @@ To run tests locally for Selenium with pytest:
 This project is deployed with [Vercel](https://vercel.com).
 
 > 🚀 Automatic deployments are triggered when you push to the `main` branch via Git.
+
+To connect a project using the Vercel website, navigate to [Vercel](https://vercel.com). Select the **Add New...** button that will show a dropdown with the option **Project** to select. A page with the option to **Import Git Repository** will appear where the existing project on a Git provider (such as GitHub) can be selected to begin automatic deployments.
 
 If you want to deploy manually using the Vercel CLI:
 1. **Make sure to be logged into your Vercel account**
