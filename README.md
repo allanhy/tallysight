@@ -176,6 +176,7 @@ This project includes basic unit, integration, and automated testing with real d
 - [Python](https://www.python.org/downloads/) (3.10+ recommended)
 - pip (comes with Python)
 - [Python Extension](https://marketplace.visualstudio.com/items/?itemName=ms-python.python) (Latest Verison)
+- For more info, follow the link to the Jest homepage (https://jestjs.io/)
 
 To run tests locally for **Jest** (29.7+ recommended) where a report is automatically generated about passing/failing tests:
 
@@ -228,7 +229,7 @@ If you want to deploy manually using the Vercel CLI:
 - **[Jeremy Auradou](https://github.com/JeremyAuradou)**: jauradou@csus.edu
 - **[Anthony Hernandez](https://github.com/ahern2212)**: ahernandez56@csus.edu
 - **[Allan Hy](https://github.com/allanhy)**: allanhy@csus.edu
-- **[James Pullin](https://github.com/OscarVillaloboss)**: jamespullin@csus.edu
+- **[James Pullin](https://github.com/Splatt707)**: jamespullin@csus.edu
 - **[Oscar Villalobos](https://github.com/OscarVillaloboss)**: oscarvillalobos@csus.edu
 - **[Mursal Yari](https://github.com/Myari1)**: myari@csus.edu
 - **[Sosan Yari](https://github.com/SosanY)**: syari@csus.edu
