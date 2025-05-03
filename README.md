@@ -177,6 +177,7 @@ This project includes basic unit, integration, and automated testing with real d
 - pip (comes with Python)
 - [Python Extension](https://marketplace.visualstudio.com/items/?itemName=ms-python.python) (Latest Verison)
 - For more info, follow the link to the Jest homepage (https://jestjs.io/)
+- For more info, follow the link to the selenium homepage (https://www.selenium.dev/)
 
 To run tests locally for **Jest** (29.7+ recommended) where a report is automatically generated about passing/failing tests:
 
